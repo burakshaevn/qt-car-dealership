@@ -1,0 +1,8 @@
+<RCC>
+    <qresource prefix="/">
+        <file>more_horiz.svg</file>
+        <file>navigate_next.svg</file>
+        <file>person.svg</file>
+        <file>logo.svg</file>
+    </qresource>
+</RCC>
