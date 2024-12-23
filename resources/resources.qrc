@@ -4,5 +4,9 @@
         <file>navigate_next.svg</file>
         <file>person.svg</file>
         <file>logo.svg</file>
+        <file>mercedez-benz.svg</file>
+        <file>directions_car.svg</file>
+        <file>search.svg</file>
+        <file>navigate_before.svg</file>
     </qresource>
 </RCC>

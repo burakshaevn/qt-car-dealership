@@ -25,15 +25,22 @@ public:
 
     bool Open();
     void Close();
-
-    void UpdateConnection(const QStringView host, int port, const QStringView db_name, const QStringView username, const QStringView password);
+    void UpdateConnection(const QString& host, int port, const QString& db_name, const QString& username, const QString& password);
 
     QString GetLastError() const;
 
-    QVariant ExecuteQuery(const QStringView string_query);
-    QVariant ExecuteSelectQuery(const QStringView string_query);
+    QString GetTableDescription(const QStringView table_name);
+
+    QStringList GetTables() const;
+
+    bool ExecuteQuery(const QStringView string_query);
+    QVariant ExecuteSelectQuery(const QStringView string_query) const;
 
     int GetRowsCount(QStringView table_name) const;
+
+    int GetMaxOrMinValueFromTable(const QString& max_or_min, const QString& column_name, const QString& table_name);
+
+    const QStringList GetForeignKeysForColumn(const QString& table_name, const QString& column);
 
 private:
     QSqlDatabase db_;
