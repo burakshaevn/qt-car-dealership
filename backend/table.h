@@ -17,6 +17,8 @@
 #include <QSqlField>
 #include <QTableWidget>
 #include <QStandardItemModel>
+#include <QScrollArea>
+#include <QDir>
 
 #include "database_manager.h"
 #include "edit_dialog.h"
@@ -39,15 +41,12 @@ protected:
     QPushButton* logout_button_;
 
     Tables current_table_;
-
 public:
     explicit Table(DatabaseManager* db_manager, const User* user, QWidget* parent = nullptr);
 
     void BuildAdminTables();
-    void BuildUserTables(const int id);
 
     void LoadTable();
-    void LoadAppointments(const int id);
 
     void AddRecord();
     void DeleteRecord();

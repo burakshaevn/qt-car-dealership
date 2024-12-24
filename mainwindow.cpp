@@ -50,7 +50,10 @@ void MainWindow::on_pushButton_login_clicked() {
                     UpdateUser(user, this);
 
                     table_ = std::make_unique<Table>(&db_manager_, user_.get(), nullptr);
+                    table_->BuildAdminTables();
+
                     connect(table_.get(), &Table::Logout, this, &MainWindow::on_pushButton_logout_clicked);
+
                     ui->stackedWidget->addWidget(table_.get());
                     ui->stackedWidget->setCurrentWidget(table_.get());
                 }
@@ -66,21 +69,20 @@ void MainWindow::on_pushButton_login_clicked() {
                     if (query.next()) {
                         UserInfo user;
                         user.id_ = query.value("id").toInt();
-                        user.full_name_ = query.value("name").toString();
+                        user.full_name_ = query.value("first_name").toString();
+                        user.full_name_ += " " + query.value("last_name").toString();
                         user.email_ = query.value("email").toString();
                         user.password_ = query.value("password").toString();
                         user.role_ = Role::User;
+                        user.purchased_cars_ = GetCars(user.id_);
 
                         if (user.password_ == ui->lineEdit_password->text()) {
                             ui->lineEdit_login->clear();
                             ui->lineEdit_password->clear();
                             QMessageBox::information(this, "Авторизация", "Выполнена авторизация как пользователь.");
-                            UpdateUser(user, this);
 
-                            table_ = std::make_unique<Table>(&db_manager_, user_.get(), nullptr);
-                            connect(table_.get(), &Table::Logout, this, &MainWindow::on_pushButton_logout_clicked);
-                            ui->stackedWidget->addWidget(table_.get());
-                            ui->stackedWidget->setCurrentWidget(table_.get());
+                            UpdateUser(user, this);
+                            ui->stackedWidget->setCurrentWidget(ui->main);
 
                             SetupFloatingMenu();
                             SetupSideMenu();
@@ -103,36 +105,73 @@ void MainWindow::on_pushButton_login_clicked() {
     }
 }
 
+// void MainWindow::on_pushButton_logout_clicked() {
+//     if (!this->ui->stackedWidget) {
+//         return;
+//     }
+//     user_.reset();
+//     table_.reset();
+//     table_services_.reset();
+//     side_widget_.reset();
+//     floating_menu_.reset();
+
+//     this->ui->stackedWidget->setCurrentWidget(this->ui->login);
+// }
 void MainWindow::on_pushButton_logout_clicked() {
     if (!this->ui->stackedWidget) {
         return;
     }
+
     user_.reset();
+    table_.reset();
+    table_services_.reset();
+    side_widget_.reset();
+    floating_menu_.reset();
+
+    if (ui->scrollArea) {
+        QWidget* oldWidget = ui->scrollArea->takeWidget();
+        if (oldWidget) {
+            oldWidget->deleteLater();
+        }
+    }
+    if (ui->scrollArea_2) {
+        QWidget* oldWidget = ui->scrollArea_2->takeWidget();
+        if (oldWidget) {
+            oldWidget->deleteLater();
+        }
+    }
+
+    // Очистка карты с автомобилями
+    carCardsMap_.clear();
+    carColors_.clear();
+    currentColorIndex_ = 0;
+
+    // Переключение на экран логина
     this->ui->stackedWidget->setCurrentWidget(this->ui->login);
 }
 
 void MainWindow::SetupFloatingMenu(){
-    QWidget* floatingMenu = new QWidget(this);
-    floatingMenu->setStyleSheet("background-color: #fafafa; border-radius: 39px;");
-    floatingMenu->setFixedSize(353, 96);
+    floating_menu_ = std::make_unique<QWidget>(this);
+    floating_menu_->setStyleSheet("background-color: #fafafa; border-radius: 39px;");
+    floating_menu_->setFixedSize(353, 96);
 
     // Горизонтальное размещение кнопок в меню
-    QHBoxLayout* menuLayout = new QHBoxLayout(floatingMenu);
+    QHBoxLayout* menuLayout = new QHBoxLayout(floating_menu_.get());
     menuLayout->setContentsMargins(20, 10, 20, 10);
     menuLayout->setSpacing(20);
 
-    QPushButton* carButton = new QPushButton(floatingMenu);
+    QPushButton* carButton = new QPushButton(floating_menu_.get());
     carButton->setIcon(QIcon("://directions_car.svg"));
     carButton->setIconSize(QSize(45, 45));
     carButton->setStyleSheet("QPushButton { border: none; outline: none; }");
     connect(carButton, &QPushButton::clicked, this, &MainWindow::on_pushButton_cars_clicked);
 
-    QPushButton* searchButton = new QPushButton(floatingMenu);
+    QPushButton* searchButton = new QPushButton(floating_menu_.get());
     searchButton->setIcon(QIcon("://search.svg"));
     searchButton->setIconSize(QSize(45, 45));
     searchButton->setStyleSheet("QPushButton { border: none; outline: none; }");
 
-    QPushButton* userButton = new QPushButton(floatingMenu);
+    QPushButton* userButton = new QPushButton(floating_menu_.get());
     userButton->setIcon(QIcon("://person.svg"));
     userButton->setIconSize(QSize(45, 45));
     userButton->setStyleSheet("QPushButton { border: none; outline: none; }");
@@ -143,31 +182,31 @@ void MainWindow::SetupFloatingMenu(){
     menuLayout->addWidget(userButton);
 
     // Установим позицию меню (по центру внизу)
-    floatingMenu->move((this->width() - floatingMenu->width()) / 2, this->height() - floatingMenu->height() - 20);
-    floatingMenu->show();
+    floating_menu_->move((this->width() - floating_menu_->width()) / 2, this->height() - floating_menu_->height() - 20);
+    floating_menu_->show();
 }
 
-void MainWindow::DrawCars(const QString& condition) {
-    QWidget* oldWidget = ui->scrollArea->takeWidget();
+void MainWindow::DrawCars(QScrollArea* scrollArea, const QString& condition) {
+    QWidget* oldWidget = scrollArea->takeWidget();
     if (oldWidget) {
         oldWidget->deleteLater(); // Удаляем виджет асинхронно
     }
 
     // Создаем виджет-контейнер для карточек
-    QWidget* container = new QWidget(ui->scrollArea);
+    QWidget* container = new QWidget(scrollArea);
     QVBoxLayout* layout = new QVBoxLayout(container);
 
     // Запрос к базе данных для получения автомобилей
-    // auto queryResult = db_manager_.ExecuteSelectQuery(QString("SELECT name, color, price, image_url FROM cars;"));
-    // auto queryResult = db_manager_.ExecuteSelectQuery(QString("SELECT name, color, price, image_url FROM cars WHERE color = 'Белый'"));
     auto queryResult = db_manager_.ExecuteSelectQuery(condition);
 
     if (queryResult.canConvert<QSqlQuery>()) {
         QSqlQuery query = queryResult.value<QSqlQuery>();
         while (query.next()) {
+            int id = query.value("id").toInt();
             QString name = query.value("name").toString();
             QString color = query.value("color").toString();
             double price = query.value("price").toDouble();
+            QString description = query.value("description").toString();
 
             QString relativePath = "/../../resources/";
             QString imagePath = QDir::cleanPath(QCoreApplication::applicationDirPath() + "/" + relativePath + query.value("image_url").toString().replace("\\", "/"));
@@ -217,16 +256,6 @@ void MainWindow::DrawCars(const QString& condition) {
                 carColor->setFixedSize(400, 25);
                 carColor->move(368, 83);
 
-                // Функция для форматирования цены
-                auto FormatPrice = [](int price) {
-                    QString formattedPrice = QString::number(price); // Преобразуем в строку
-                    int len = formattedPrice.length();
-                    for (int i = len - 3; i > 0; i -= 3) {
-                        formattedPrice.insert(i, ' '); // Вставляем пробел каждые три цифры
-                    }
-                    return formattedPrice;
-                };
-
                 // Использование функции FormatPrice
                 QLabel* carPrice = new QLabel(FormatPrice(price) + " руб.", carCard);
                 carPrice->setStyleSheet("font: 700 22pt 'JetBrains Mono'; color: #1d1b20;");
@@ -237,22 +266,68 @@ void MainWindow::DrawCars(const QString& condition) {
                 // Добавляем карточку в контейнер
                 layout->addWidget(carCard);
 
-                connect(carCard, &QWidget::mousePressEvent, [=](QMouseEvent*) {
-                    emit carSelected(name, color, price, imagePath);
-                });
-            } else {
+                Car selectedCar(id, name, color, price, description, imagePath);
+                carCardsMap_[carCard] = selectedCar;
+                carCard->installEventFilter(this);
+            }
+            else {
                 qDebug() << "Не удалось загрузить изображение: " << imagePath;
             }
         }
     }
     container->setLayout(layout);
-    ui->scrollArea->setWidget(container);
+    scrollArea->setWidget(container);
+}
+
+QString MainWindow::FormatPrice(int price) {
+    QString formattedPrice = QString::number(price);
+    int len = formattedPrice.length();
+    for (int i = len - 3; i > 0; i -= 3) {
+        formattedPrice.insert(i, ' ');
+    }
+    return formattedPrice;
+};
+
+QList<Car> MainWindow::GetCars(int user_id) const {
+    QList<Car> cars;
+    QSqlQuery query;
+    QString query_str = QString("select * from cars where id in (select car_id from purchases where client_id = %1); ").arg(user_id);
+
+    if (!query.exec(query_str)) {
+        qWarning() << "Failed to execute query:" << query.lastError().text();
+        return cars;
+    }
+
+    while (query.next()) {
+        cars.append(Car{
+            query.value(0).toInt(),       // id
+            query.value(1).toString(),   // name
+            query.value(2).toString(),   // color
+            query.value(3).toInt(),      // price
+            query.value(4).toString(),   // description
+            query.value(5).toString()    // path_to_image
+        });
+    }
+
+    return cars;
+}
+
+bool MainWindow::eventFilter(QObject* obj, QEvent* event) {
+    if (event->type() == QEvent::MouseButtonPress) {
+        auto it = carCardsMap_.find(static_cast<QWidget*>(obj));
+        if (it != carCardsMap_.end()) {
+            current_car_ = it.value();
+            emit onCarSelected(current_car_);
+        }
+    }
+    return QMainWindow::eventFilter(obj, event);
 }
 
 void MainWindow::SetupSideMenu() {
     // Создаём боковое меню как QWidget
     side_widget_ = std::make_unique<QWidget>(this);
     side_widget_->setStyleSheet("background-color: #fafafa;");
+
     side_widget_->setGeometry(0, 0, 305, 760);
 
     // Добавляем логотип
@@ -285,16 +360,16 @@ void MainWindow::SetupSideMenu() {
     QListWidgetItem* viewAllItem = new QListWidgetItem("Смотреть все модели", side_list_);
     viewAllItem->setTextAlignment(Qt::AlignLeft); // Выравнивание текста по центру
     viewAllItem->setFont(QFont("JetBrains Mono", 16));
-    viewAllItem->setForeground(QColor("#140f10"));
+    viewAllItem->setForeground(QColor("#9b9c9c"));
 
     // Обработка кликов по элементам меню
     connect(side_list_, &QListWidget::itemClicked, this, [this](QListWidgetItem* item) {
         if (item->text() == "Смотреть все модели") {
             // Логика для кнопки "Смотреть все"
-            DrawCars("SELECT * FROM cars WHERE color = 'Белый'");
+            DrawCars(ui->scrollArea, "SELECT * FROM cars WHERE color = 'Белый'");
         } else {
             // Логика для остальных пунктов списка
-            DrawCars(QString(R"(SELECT * FROM cars WHERE type_id =
+            DrawCars(ui->scrollArea, QString(R"(SELECT * FROM cars WHERE type_id =
                             (SELECT id FROM car_types WHERE name = '%1') AND color = '%2')")
                          .arg(item->text())
                          .arg("Белый"));
@@ -313,29 +388,22 @@ void MainWindow::on_pushButton_profile_clicked()
     }
     else{
         if (user_->GetRole() == Role::User){
-            // table_->LoadAppointments(user_->GetId());
-            ui->stackedWidget->setCurrentWidget(table_.get());
+            side_widget_->setVisible(false);
+            side_list_->setVisible(false);
+            DrawCars(ui->scrollArea_2, QString(R"(select * from cars
+            where id IN (select car_id from purchases where client_id = %1);)").arg(user_->GetId()));
+            ui->label_clientname->setText(user_->GetName());
+            ui->stackedWidget->setCurrentWidget(ui->user_page);
         }
     }
 }
-
-// void MainWindow::on_pushButton_masters_clicked()
-// {
-//     if (user_.get()){
-//         if (user_->GetRole() == Role::User){
-//             ShowMasters();
-//             // ui->stackedWidget->setCurrentWidget(ui->masters);
-//             return;
-//         }
-//     }
-//     QMessageBox::warning(this, "Ошибка", "Чтобы переключаться по остальным разделам, необходимо авторизоваться как пользователь.");
-// }
 
 void MainWindow::on_pushButton_cars_clicked()
 {
     if (user_.get()){
         if (user_->GetRole() == Role::User) {
-            // DrawCars("SELECT name, color, price, image_url FROM cars WHERE color = 'Белый'");
+            side_widget_->setVisible(true);
+            side_list_->setVisible(true);
             ui->stackedWidget->setCurrentWidget(ui->main);
             return;
         }
@@ -347,7 +415,8 @@ void MainWindow::on_pushButton_back_clicked()
 {
     if (user_.get()){
         if (user_->GetRole() == Role::User) {
-            // DrawCars("SELECT name, color, price, image_url FROM cars WHERE color = 'Белый'");
+            side_widget_->setVisible(true);
+            side_list_->setVisible(true);
             ui->stackedWidget->setCurrentWidget(ui->main);
             return;
         }
@@ -355,17 +424,88 @@ void MainWindow::on_pushButton_back_clicked()
     QMessageBox::warning(this, "Ошибка", "Чтобы переключаться по остальным разделам, необходимо авторизоваться как пользователь.");
 }
 
-void MainWindow::onCarSelected(const QString& name, const QString& color, double price, const QString& imagePath) {
-    // Устанавливаем данные на странице ui->personal (предполагается, что такие элементы есть в форме)
-    ui->personalCarName->setText(name);
-    ui->personalCarColor->setText(color);
-    ui->personalCarPrice->setText(QString::number(price) + " руб.");
+void MainWindow::onCarSelected(const Car& car) {
+    side_widget_->setVisible(false);
+    side_list_->setVisible(false);
 
-    QPixmap pixmap(imagePath);
-    if (!pixmap.isNull()) {
-        ui->personalCarImage->setPixmap(pixmap); // Устанавливаем изображение
+    // Выполняем запрос в базу данных для получения всех цветов
+    carColors_.clear();
+    currentColorIndex_ = 0;
+
+    QSqlQuery query;
+    query.prepare("SELECT * FROM cars WHERE name = :name");
+    query.bindValue(":name", car.name_);
+    if (query.exec()) {
+        while (query.next()) {
+            Car colorVariant;
+            colorVariant.id_ = query.value("id").toInt();
+            colorVariant.name_ = query.value("name").toString();
+            colorVariant.color_ = query.value("color").toString();
+            colorVariant.price_ = query.value("price").toInt();
+            colorVariant.description_= query.value("description").toString();
+            colorVariant.path_to_image_ = query.value("image_url").toString();
+            carColors_.append(colorVariant);
+        }
     }
 
-    // Переходим на страницу "personal"
+    if (!carColors_.isEmpty()) {
+        showCarColor(carColors_.at(currentColorIndex_));
+
+    }
+
     ui->stackedWidget->setCurrentWidget(ui->personal);
+}
+
+void MainWindow::showCarColor(const Car& car) {
+    ui->label_name->setText(car.name_);
+    ui->label_price->setText(FormatPrice(car.price_) + " руб.");
+    ui->label_color_index->setText(QString::number(currentColorIndex_ + 1) + "/" + QString::number(carColors_.size()));
+
+    QString imagePath = QDir::cleanPath(QCoreApplication::applicationDirPath() + "/../../resources/" + car.path_to_image_);
+    QPixmap originalPixmap(imagePath);
+
+    if (!originalPixmap.isNull()) {
+        int fixedWidth = 520;
+        QPixmap scaledPixmap = originalPixmap.scaled(fixedWidth, originalPixmap.height(), Qt::KeepAspectRatio, Qt::SmoothTransformation);
+
+        int imageHeight = scaledPixmap.height();
+        int labelNameY = ui->label_name->y();
+        int imageY = labelNameY - imageHeight - 24;
+
+        ui->label_car_image->setPixmap(scaledPixmap);
+        ui->label_car_image->setFixedSize(fixedWidth, imageHeight);
+        ui->label_car_image->move(391, imageY);
+        ui->label_car_image->show();
+    }
+}
+
+void MainWindow::on_pushButton_next_left_clicked() {
+    if (!carColors_.isEmpty()) {
+        currentColorIndex_ = (currentColorIndex_ - 1 + carColors_.size()) % carColors_.size();
+        current_car_.id_ = carColors_.at(currentColorIndex_).id_;
+        current_car_.color_ = carColors_.at(currentColorIndex_).color_;
+        current_car_.path_to_image_ = carColors_.at(currentColorIndex_).path_to_image_;
+        showCarColor(carColors_.at(currentColorIndex_));
+    }
+}
+
+void MainWindow::on_pushButton_next_right_clicked() {
+    if (!carColors_.isEmpty()) {
+        currentColorIndex_ = (currentColorIndex_ + 1) % carColors_.size();
+        current_car_.id_ = carColors_.at(currentColorIndex_).id_;
+        current_car_.color_ = carColors_.at(currentColorIndex_).color_;
+        current_car_.path_to_image_ = carColors_.at(currentColorIndex_).path_to_image_;
+        showCarColor(carColors_.at(currentColorIndex_));
+    }
+}
+
+void MainWindow::on_pushButton_to_pay_clicked()
+{
+    int newId = db_manager_.GetMaxOrMinValueFromTable("MAX", "id", "purchases") + 1;
+    if (db_manager_.ExecuteQuery(QString("INSERT INTO public.purchases(id, car_id, client_id) VALUES (%1, %2, %3);").arg(newId).arg(current_car_.id_).arg(user_->GetId()))){
+        QMessageBox::information(this, "Выполнение операции", "Произведена оплата. Купленный автомобиль добавлен в Профиль.");
+    }
+    else{
+        QMessageBox::critical(this, "", db_manager_.GetLastError());
+    }
 }

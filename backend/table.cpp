@@ -5,14 +5,14 @@ Table::Table(DatabaseManager* db_manager, const User* user, QWidget* parent)
     , data_table_(new QTableView(this))
     , description_table(new QLabel(this))
 {
-    switch (user->GetRole()) {
-    case Role::Admin:
-        BuildAdminTables();
-        break;
-    case Role::User:
-        BuildUserTables(user->GetId());
-        break;
-    }
+    // switch (user->GetRole()) {
+    // case Role::Admin:
+    //     BuildAdminTables();
+    //     break;
+    // case Role::User:
+    //     BuildUserTables(user);
+    //     break;
+    // }
 }
 
 void Table::BuildAdminTables(){
@@ -117,39 +117,6 @@ void Table::BuildAdminTables(){
     connect(logout_button_, &QPushButton::clicked, this, &Table::Logout);
 }
 
-void Table::BuildUserTables(const int id){
-    auto* layout = new QVBoxLayout(this);
-
-    description_table->setStyleSheet(R"(QLabel{\n	color: #1d1b20; \n	font: 18pt "Open Sans"; \n})");
-    layout->addWidget(description_table);
-
-    // Таблица для отображения данных
-    data_table_->setSelectionBehavior(QAbstractItemView::SelectRows);
-    data_table_->setSelectionMode(QAbstractItemView::SingleSelection);
-    data_table_->horizontalHeader()->setStretchLastSection(true);
-    data_table_->horizontalHeader()->setSectionResizeMode(QHeaderView::Stretch);
-    data_table_->setStyleSheet(R"(
-        QTableView{
-            border: 0px;
-        }
-    )");
-    layout->addWidget(data_table_);
-
-    logout_button_ = new QPushButton("Выход", this);
-    logout_button_->setMinimumWidth(30);
-    logout_button_->setStyleSheet(R"(
-    QPushButton{
-        background-color: #fafafa;
-        color: #140f10;
-        font: 18pt "Open Sans";
-        border-radius: 15px;
-    }
-    )");
-    layout->addWidget(logout_button_);
-    connect(logout_button_, &QPushButton::clicked, this, &Table::Logout);
-    LoadAppointments(id);
-}
-
 void Table::LoadTable() {
     QString table_name = table_selector_->currentText();
 
@@ -214,88 +181,6 @@ void Table::LoadTable() {
 
         // Сохранение текущей таблицы
         current_table_ = StringToTables(table_name);
-    } else {
-        QMessageBox::critical(this, "Ошибка в базе данных", "Ошибка при выполнении запроса.");
-    }
-}
-
-void Table::LoadAppointments(const int id){
-    QVariant result = db_manager_->ExecuteSelectQuery(QString(R"(
-        SELECT
-        s.name AS service_name,
-        m.name AS master_name,
-        a.appointment_time
-            FROM
-                appointments a
-                    JOIN
-                        clients c ON a.client_id = c.id
-              JOIN
-                  clients u ON c.id = u.id
-              JOIN
-                  services s ON a.service_id = s.id
-              JOIN
-                  masters m ON a.master_id = m.id
-              WHERE
-                  u.id = %1;
-        )"
-    ).arg(id));
-    if (result.canConvert<QSqlQuery>()) {
-        QSqlQuery query = result.value<QSqlQuery>();
-
-        if (!query.isActive()) {
-            QMessageBox::critical(this, "Error", "Query execution failed: " + query.lastError().text());
-            return;
-        }
-
-        if (!query.next()) {
-            QMessageBox::warning(this, "Предупреждение", "Выбранная таблица пуста или не существует.");
-            return;
-        }
-
-        // Возврат к началу результата
-        query.first();
-
-        // Обновление описания таблицы
-        description_table->clear();
-        description_table->setText("Ваши записи:");
-        description_table->setWordWrap(true);
-        description_table->setTextInteractionFlags(Qt::TextBrowserInteraction);
-        description_table->setAlignment(Qt::AlignLeft | Qt::AlignTop);
-
-        // Создание новой модели
-        auto* model = new QStandardItemModel(this);
-        data_table_->setModel(nullptr); // Удаляем старую модель
-
-        // Получение структуры таблицы
-        QSqlRecord record = query.record();
-        int column_count = record.count();
-
-        // Установка заголовков
-        QStringList headers;
-        for (int i = 0; i < column_count; ++i) {
-            headers << record.fieldName(i); // Имена столбцов
-        }
-        model->setHorizontalHeaderLabels(headers);
-
-        // Заполнение модели данными из запроса
-        do {
-            QList<QStandardItem*> items;
-            for (int col = 0; col < column_count; ++col) {
-                auto* item = new QStandardItem(query.value(col).toString());
-                item->setEditable(false);
-                items.append(item);
-            }
-            model->appendRow(items);
-        } while (query.next());
-
-        // Установка модели
-        data_table_->setModel(model);
-        data_table_->resizeColumnsToContents();
-        data_table_->setEditTriggers(QAbstractItemView::DoubleClicked | QAbstractItemView::SelectedClicked);
-        data_table_->setSortingEnabled(true);
-
-        QHeaderView* header = data_table_->horizontalHeader();
-        header->setSectionResizeMode(QHeaderView::Stretch);
     } else {
         QMessageBox::critical(this, "Ошибка в базе данных", "Ошибка при выполнении запроса.");
     }

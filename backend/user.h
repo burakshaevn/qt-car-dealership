@@ -11,19 +11,22 @@ struct UserInfo {
         , email_(QString())
         , password_(QString())
         , role_(Role::User)
+        , purchased_cars_()
     {}
-    UserInfo(const int id, const QString& full_name, const QString& email, const QString& password, const Role& role)
+    UserInfo(const int id, const QString& full_name, const QString& email, const QString& password, const Role& role, const QList<Car> purchased_cars)
         : id_(id)
         , full_name_(full_name)
         , email_(email)
         , password_(password)
         , role_(role)
+        , purchased_cars_(purchased_cars)
     {}
     int id_;
     QString full_name_;
     QString email_;
     QString password_;
     Role role_;
+    QList<Car> purchased_cars_;
 };
 
 class User : public QMainWindow
@@ -63,6 +66,13 @@ public:
     }
     inline virtual const Role& GetRole() const{
         return user_.role_;
+    }
+
+    void SetPurchasedCars(const QList<Car> purchased_cars){
+        user_.purchased_cars_ = purchased_cars;
+    }
+    inline QList<Car> GetPurchasedCars() const {
+        return user_.purchased_cars_;
     }
 
 protected:

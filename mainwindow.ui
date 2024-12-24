@@ -32,6 +32,130 @@
 	background-color: #ffffff;
 }</string>
     </property>
+    <widget class="QWidget" name="user_page">
+     <widget class="QLabel" name="label_3">
+      <property name="geometry">
+       <rect>
+        <x>76</x>
+        <y>28</y>
+        <width>1148</width>
+        <height>96</height>
+       </rect>
+      </property>
+      <property name="styleSheet">
+       <string notr="true">QLabel {
+	background-color: #fafafa;
+	border-radius: 30px;
+}</string>
+      </property>
+      <property name="text">
+       <string/>
+      </property>
+     </widget>
+     <widget class="QPushButton" name="pushButton_logout">
+      <property name="geometry">
+       <rect>
+        <x>1085</x>
+        <y>51</y>
+        <width>115</width>
+        <height>49</height>
+       </rect>
+      </property>
+      <property name="styleSheet">
+       <string notr="true">QPushButton {
+	background-color: transparent;
+	color: #1d1b20;
+	border: 1px solid #1d1b20;
+	border-radius: 20px;
+	
+	font: 12pt &quot;JetBrains Mono&quot;;
+}</string>
+      </property>
+      <property name="text">
+       <string>Выход</string>
+      </property>
+     </widget>
+     <widget class="QLabel" name="label_clientname">
+      <property name="geometry">
+       <rect>
+        <x>536</x>
+        <y>59</y>
+        <width>523</width>
+        <height>34</height>
+       </rect>
+      </property>
+      <property name="styleSheet">
+       <string notr="true">QLabel {
+	color: #1d1b20;
+	background-color: transparent;
+	font: 700 21pt &quot;JetBrains Mono&quot;;
+}</string>
+      </property>
+      <property name="text">
+       <string/>
+      </property>
+      <property name="alignment">
+       <set>Qt::AlignmentFlag::AlignRight|Qt::AlignmentFlag::AlignTrailing|Qt::AlignmentFlag::AlignVCenter</set>
+      </property>
+     </widget>
+     <widget class="QScrollArea" name="scrollArea_2">
+      <property name="geometry">
+       <rect>
+        <x>153</x>
+        <y>152</y>
+        <width>995</width>
+        <height>534</height>
+       </rect>
+      </property>
+      <property name="styleSheet">
+       <string notr="true">QScrollArea{
+	background-color: transparent;
+	border: 0px;
+}
+
+QScrollBar:vertical {
+        border: none;
+        background: transparent;
+        width: 10px;
+        margin: 0px 0px 0px 0px;
+    }
+    QScrollBar::handle:vertical {
+        background: #9b9c9c;
+        min-height: 20px;
+        border-radius: 5px;
+    }
+    QScrollBar::add-line:vertical, QScrollBar::sub-line:vertical {
+        background: none;
+        height: 0px;
+    }
+    QScrollBar::add-page:vertical, QScrollBar::sub-page:vertical {
+        background: transparent;
+    }</string>
+      </property>
+      <property name="verticalScrollBarPolicy">
+       <enum>Qt::ScrollBarPolicy::ScrollBarAsNeeded</enum>
+      </property>
+      <property name="horizontalScrollBarPolicy">
+       <enum>Qt::ScrollBarPolicy::ScrollBarAlwaysOff</enum>
+      </property>
+      <property name="widgetResizable">
+       <bool>false</bool>
+      </property>
+      <property name="alignment">
+       <set>Qt::AlignmentFlag::AlignHCenter|Qt::AlignmentFlag::AlignTop</set>
+      </property>
+      <widget class="QWidget" name="scrollAreaWidgetContents_2">
+       <property name="geometry">
+        <rect>
+         <x>2</x>
+         <y>0</y>
+         <width>981</width>
+         <height>685</height>
+        </rect>
+       </property>
+      </widget>
+     </widget>
+    </widget>
     <widget class="QWidget" name="login">
      <widget class="QLineEdit" name="lineEdit_login">
       <property name="geometry">
@@ -168,7 +292,7 @@ QScrollBar:vertical {
     }</string>
       </property>
       <property name="verticalScrollBarPolicy">
-       <enum>Qt::ScrollBarPolicy::ScrollBarAlwaysOn</enum>
+       <enum>Qt::ScrollBarPolicy::ScrollBarAsNeeded</enum>
       </property>
       <property name="horizontalScrollBarPolicy">
        <enum>Qt::ScrollBarPolicy::ScrollBarAlwaysOff</enum>
@@ -182,7 +306,7 @@ QScrollBar:vertical {
       <widget class="QWidget" name="scrollAreaWidgetContents">
        <property name="geometry">
         <rect>
-         <x>2</x>
+         <x>7</x>
          <y>0</y>
          <width>981</width>
          <height>685</height>
@@ -196,7 +320,7 @@ QScrollBar:vertical {
       <property name="geometry">
        <rect>
         <x>215</x>
-        <y>232</y>
+        <y>254</y>
         <width>869</width>
         <height>256</height>
        </rect>
@@ -208,14 +332,14 @@ QScrollBar:vertical {
 }</string>
       </property>
       <property name="text">
-       <string>TextLabel</string>
+       <string/>
       </property>
      </widget>
      <widget class="QPushButton" name="pushButton_back">
       <property name="geometry">
        <rect>
         <x>373</x>
-        <y>504</y>
+        <y>526</y>
         <width>169</width>
         <height>25</height>
        </rect>
@@ -238,7 +362,7 @@ QScrollBar:vertical {
       <property name="geometry">
        <rect>
         <x>758</x>
-        <y>504</y>
+        <y>526</y>
         <width>169</width>
         <height>25</height>
        </rect>
@@ -261,7 +385,7 @@ QScrollBar:vertical {
       <property name="geometry">
        <rect>
         <x>565</x>
-        <y>504</y>
+        <y>526</y>
         <width>169</width>
         <height>25</height>
        </rect>
@@ -279,11 +403,11 @@ QScrollBar:vertical {
        <string>К оплате</string>
       </property>
      </widget>
-     <widget class="QPushButton" name="pushButton_next">
+     <widget class="QPushButton" name="pushButton_next_right">
       <property name="geometry">
        <rect>
         <x>1100</x>
-        <y>325</y>
+        <y>347</y>
         <width>72</width>
         <height>72</height>
        </rect>
@@ -292,6 +416,14 @@ QScrollBar:vertical {
        <string notr="true">QPushButton {
 	background-color: #fafafa;  
 	border-radius: 36px; 
+	color: #1d1b20;
+	font: 28pt &quot;JetBrains Mono&quot;;
+}
+
+QPushButton::pressed {
+	background-color: #fafafa;  
+	border-radius: 36px; 
+	border: 3px solid #1d1b20;
 	color: #1d1b20;
 	font: 28pt &quot;JetBrains Mono&quot;;
 }</string>
@@ -310,11 +442,11 @@ QScrollBar:vertical {
        </size>
       </property>
      </widget>
-     <widget class="QPushButton" name="pushButton_next_2">
+     <widget class="QPushButton" name="pushButton_next_left">
       <property name="geometry">
        <rect>
         <x>129</x>
-        <y>325</y>
+        <y>347</y>
         <width>72</width>
         <height>72</height>
        </rect>
@@ -323,6 +455,14 @@ QScrollBar:vertical {
        <string notr="true">QPushButton {
 	background-color: #fafafa;  
 	border-radius: 36px; 
+	color: #1d1b20;
+	font: 28pt &quot;JetBrains Mono&quot;;
+}
+
+QPushButton::pressed {
+	background-color: #fafafa;  
+	border-radius: 36px; 
+	border: 3px solid #1d1b20;
 	color: #1d1b20;
 	font: 28pt &quot;JetBrains Mono&quot;;
 }</string>
@@ -345,7 +485,7 @@ QScrollBar:vertical {
       <property name="geometry">
        <rect>
         <x>247</x>
-        <y>378</y>
+        <y>400</y>
         <width>808</width>
         <height>46</height>
        </rect>
@@ -358,7 +498,7 @@ QScrollBar:vertical {
 }</string>
       </property>
       <property name="text">
-       <string>TextLabel</string>
+       <string/>
       </property>
       <property name="alignment">
        <set>Qt::AlignmentFlag::AlignCenter</set>
@@ -368,7 +508,7 @@ QScrollBar:vertical {
       <property name="geometry">
        <rect>
         <x>247</x>
-        <y>429</y>
+        <y>451</y>
         <width>808</width>
         <height>34</height>
        </rect>
@@ -381,7 +521,49 @@ QScrollBar:vertical {
 }</string>
       </property>
       <property name="text">
-       <string>TextLabel</string>
+       <string/>
+      </property>
+      <property name="alignment">
+       <set>Qt::AlignmentFlag::AlignCenter</set>
+      </property>
+     </widget>
+     <widget class="QLabel" name="label_car_image">
+      <property name="geometry">
+       <rect>
+        <x>391</x>
+        <y>83</y>
+        <width>520</width>
+        <height>293</height>
+       </rect>
+      </property>
+      <property name="styleSheet">
+       <string notr="true">QLabel {
+	background-color: transparent;
+	boreder: 0px;
+}</string>
+      </property>
+      <property name="text">
+       <string/>
+      </property>
+     </widget>
+     <widget class="QLabel" name="label_color_index">
+      <property name="geometry">
+       <rect>
+        <x>955</x>
+        <y>268</y>
+        <width>121</width>
+        <height>34</height>
+       </rect>
+      </property>
+      <property name="styleSheet">
+       <string notr="true">QLabel {
+	color: #1d1b20;
+	background-color: transparent;
+	font: 500 21pt &quot;JetBrains Mono&quot;;
+}</string>
+      </property>
+      <property name="text">
+       <string/>
       </property>
       <property name="alignment">
        <set>Qt::AlignmentFlag::AlignCenter</set>

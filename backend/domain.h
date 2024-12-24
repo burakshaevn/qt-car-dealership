@@ -9,6 +9,7 @@ struct Car
     explicit Car(const int id, const QString name, const QString color, const int price, const QString description, const QString path_to_image)
         : id_(id)
         , name_(name)
+        , color_(color)
         , price_(price)
         , description_(description)
         , path_to_image_(path_to_image)
