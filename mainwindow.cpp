@@ -14,7 +14,7 @@ MainWindow::MainWindow(QWidget *parent)
     int port = 5432;
     QString dbname = "car-dealership";
     QString username = "postgres";
-    QString password = "password";
+    QString password = "89274800234Nn";
     db_manager_.UpdateConnection(hostname, port, dbname, username, password);
     db_manager_.Open();
 
@@ -112,7 +112,7 @@ void MainWindow::on_pushButton_logout_clicked() {
 
     user_.reset();
     table_.reset();
-    // table_services_.reset();
+    colorDropdown_.reset();
     side_widget_.reset();
     floating_menu_.reset();
 
@@ -151,7 +151,7 @@ void MainWindow::UpdateColorDropdown() {
     }
 
     // Добавляем опцию "Все" для сброса фильтра
-    colorDropdown_->addItem("По умолч.");
+    colorDropdown_->addItem("По умолчанию");
 
     for (const auto& color : colors) {
         colorDropdown_->addItem(color);
@@ -159,7 +159,7 @@ void MainWindow::UpdateColorDropdown() {
 
     // Подключаем сигнал для изменения выбора
     connect(colorDropdown_.get(), &QComboBox::currentTextChanged, this, [this](const QString& selectedColor) {
-        if (selectedColor == "По умолч.") {
+        if (selectedColor == "По умолчанию") {
             DrawCars(ui->scrollArea, "select * from cars where color = 'Белый'");
         } else {
             DrawCars(ui->scrollArea, QString("select * from cars where color = '%1'").arg(selectedColor));

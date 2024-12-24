@@ -338,7 +338,7 @@ QScrollBar:vertical {
      <widget class="QPushButton" name="pushButton_back">
       <property name="geometry">
        <rect>
-        <x>340</x>
+        <x>413</x>
         <y>386</y>
         <width>128</width>
         <height>19</height>
@@ -358,33 +358,10 @@ QScrollBar:vertical {
        <string>Назад</string>
       </property>
      </widget>
-     <widget class="QPushButton" name="pushButton_info">
-      <property name="geometry">
-       <rect>
-        <x>632</x>
-        <y>386</y>
-        <width>128</width>
-        <height>19</height>
-       </rect>
-      </property>
-      <property name="styleSheet">
-       <string notr="true">QPushButton {
-	background-color: transparent;
-	color: #1d1b20;
-	border: 1px solid #1d1b20;
-	border-radius: 7px;
-	
-	font: 10pt &quot;JetBrains Mono&quot;;
-}</string>
-      </property>
-      <property name="text">
-       <string>Подробнее</string>
-      </property>
-     </widget>
      <widget class="QPushButton" name="pushButton_to_pay">
       <property name="geometry">
        <rect>
-        <x>486</x>
+        <x>559</x>
         <y>386</y>
         <width>128</width>
         <height>19</height>
