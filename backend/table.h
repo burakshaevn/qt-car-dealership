@@ -18,7 +18,7 @@
 #include <QTableWidget>
 #include <QStandardItemModel>
 #include <QScrollArea>
-#include <QDir>
+#include <QMouseEvent>
 
 #include "database_manager.h"
 #include "edit_dialog.h"
@@ -29,6 +29,7 @@ class Table : public QWidget {
     Q_OBJECT
 
 protected:
+    Tables current_table_;
     DatabaseManager* db_manager_;
     QTableView* data_table_;
     QLabel* description_table;
@@ -40,7 +41,8 @@ protected:
     QPushButton* edit_button_;
     QPushButton* logout_button_;
 
-    Tables current_table_;
+    std::unique_ptr<QWidget> floating_menu_;
+
 public:
     explicit Table(DatabaseManager* db_manager, const User* user, QWidget* parent = nullptr);
 
@@ -55,6 +57,8 @@ public:
     QString GetPrimaryKeyColumnName(const QString& table_name);
 
     bool GetConfirmation(const QString& table_name, const QString& primary_key_column, int id);
+
+    bool eventFilter(QObject* obj, QEvent* event);
 
 signals:
     void Logout();

@@ -135,3 +135,24 @@ const QStringList DatabaseManager::GetForeignKeysForColumn(const QString& table_
 
     return foreign_keys;
 }
+
+QList<QString> DatabaseManager::GetDistinctColors() {
+    QList<QString> colors;
+    QSqlQuery query(db_);
+    if (!query.exec("SELECT DISTINCT color FROM cars")) {
+        qDebug() << "Query execution failed:" << query.lastError().text();
+        return colors;
+    }
+
+    while (query.next()) {
+        QString color = query.value(0).toString();
+        colors.append(color);
+    }
+
+    if (colors.isEmpty()) {
+        qDebug() << "No colors retrieved from the database.";
+    }
+    return colors;
+}
+
+

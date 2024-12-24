@@ -57,7 +57,7 @@ QSqlRecord EditDialog::GetUpdatedRecord() const {
         if (fieldName.toLower() == "email") {
             QRegularExpression emailRegex(R"((\w+)(\.\w+)*@(\w+)(\.\w{2,})+)");
             if (!emailRegex.match(value).hasMatch()) {
-                throw std::invalid_argument(QString("Field '%1' must contain a valid email address: example@site.com").arg(fieldName).toStdString());
+                throw std::invalid_argument(QString("Поле '%1' должно содержать действительный адрес электронной почты. Пример: example@site.com").arg(fieldName).toStdString());
             }
         }
 

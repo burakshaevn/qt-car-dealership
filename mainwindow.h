@@ -35,9 +35,9 @@ private slots:
     void on_pushButton_login_clicked();
     void on_pushButton_logout_clicked();
 
-    void on_pushButton_profile_clicked();
-
     void on_pushButton_cars_clicked();
+    void on_pushButton_search_clicked();
+    void on_pushButton_profile_clicked();
 
     void on_pushButton_back_clicked();
 
@@ -50,6 +50,8 @@ private slots:
 
     void on_pushButton_to_pay_clicked();
 
+    void onSortByColorClicked();
+
 private:
     Ui::MainWindow *ui;
 
@@ -61,8 +63,9 @@ private:
     DatabaseManager db_manager_;
     std::unique_ptr<User> user_;
     std::unique_ptr<Table> table_;
-    std::unique_ptr<QTableWidget> table_services_;
-    std::unique_ptr<QWidget> floating_menu_;
+    // std::unique_ptr<QTableWidget> table_services_;
+    std::unique_ptr<QWidget> floating_menu_; // Плавающее меню
+    std::unique_ptr<QComboBox> colorDropdown_; // Выпадающий список цветов
 
     std::unique_ptr<QWidget> side_widget_;
     QListWidget* side_list_;
@@ -78,5 +81,7 @@ private:
     QString FormatPrice(int price);
 
     QList<Car> GetCars(int user_id) const;
+
+    void UpdateColorDropdown();
 };
 #endif // MAINWINDOW_H

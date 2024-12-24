@@ -8,5 +8,9 @@
         <file>directions_car.svg</file>
         <file>search.svg</file>
         <file>navigate_before.svg</file>
+        <file>add.svg</file>
+        <file>delete.svg</file>
+        <file>edit.svg</file>
+        <file>Color Swatch 02.svg</file>
     </qresource>
 </RCC>

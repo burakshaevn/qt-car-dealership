@@ -4,24 +4,10 @@ Table::Table(DatabaseManager* db_manager, const User* user, QWidget* parent)
     : QWidget(parent)
     , data_table_(new QTableView(this))
     , description_table(new QLabel(this))
-{
-    // switch (user->GetRole()) {
-    // case Role::Admin:
-    //     BuildAdminTables();
-    //     break;
-    // case Role::User:
-    //     BuildUserTables(user);
-    //     break;
-    // }
-}
+{}
 
 void Table::BuildAdminTables(){
     table_selector_ = new QComboBox(this);
-    button_layout = new QHBoxLayout();
-    add_button_ = new QPushButton("Добавить", this);
-    delete_button_ = new QPushButton("Удалить", this);
-    edit_button_ = new QPushButton("Редактировать", this);
-    logout_button_ = new QPushButton("Выход", this);
     current_table_ = Tables::unknown;
 
     auto* layout = new QVBoxLayout(this);
@@ -59,62 +45,86 @@ void Table::BuildAdminTables(){
     )");
     layout->addWidget(data_table_);
 
-    add_button_->setMinimumWidth(30);
-    add_button_->setStyleSheet(R"(QPushButton{\n	background-color: #fafafa;\n	border: 0px;\n})");
-    add_button_->setIcon(QIcon(":/add.svg"));
-    add_button_->setIconSize({22, 22});
-    add_button_->setStyleSheet(R"(
-    QPushButton {
-        background-color: #fafafa;
-        color: #140f10;
-        font: 18pt "Open Sans";
-        border-radius: 15px;
-    })");
-    button_layout->addWidget(add_button_);
+    floating_menu_ = std::make_unique<QWidget>(this);
+    floating_menu_->setStyleSheet("background-color: #fafafa; border-radius: 29px;");
+    floating_menu_->setFixedSize(335, 74);
 
-    edit_button_->setMinimumWidth(30);
-    edit_button_->setStyleSheet(R"(QPushButton{\n	background-color: #fafafa;\n	border: 0px;\n})");
-    edit_button_->setIcon(QIcon(":/edit.svg"));
-    edit_button_->setIconSize({20, 20});
-    edit_button_->setStyleSheet(R"(
-    QPushButton {
-        background-color: #fafafa;
-        color: #140f10;
-        font: 18pt "Open Sans";
-        border-radius: 15px;
-    })");
-    button_layout->addWidget(edit_button_);
+    // Горизонтальное размещение кнопок в меню
+    QHBoxLayout* menuLayout = new QHBoxLayout(floating_menu_.get());
+    menuLayout->setContentsMargins(20, 10, 20, 10);
+    menuLayout->setSpacing(20);
 
-    delete_button_->setMinimumWidth(30);
-    delete_button_->setStyleSheet(R"(QPushButton{\n	background-color: #fafafa;\n	border: 0px;\n})");
-    delete_button_->setIcon(QIcon(":/delete.svg"));
-    delete_button_->setIconSize({20, 20});
-    delete_button_->setStyleSheet(R"(
-    QPushButton {
-        background-color: #fafafa;
-        color: #140f10;
-        font: 18pt "Open Sans";
-        border-radius: 15px;
-    })");
-    button_layout->addWidget(delete_button_);
+    add_button_ = new QPushButton(QIcon(":/add.svg"), "", floating_menu_.get());
+    add_button_->setIconSize(QSize(35, 35));
+    add_button_->setStyleSheet("QPushButton { border: none; outline: none; }");
 
-    layout->addLayout(button_layout);
-    logout_button_->setMinimumWidth(30);
-    logout_button_->setStyleSheet(R"(
-    QPushButton{
-        background-color: #fafafa;
-        color: #140f10;
-        font: 18pt "Open Sans";
-        border-radius: 15px;
-    }
-    )");
-    layout->addWidget(logout_button_);
+    edit_button_ = new QPushButton(QIcon(":/edit.svg"), "", floating_menu_.get());
+    edit_button_->setIconSize(QSize(35, 35));
+    edit_button_->setStyleSheet("QPushButton { border: none; outline: none; }");
+
+    delete_button_ = new QPushButton(QIcon(":/delete.svg"), "", floating_menu_.get());
+    delete_button_->setIconSize(QSize(35, 35));
+    delete_button_->setStyleSheet("QPushButton { border: none; outline: none; }");
+
+    logout_button_ = new QPushButton(QIcon(":/navigate_next.svg"), "", floating_menu_.get());
+    logout_button_->setIconSize(QSize(35, 35));
+    logout_button_->setStyleSheet("QPushButton { border: none; outline: none; }");
+
+    menuLayout->addWidget(add_button_);
+    menuLayout->addWidget(edit_button_);
+    menuLayout->addWidget(delete_button_);
+    menuLayout->addWidget(logout_button_);
+
+    // Установим позицию меню (по центру внизу)
+    floating_menu_->move(378, 460);
+    floating_menu_->show();
 
     connect(table_selector_, &QComboBox::currentTextChanged, this, &Table::LoadTable);
     connect(add_button_, &QPushButton::clicked, this, &Table::AddRecord);
     connect(edit_button_, &QPushButton::clicked, this, &Table::EditRecord);
     connect(delete_button_, &QPushButton::clicked, this, &Table::DeleteRecord);
     connect(logout_button_, &QPushButton::clicked, this, &Table::Logout);
+
+    floating_menu_->installEventFilter(this);
+}
+
+bool Table::eventFilter(QObject* obj, QEvent* event) {
+    if (obj == floating_menu_.get()) {
+        static QPoint dragStartPos;  // Начальная позиция
+        static bool dragging = false;
+
+        // Обработка событий мыши
+        if (event->type() == QEvent::MouseButtonPress) {
+            QMouseEvent* mouseEvent = static_cast<QMouseEvent*>(event);
+            if (mouseEvent->button() == Qt::LeftButton) {
+                dragStartPos = mouseEvent->pos();
+                dragging = true;
+                return true;
+            }
+        } else if (event->type() == QEvent::MouseMove) {
+            QMouseEvent* mouseEvent = static_cast<QMouseEvent*>(event);
+            if (dragging) {
+                QPoint newPos = floating_menu_->pos() + mouseEvent->pos() - dragStartPos;
+
+                // Убедитесь, что новое положение находится в пределах родительского окна
+                QWidget* parent = floating_menu_->parentWidget();
+                if (parent) {
+                    QRect parentRect = parent->rect();
+                    QSize menuSize = floating_menu_->size();
+
+                    newPos.setX(std::max(0, std::min(newPos.x(), parentRect.width() - menuSize.width())));
+                    newPos.setY(std::max(0, std::min(newPos.y(), parentRect.height() - menuSize.height())));
+                }
+
+                floating_menu_->move(newPos);
+                return true;
+            }
+        } else if (event->type() == QEvent::MouseButtonRelease) {
+            dragging = false; // Завершаем перетаскивание
+            return true;
+        }
+    }
+    return QWidget::eventFilter(obj, event);
 }
 
 void Table::LoadTable() {
@@ -188,7 +198,7 @@ void Table::LoadTable() {
 
 void Table::AddRecord() {
     if (!data_table_->model()) {
-        QMessageBox::warning(this, "No Model", "No model is set for the table view.");
+        QMessageBox::critical(this, "Ошибка", "Выберите таблицу для добавления записи.");
         return;
     }
 
@@ -259,7 +269,7 @@ void Table::AddRecord() {
 
 void Table::DeleteRecord() {
     if (!data_table_->model()) {
-        QMessageBox::warning(this, "No Model", "No model is set for the table view.");
+        QMessageBox::critical(this, "Ошибка", "Выберите таблицу для удаления записи.");
         return;
     }
     QString table_name = table_selector_->currentText();
@@ -274,7 +284,7 @@ void Table::DeleteRecord() {
 
         bool ok;
         id = QInputDialog::getInt(
-            this, "Delete Record", "Enter ID number:", 1, min_id, max_id, 1, &ok
+            this, "Удаление записи", "Укажите порядковый номер записи (столбец ID):", 1, min_id, max_id, 1, &ok
             );
 
         if (!ok) {
@@ -344,14 +354,14 @@ void Table::DeleteRecord() {
 
         QString infoMessage;
         if (!foreignKeys.isEmpty()) {
-            infoMessage = "Deleting this record will affect the following related tables:\n";
+            infoMessage = "Удаление этой записи повлияет на следующие связанные таблицы:\n";
             infoMessage += foreignKeys.join("\n");
-            infoMessage += "\n\nAre you sure you want to proceed?";
+            infoMessage += "\n\nВы уверены, что хотите продолжить?";
         } else {
-            infoMessage = "Are you sure you want to delete this record?";
+            infoMessage = "Вы уверены, что хотите удалить эту запись?";
         }
 
-        if (QMessageBox::warning(this, "Confirm Deletion", infoMessage,
+        if (QMessageBox::warning(this, "Подтверждение удаления", infoMessage,
                                  QMessageBox::Yes | QMessageBox::No) == QMessageBox::No) {
             return;
         }
@@ -374,13 +384,13 @@ void Table::DeleteRecord() {
 
 void Table::EditRecord() {
     if (!data_table_->model()) {
-        QMessageBox::warning(this, "No Model", "No model is set for the table view.");
+        QMessageBox::critical(this, "Ошибка", "Выберите таблицу для редактирования записи.");
         return;
     }
 
     bool ok;
     int row = QInputDialog::getInt(
-        this, "Edit Record", "Enter ROW number:", 1, 1, data_table_->model()->rowCount(), 1, &ok
+        this, "Редактирование записи", "Укажите порядковый номер строки в таблице:", 1, 1, data_table_->model()->rowCount(), 1, &ok
         );
 
     if (!ok) {
@@ -483,7 +493,7 @@ bool Table::GetConfirmation(const QString& table_name, const QString& primary_ke
 
     // Создаем модальное окно
     QDialog dialog;
-    dialog.setWindowTitle("Confirm Deletion");
+    dialog.setWindowTitle("Подтвердите удаление");
     dialog.setModal(true);
 
     // Создаем табличный виджет

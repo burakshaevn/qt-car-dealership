@@ -6,7 +6,7 @@ MainWindow::MainWindow(QWidget *parent)
     , ui(new Ui::MainWindow)
 {
     ui->setupUi(this);
-    this->setFixedSize(1300, 760);
+    this->setFixedSize(1100, 560);
 
     // Настраиваем автоматическое подключение к базе данных
     // при запуске приложения и открываем базу данных
@@ -14,7 +14,7 @@ MainWindow::MainWindow(QWidget *parent)
     int port = 5432;
     QString dbname = "car-dealership";
     QString username = "postgres";
-    QString password = "89274800234Nn";
+    QString password = "password";
     db_manager_.UpdateConnection(hostname, port, dbname, username, password);
     db_manager_.Open();
 
@@ -105,18 +105,6 @@ void MainWindow::on_pushButton_login_clicked() {
     }
 }
 
-// void MainWindow::on_pushButton_logout_clicked() {
-//     if (!this->ui->stackedWidget) {
-//         return;
-//     }
-//     user_.reset();
-//     table_.reset();
-//     table_services_.reset();
-//     side_widget_.reset();
-//     floating_menu_.reset();
-
-//     this->ui->stackedWidget->setCurrentWidget(this->ui->login);
-// }
 void MainWindow::on_pushButton_logout_clicked() {
     if (!this->ui->stackedWidget) {
         return;
@@ -124,7 +112,7 @@ void MainWindow::on_pushButton_logout_clicked() {
 
     user_.reset();
     table_.reset();
-    table_services_.reset();
+    // table_services_.reset();
     side_widget_.reset();
     floating_menu_.reset();
 
@@ -150,40 +138,127 @@ void MainWindow::on_pushButton_logout_clicked() {
     this->ui->stackedWidget->setCurrentWidget(this->ui->login);
 }
 
-void MainWindow::SetupFloatingMenu(){
-    floating_menu_ = std::make_unique<QWidget>(this);
-    floating_menu_->setStyleSheet("background-color: #fafafa; border-radius: 39px;");
-    floating_menu_->setFixedSize(353, 96);
+void MainWindow::UpdateColorDropdown() {
+    if (!colorDropdown_) return;
 
-    // Горизонтальное размещение кнопок в меню
+    colorDropdown_->clear(); // Очищаем список
+
+    QList<QString> colors = db_manager_.GetDistinctColors();
+
+    if (colors.isEmpty()) {
+        qDebug() << "No colors retrieved from the database.";
+        return;
+    }
+
+    // Добавляем опцию "Все" для сброса фильтра
+    colorDropdown_->addItem("По умолч.");
+
+    for (const auto& color : colors) {
+        colorDropdown_->addItem(color);
+    }
+
+    // Подключаем сигнал для изменения выбора
+    connect(colorDropdown_.get(), &QComboBox::currentTextChanged, this, [this](const QString& selectedColor) {
+        if (selectedColor == "По умолч.") {
+            DrawCars(ui->scrollArea, "select * from cars where color = 'Белый'");
+        } else {
+            DrawCars(ui->scrollArea, QString("select * from cars where color = '%1'").arg(selectedColor));
+        }
+    });
+}
+
+void MainWindow::SetupFloatingMenu() {
+    floating_menu_ = std::make_unique<QWidget>(this);
+    floating_menu_->setStyleSheet("background-color: #fafafa; border-radius: 29px;");
+    floating_menu_->setFixedSize(349, 74);
+
     QHBoxLayout* menuLayout = new QHBoxLayout(floating_menu_.get());
     menuLayout->setContentsMargins(20, 10, 20, 10);
     menuLayout->setSpacing(20);
 
     QPushButton* carButton = new QPushButton(floating_menu_.get());
     carButton->setIcon(QIcon("://directions_car.svg"));
-    carButton->setIconSize(QSize(45, 45));
+    carButton->setIconSize(QSize(35, 35));
     carButton->setStyleSheet("QPushButton { border: none; outline: none; }");
     connect(carButton, &QPushButton::clicked, this, &MainWindow::on_pushButton_cars_clicked);
 
     QPushButton* searchButton = new QPushButton(floating_menu_.get());
     searchButton->setIcon(QIcon("://search.svg"));
-    searchButton->setIconSize(QSize(45, 45));
+    searchButton->setIconSize(QSize(35, 35));
     searchButton->setStyleSheet("QPushButton { border: none; outline: none; }");
+    connect(searchButton, &QPushButton::clicked, this, [this]() {
+        bool ok;
+        Car car;
+        car.name_= QInputDialog::getText(
+            this,
+            "Поиск автомобиля",
+            "Введите название автомобиля:",
+            QLineEdit::Normal,
+            "",
+            &ok
+            );
+
+        if (ok && !car.name_.isEmpty()) {
+            onCarSelected(car);
+        }
+    });
+
+    QPushButton* sort_by_color = new QPushButton(floating_menu_.get());
+    sort_by_color->setIcon(QIcon("://Color Swatch 02.svg"));
+    sort_by_color->setIconSize(QSize(32, 32));
+    sort_by_color->setStyleSheet("QPushButton { border: none; outline: none; }");
 
     QPushButton* userButton = new QPushButton(floating_menu_.get());
     userButton->setIcon(QIcon("://person.svg"));
-    userButton->setIconSize(QSize(45, 45));
+    userButton->setIconSize(QSize(35, 35));
     userButton->setStyleSheet("QPushButton { border: none; outline: none; }");
     connect(userButton, &QPushButton::clicked, this, &MainWindow::on_pushButton_profile_clicked);
 
     menuLayout->addWidget(carButton);
     menuLayout->addWidget(searchButton);
+    menuLayout->addWidget(sort_by_color);
     menuLayout->addWidget(userButton);
 
-    // Установим позицию меню (по центру внизу)
     floating_menu_->move((this->width() - floating_menu_->width()) / 2, this->height() - floating_menu_->height() - 20);
     floating_menu_->show();
+
+    // Создаем выпадающий список для цветов
+    colorDropdown_ = std::make_unique<QComboBox>(this);
+    colorDropdown_->setStyleSheet(R"(
+    QComboBox {
+        background-color: #fafafa;
+        border-radius: 9px;
+        border: 1px solid #303436;
+        padding: 5px;
+    }
+    QComboBox::drop-down {
+        border: none;
+    }
+    QComboBox::down-arrow {
+        width: 10px;
+        height: 10px;
+    }
+    QComboBox QAbstractItemView {
+        border: 1px solid #303436;
+        border-radius: 9px;
+        background-color: #fafafa;
+    }
+    )");
+    colorDropdown_->hide(); // Скрываем выпадающий список изначально
+
+    connect(sort_by_color, &QPushButton::clicked, this, [this]() {
+        if (colorDropdown_->isVisible()) {
+            colorDropdown_->hide();
+        } else {
+            UpdateColorDropdown();
+            QPoint buttonPos = floating_menu_->geometry().bottomLeft();
+            colorDropdown_->setFixedSize(246, 35);
+            colorDropdown_->move(464, 442);
+            colorDropdown_->show();
+        }
+    });
+
+    UpdateColorDropdown();
 }
 
 void MainWindow::DrawCars(QScrollArea* scrollArea, const QString& condition) {
@@ -216,7 +291,7 @@ void MainWindow::DrawCars(QScrollArea* scrollArea, const QString& condition) {
                 // Создаем карточку
                 QWidget* carCard = new QWidget(container);
                 carCard->setStyleSheet("background-color: #fafafa; border-radius: 50px;");
-                carCard->setFixedSize(869, 207);
+                carCard->setFixedSize(640, 152);
 
                 // Загружаем изображение
                 QPixmap originalPixmap(imagePath);
@@ -224,7 +299,7 @@ void MainWindow::DrawCars(QScrollArea* scrollArea, const QString& condition) {
                 // Проверяем, удалось ли загрузить изображение
                 if (!originalPixmap.isNull()) {
                     // Фиксированная ширина для всех изображений
-                    int fixedWidth = 271;
+                    int fixedWidth = 200;
 
                     // Масштабируем изображение с сохранением пропорций
                     QPixmap scaledPixmap = originalPixmap.scaled(fixedWidth, 150, Qt::KeepAspectRatio, Qt::SmoothTransformation);
@@ -239,29 +314,29 @@ void MainWindow::DrawCars(QScrollArea* scrollArea, const QString& condition) {
                     QLabel* carImage = new QLabel(carCard);
                     carImage->setPixmap(scaledPixmap);
                     carImage->setFixedSize(fixedWidth, imageHeight);
-                    carImage->move(49, imageY);
+                    carImage->move(36, imageY);
                 }
 
                 // Добавляем название автомобиля
                 QLabel* carName = new QLabel("<b>" + name + "</b>", carCard);
-                carName->setStyleSheet("font: 22pt 'JetBrains Mono'; color: #1d1b20;");
+                carName->setStyleSheet("font: 16pt 'JetBrains Mono'; color: #1d1b20;");
                 carName->setAlignment(Qt::AlignLeft);
-                carName->setFixedSize(428, 34);
-                carName->move(368, 40);
+                carName->setFixedSize(315, 25);
+                carName->move(271, 25);
 
                 // Добавляем цвет автомобиля
                 QLabel* carColor = new QLabel(color, carCard);
-                carColor->setStyleSheet("font: 16pt 'JetBrains Mono'; color: #555555;");
+                carColor->setStyleSheet("font: 12pt 'JetBrains Mono'; color: #555555;");
                 carColor->setAlignment(Qt::AlignLeft);
-                carColor->setFixedSize(400, 25);
-                carColor->move(368, 83);
+                carColor->setFixedSize(294, 19);
+                carColor->move(271, 57);
 
                 // Использование функции FormatPrice
                 QLabel* carPrice = new QLabel(FormatPrice(price) + " руб.", carCard);
-                carPrice->setStyleSheet("font: 700 22pt 'JetBrains Mono'; color: #1d1b20;");
+                carPrice->setStyleSheet("font: 700 16pt 'JetBrains Mono'; color: #1d1b20;");
                 carPrice->setAlignment(Qt::AlignRight);
-                carPrice->setFixedSize(456, 34);
-                carPrice->move(368, 133);
+                carPrice->setFixedSize(336, 25);
+                carPrice->move(271, 102);
 
                 // Добавляем карточку в контейнер
                 layout->addWidget(carCard);
@@ -328,26 +403,26 @@ void MainWindow::SetupSideMenu() {
     side_widget_ = std::make_unique<QWidget>(this);
     side_widget_->setStyleSheet("background-color: #fafafa;");
 
-    side_widget_->setGeometry(0, 0, 305, 760);
+    side_widget_->setGeometry(0, 0, 224, 560);
 
     // Добавляем логотип
     QLabel* logo = new QLabel(side_widget_.get());
-    logo->setPixmap(QPixmap("://logo.svg").scaled(25, 25, Qt::KeepAspectRatio, Qt::SmoothTransformation));
-    logo->setGeometry(26, 51, 25, 25);
+    logo->setPixmap(QPixmap("://logo.svg").scaled(18, 18, Qt::KeepAspectRatio, Qt::SmoothTransformation));
+    logo->setGeometry(19, 38, 18, 18);
 
     QLabel* logo_words = new QLabel(side_widget_.get());
-    logo_words->setPixmap(QPixmap("://mercedez-benz.svg").scaled(218, 25, Qt::KeepAspectRatio, Qt::SmoothTransformation));
-    logo_words->setGeometry(61, 51, 218, 25);
+    logo_words->setPixmap(QPixmap("://mercedez-benz.svg").scaled(160, 18, Qt::KeepAspectRatio, Qt::SmoothTransformation));
+    logo_words->setGeometry(45, 38, 160, 18);
 
     // Добавляем заголовок
     QLabel* title = new QLabel("Модели", side_widget_.get());
-    title->setStyleSheet("background-color: #fafafa; color: #140f10; font: 700 16pt 'JetBrains Mono';");
+    title->setStyleSheet("background-color: #fafafa; color: #140f10; font: 700 12pt 'JetBrains Mono';");
     title->setGeometry(30, 125, 234, 25);
 
     // Создаём QListWidget
     side_list_ = new QListWidget(side_widget_.get());
-    side_list_->setStyleSheet("background-color: #fafafa; color: #140f10; font: 16pt 'JetBrains Mono'; border: 0px;");
-    side_list_->setGeometry(30, 168, 275, 592);
+    side_list_->setStyleSheet("background-color: #fafafa; color: #140f10; font: 12pt 'JetBrains Mono'; border: 0px;");
+    side_list_->setGeometry(22, 111, 224, 449);
 
     // Наполняем список моделей
     QSqlQuery query("SELECT name FROM car_types");
@@ -357,14 +432,14 @@ void MainWindow::SetupSideMenu() {
     }
 
     // Добавляем кнопку "Смотреть все" как элемент списка
-    QListWidgetItem* viewAllItem = new QListWidgetItem("Смотреть все модели", side_list_);
+    QListWidgetItem* viewAllItem = new QListWidgetItem("Все модели", side_list_);
     viewAllItem->setTextAlignment(Qt::AlignLeft); // Выравнивание текста по центру
-    viewAllItem->setFont(QFont("JetBrains Mono", 16));
+    viewAllItem->setFont(QFont("JetBrains Mono", 12));
     viewAllItem->setForeground(QColor("#9b9c9c"));
 
     // Обработка кликов по элементам меню
     connect(side_list_, &QListWidget::itemClicked, this, [this](QListWidgetItem* item) {
-        if (item->text() == "Смотреть все модели") {
+        if (item->text() == "Все модели") {
             // Логика для кнопки "Смотреть все"
             DrawCars(ui->scrollArea, "SELECT * FROM cars WHERE color = 'Белый'");
         } else {
@@ -379,6 +454,44 @@ void MainWindow::SetupSideMenu() {
 
     // Делаем виджет видимым
     side_widget_->show();
+}
+
+void MainWindow::on_pushButton_cars_clicked()
+{
+    if (user_.get()){
+        if (user_->GetRole() == Role::User) {
+            side_widget_->setVisible(true);
+            side_list_->setVisible(true);
+            ui->stackedWidget->setCurrentWidget(ui->main);
+            return;
+        }
+    }
+    QMessageBox::warning(this, "Ошибка", "Чтобы переключаться по остальным разделам, необходимо авторизоваться как пользователь.");
+}
+
+void MainWindow::on_pushButton_search_clicked() {
+    if (ui->stackedWidget->currentWidget() == ui->login ||
+        ui->stackedWidget->currentWidget() == table_.get()) {
+        QMessageBox::information(this, "Информация", "Текущая страница — главная.");
+    } else {
+        if (user_->GetRole() == Role::User) {
+            QSqlRecord record;
+            EditDialog dialog(record, this);
+
+            if (dialog.exec() == QDialog::Accepted) {
+                try {
+                    QSqlRecord updatedRecord = dialog.GetUpdatedRecord();
+                    QString carName = updatedRecord.value("name").toString();
+
+                    if (!carName.isEmpty()) {
+
+                    }
+                } catch (const std::exception& e) {
+                    QMessageBox::critical(this, "Ошибка", e.what());
+                }
+            }
+        }
+    }
 }
 
 void MainWindow::on_pushButton_profile_clicked()
@@ -396,19 +509,6 @@ void MainWindow::on_pushButton_profile_clicked()
             ui->stackedWidget->setCurrentWidget(ui->user_page);
         }
     }
-}
-
-void MainWindow::on_pushButton_cars_clicked()
-{
-    if (user_.get()){
-        if (user_->GetRole() == Role::User) {
-            side_widget_->setVisible(true);
-            side_list_->setVisible(true);
-            ui->stackedWidget->setCurrentWidget(ui->main);
-            return;
-        }
-    }
-    QMessageBox::warning(this, "Ошибка", "Чтобы переключаться по остальным разделам, необходимо авторизоваться как пользователь.");
 }
 
 void MainWindow::on_pushButton_back_clicked()
@@ -447,6 +547,9 @@ void MainWindow::onCarSelected(const Car& car) {
             carColors_.append(colorVariant);
         }
     }
+    else{
+        QMessageBox::warning(this, "Результаты поиска", "Автомобиль не найден.");
+    }
 
     if (!carColors_.isEmpty()) {
         showCarColor(carColors_.at(currentColorIndex_));
@@ -465,16 +568,16 @@ void MainWindow::showCarColor(const Car& car) {
     QPixmap originalPixmap(imagePath);
 
     if (!originalPixmap.isNull()) {
-        int fixedWidth = 520;
+        int fixedWidth = 394;
         QPixmap scaledPixmap = originalPixmap.scaled(fixedWidth, originalPixmap.height(), Qt::KeepAspectRatio, Qt::SmoothTransformation);
 
         int imageHeight = scaledPixmap.height();
         int labelNameY = ui->label_name->y();
-        int imageY = labelNameY - imageHeight - 24;
+        int imageY = labelNameY - imageHeight - 18;
 
         ui->label_car_image->setPixmap(scaledPixmap);
         ui->label_car_image->setFixedSize(fixedWidth, imageHeight);
-        ui->label_car_image->move(391, imageY);
+        ui->label_car_image->move(353, imageY);
         ui->label_car_image->show();
     }
 }
@@ -507,5 +610,16 @@ void MainWindow::on_pushButton_to_pay_clicked()
     }
     else{
         QMessageBox::critical(this, "", db_manager_.GetLastError());
+    }
+}
+
+void MainWindow::onSortByColorClicked() {
+    if (!colorDropdown_) return;
+
+    if (colorDropdown_->isVisible()) {
+        colorDropdown_->setVisible(false);
+    } else {
+        UpdateColorDropdown(); // Обновляем данные
+        colorDropdown_->setVisible(true);
     }
 }

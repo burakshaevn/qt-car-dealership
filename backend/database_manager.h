@@ -42,6 +42,8 @@ public:
 
     const QStringList GetForeignKeysForColumn(const QString& table_name, const QString& column);
 
+    QList<QString> GetDistinctColors();
+
 private:
     QSqlDatabase db_;
 };
