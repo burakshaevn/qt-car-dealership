@@ -200,6 +200,6 @@
 
 ## ER-диаграмма базы данных
 <div align="center">
-  <img src="https://github.com/user-attachments/assets/ee38b467-5e2b-45b6-bf15-3c12035b01cb" alt="image">
+  <img src="https://github.com/user-attachments/assets/96c5a4b0-6d4f-41f4-a66d-a5c035a8c498" alt="image">
   <p>Рис. 19 — ER-диаграмма.</p>
 </div>    
