@@ -52,7 +52,7 @@
 
 ## Пример  
 <div align="center">
-  <img src="https://github.com/user-attachments/assets/bc853db6-c2e1-401b-a2ab-cda654d56ae7" alt="image">
+  <img src="https://github.com/user-attachments/assets/010655eb-0fec-49a3-a013-f78a9dccc91e" alt="image">
   <p>Рис. 1 — Главный экран.</p>
 </div> 
 
@@ -100,18 +100,18 @@
 
 * **Главна страница**. Здесь все автомобили по умолчанию отображаются в белом цвете.
   <div align="center">
-    <img src="https://github.com/user-attachments/assets/d816cd7c-a3d5-4bf5-95e9-e1c73af36c99" alt="GIF Image" width="50%">
+    <img src="https://github.com/user-attachments/assets/d816cd7c-a3d5-4bf5-95e9-e1c73af36c99" alt="GIF Image" width="70%">
     <p>Рис. 3 — Главная страница после авторизации как пользователь.</p>
   </div>  
   После выбора автомобиля в прокручиваемом меню, осуществляется переход на отдельную страницу, где пользователю предосталяется возможность выбрать цвет автомобиля и при необходимости произвести оплату. 
   <div align="center">
-    <img src="https://github.com/user-attachments/assets/5b170d61-ec35-4c35-9aab-a3b0325ddc44" alt="Image" width="50%">
-    <p>Рис. 4 — Главная страница после авторизации как пользователь.</p>
+    <img src="https://github.com/user-attachments/assets/56100e3c-ff71-4d0f-b846-5a1eab8d5224" alt="Image" width="70%">
+    <p>Рис. 4 — Персональная страница автомобиля с возможностью выбора цветов и покупки.</p>
   </div> 
   В правом верхем углу карточки автомобиля отображается доступное количество цветов.
   <div align="center">
-    <img src="https://github.com/user-attachments/assets/194d2e44-b0bc-457b-a23d-de0d56d26c67" alt="GIF Image" width="50%">
-    <p>Рис. 5 — Главная страница после авторизации как пользователь.</p>
+    <img src="https://github.com/user-attachments/assets/6ef7c5f6-423b-4f29-8373-f525af132b0d" alt="GIF Image" width="70%">
+    <p>Рис. 5 — Персональная страница автомобиля с возможностью выбора цветов и покупки.</p>
   </div> 
 * **Сортировка по цветам**.
   <div align="center">
@@ -129,7 +129,7 @@
   
   Купленный автомобиль отображается в таблице `purchases` и отображается в профиле.
   <div align="center">
-    <img src="https://github.com/user-attachments/assets/4c5ddf08-83e5-4787-9479-606c51aedeed" alt="Image" width="40%">
+    <img src="https://github.com/user-attachments/assets/82db5d06-3786-4fcc-8b8f-05572f31abcf" alt="Image">
     <p>Рис. 8 — Подтверждение операции.</p>
   </div> 
   
