@@ -52,7 +52,7 @@
 
 ## Пример  
 <div align="center">
-  <img src="https://github.com/user-attachments/assets/010655eb-0fec-49a3-a013-f78a9dccc91e" alt="image">
+  <img src="https://github.com/user-attachments/assets/5b8423ba-f1b0-43e3-817d-efa325d51fa1" alt="image">
   <p>Рис. 1 — Главный экран.</p>
 </div> 
 
@@ -100,7 +100,7 @@
 
 * **Главна страница**. Здесь все автомобили по умолчанию отображаются в белом цвете.
   <div align="center">
-    <img src="https://github.com/user-attachments/assets/d816cd7c-a3d5-4bf5-95e9-e1c73af36c99" alt="GIF Image" width="70%">
+    <img src="https://github.com/user-attachments/assets/f3cabfc6-5cde-4b71-82a8-ea636b6f801b" alt="GIF Image" width="70%">
     <p>Рис. 3 — Главная страница после авторизации как пользователь.</p>
   </div>  
   После выбора автомобиля в прокручиваемом меню, осуществляется переход на отдельную страницу, где пользователю предосталяется возможность выбрать цвет автомобиля и при необходимости произвести оплату. 
@@ -135,7 +135,7 @@
   
 * **Профиль**. Здесь отображается прокручиваемый вниз виджет, который содержит в себе карточки купленных автомобилей клиентом. 
   <div align="center">
-    <img src="https://github.com/user-attachments/assets/e44b73a2-3d1f-4303-9877-7e4df31be462" alt="Image" width="50%">
+    <img src="https://github.com/user-attachments/assets/811734de-7b6e-4112-a03b-0cd467f47e70" alt="Image" width="70%">
     <p>Рис. 9 — Страница профиля.</p>
   </div> 
   
