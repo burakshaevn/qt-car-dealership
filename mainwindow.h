@@ -11,9 +11,15 @@
 #include <QDockWidget>
 #include <QWidget>
 
-#include "database_manager.h"
+#include <QGraphicsDropShadowEffect>
+
+#include "database_handler.h"
+#include "product_card.h"
+#include "floating_widgets.h"
+#include "cart.h"
 #include "user.h"
 #include "table.h"
+#include "Products.h"
 
 QT_BEGIN_NAMESPACE
 namespace Ui {
@@ -33,55 +39,66 @@ public:
 
 private slots:
     void on_pushButton_login_clicked();
+
     void on_pushButton_logout_clicked();
 
-    void on_pushButton_cars_clicked();
-    void on_pushButton_search_clicked();
-    void on_pushButton_profile_clicked();
+    void on_pushButton_clean_cart_clicked();
 
-    void on_pushButton_back_clicked();
+    void on_pushButton_submit_cart_clicked();
 
-    void onCarSelected(const Car& car);
-    void showCarColor(const Car& car);
+    void ShowProductOnPersonalPage(const ProductInfo&);
 
     void on_pushButton_next_left_clicked();
 
     void on_pushButton_next_right_clicked();
 
-    void on_pushButton_to_pay_clicked();
-
-    void onSortByColorClicked();
+    void on_pushButton_back_clicked();
 
 private:
     Ui::MainWindow *ui;
 
-    Car current_car_;
-    QMap<QWidget*, Car> carCardsMap_;
-    QVector<Car> carColors_; // Список вариантов автомобиля (разные цвета)
-    int currentColorIndex_; // Индекс текущего цвета
+    ProductInfo current_product_;
+    int current_color_index_ = 0; // Индекс текущего цвета
 
-    DatabaseManager db_manager_;
+    // Управление базой данных
+    std::shared_ptr<DatabaseHandler> db_manager_;
+
+    // Управляет информацией о каждом автомобиле
+    std::shared_ptr<Products> products_;
+
+    // Управляет карточками товаров
+    std::shared_ptr<ProductCard> product_card_;
+
+    // Управляет корзиной.
+    // Корзина хранится в статической памяти. Это значит, что после повторного запуска приложения
+    // текущая корзина пользователя будет очищена.
+    // Сама хэш-таблица хранит пару ключ-значение, в виде <название товара (QString), карточка (QWidget*)>
+    std::shared_ptr<Cart> cart_;
+
     std::unique_ptr<User> user_;
     std::unique_ptr<Table> table_;
-    // std::unique_ptr<QTableWidget> table_services_;
-    std::unique_ptr<QWidget> floating_menu_; // Плавающее меню
-    std::unique_ptr<QComboBox> colorDropdown_; // Выпадающий список цветов
 
-    std::unique_ptr<QWidget> side_widget_;
-    QListWidget* side_list_;
+    // Управляет плавающими виджетами: левым боковым меню каталога и правым плавающим меню
+    std::unique_ptr<FloatingWidgets> floating_widgets_;
 
+    // Инициализировать зависимости
+    void BuildDependencies();
+
+    // Обработка нажатий на кнопки "Ещё", "Профиль" и "Корзина" из плавающего меню
+    void MoreClicked();
+    void ProfileClicked();
+    void SortByColorClicked();
+
+    // Функции обработки кнопок оплаты/очистки корзины
+    void CleanCart();
+    void ToPayCart();
+
+    // Создать содержимое и настроить расположение для плавающего меню (главная, профиль, и др.)
     void SetupFloatingMenu();
 
-    void DrawCars(QScrollArea* scrollArea, const QString& condition);
+    // Получить список названий купленных товаров
+    QList<Products::ProductKey> GetPurchasedProducts(int user_id) const;
 
-    void SetupSideMenu();
-
-    bool eventFilter(QObject* obj, QEvent* event);
-
-    QString FormatPrice(int price);
-
-    QList<Car> GetCars(int user_id) const;
-
-    void UpdateColorDropdown();
 };
+
 #endif // MAINWINDOW_H

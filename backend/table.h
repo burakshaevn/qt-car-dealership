@@ -20,7 +20,7 @@
 #include <QScrollArea>
 #include <QMouseEvent>
 
-#include "database_manager.h"
+#include "database_handler.h"
 #include "edit_dialog.h"
 #include "domain.h"
 #include "user.h"
@@ -30,7 +30,7 @@ class Table : public QWidget {
 
 protected:
     Tables current_table_;
-    DatabaseManager* db_manager_;
+    std::shared_ptr<DatabaseHandler> db_manager_;
     QTableView* data_table_;
     QLabel* description_table;
 
@@ -44,7 +44,7 @@ protected:
     std::unique_ptr<QWidget> floating_menu_;
 
 public:
-    explicit Table(DatabaseManager* db_manager, const User* user, QWidget* parent = nullptr);
+    explicit Table(std::shared_ptr<DatabaseHandler> db_manager, const User* user, QWidget* parent = nullptr);
 
     void BuildAdminTables();
 

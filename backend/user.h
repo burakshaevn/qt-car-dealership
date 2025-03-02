@@ -3,6 +3,7 @@
 
 #include <QMainWindow>
 #include "domain.h"
+#include "products.h"
 
 struct UserInfo {
     UserInfo()
@@ -11,22 +12,22 @@ struct UserInfo {
         , email_(QString())
         , password_(QString())
         , role_(Role::User)
-        , purchased_cars_()
+        , products_()
     {}
-    UserInfo(const int id, const QString& full_name, const QString& email, const QString& password, const Role& role, const QList<Car> purchased_cars)
+    UserInfo(const int id, const QString& full_name, const QString& email, const QString& password, const Role& role, const QList<Products::ProductKey> products)
         : id_(id)
         , full_name_(full_name)
         , email_(email)
         , password_(password)
         , role_(role)
-        , purchased_cars_(purchased_cars)
+        , products_(products)
     {}
     int id_;
     QString full_name_;
     QString email_;
     QString password_;
     Role role_;
-    QList<Car> purchased_cars_;
+    QList<Products::ProductKey> products_; // Хранит составной ключ: название + цвет купленного предмета
 };
 
 class User : public QMainWindow
@@ -68,17 +69,15 @@ public:
         return user_.role_;
     }
 
-    void SetPurchasedCars(const QList<Car> purchased_cars){
-        user_.purchased_cars_ = purchased_cars;
+    void SetProducts(const QList<Products::ProductKey> products){
+        user_.products_ = products;
     }
-    inline QList<Car> GetPurchasedCars() const {
-        return user_.purchased_cars_;
+    inline QList<Products::ProductKey> GetProducts() const {
+        return user_.products_;
     }
 
-protected:
+private:
     UserInfo user_;
-
-signals:
 };
 
 #endif // USER_H

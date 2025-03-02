@@ -3,25 +3,6 @@
 
 #include <QString>
 
-struct Car
-{
-    Car() = default;
-    explicit Car(const int id, const QString name, const QString color, const int price, const QString description, const QString path_to_image)
-        : id_(id)
-        , name_(name)
-        , color_(color)
-        , price_(price)
-        , description_(description)
-        , path_to_image_(path_to_image)
-    {}
-    int id_;
-    QString name_;
-    QString color_;
-    int price_;
-    QString description_;
-    QString path_to_image_;
-};
-
 enum class Role {
     User,
     Admin
@@ -31,6 +12,7 @@ enum class Tables {
     unknown,
     admins,
     cars,
+    car_types,
     clients,
     purchases
 };
@@ -41,6 +23,9 @@ inline Tables StringToTables(const QString& table){
     }
     else if (table == "cars"){
         return Tables::cars;
+    }
+    else if (table == "car_types"){
+        return Tables::car_types;
     }
     else if (table == "clients"){
         return Tables::clients;
@@ -59,6 +44,8 @@ inline QString TablesToString(const Tables& table){
             return "admins";
         case Tables::cars:
             return "cars";
+        case Tables::car_types:
+            return "car_types";
         case Tables::clients:
             return "clients";
         case Tables::purchases:
@@ -75,6 +62,16 @@ inline Role StringToRole(const QString& role) {
     else {
         return Role::User;
     }
+}
+
+// Отформатировать число и вернуть строку. Пример: 100000000 → "100 000 000"
+inline QString FormatPrice(int price) {
+    QString formattedPrice = QString::number(price);
+    int len = formattedPrice.length();
+    for (int i = len - 3; i > 0; i -= 3) {
+        formattedPrice.insert(i, ' ');
+    }
+    return formattedPrice;
 }
 
 #endif // DOMAIN_H

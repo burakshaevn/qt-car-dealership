@@ -1,7 +1,8 @@
 #include "table.h"
 
-Table::Table(DatabaseManager* db_manager, const User* user, QWidget* parent)
+Table::Table(std::shared_ptr<DatabaseHandler> db_manager, const User* user, QWidget* parent)
     : QWidget(parent)
+    , db_manager_(std::move(db_manager))
     , data_table_(new QTableView(this))
     , description_table(new QLabel(this))
 {}
@@ -284,7 +285,7 @@ void Table::DeleteRecord() {
 
         bool ok;
         id = QInputDialog::getInt(
-            this, "Удаление записи", "Укажите порядковый номер записи (столбец ID):", 1, min_id, max_id, 1, &ok
+            this, tr("Удаление записи"), tr("Укажите порядковый номер записи (столбец ID):"), 1, min_id, max_id, 1, &ok
             );
 
         if (!ok) {

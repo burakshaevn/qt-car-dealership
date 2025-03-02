@@ -11,7 +11,7 @@
    </rect>
   </property>
   <property name="windowTitle">
-   <string>Mercedez-Benz Car Dealership</string>
+   <string>Mercedez-Benz</string>
   </property>
   <property name="windowIcon">
    <iconset resource="resources/resources.qrc">
@@ -33,55 +33,43 @@
 }</string>
     </property>
     <widget class="QWidget" name="user_page">
-     <widget class="QLabel" name="label_3">
+     <widget class="QPushButton" name="pushButton_logout">
       <property name="geometry">
        <rect>
-        <x>123</x>
-        <y>30</y>
-        <width>854</width>
-        <height>71</height>
+        <x>1032</x>
+        <y>25</y>
+        <width>41</width>
+        <height>41</height>
        </rect>
       </property>
       <property name="styleSheet">
-       <string notr="true">QLabel {
+       <string notr="true">QPushButton {
 	background-color: #fafafa;
-	border-radius: 31px;
+	border: 0px;
+	border-radius: 17px; 
 }</string>
       </property>
       <property name="text">
        <string/>
       </property>
-     </widget>
-     <widget class="QPushButton" name="pushButton_logout">
-      <property name="geometry">
-       <rect>
-        <x>873</x>
-        <y>48</y>
-        <width>86</width>
-        <height>37</height>
-       </rect>
+      <property name="icon">
+       <iconset resource="resources/resources.qrc">
+        <normaloff>:/navigate_next.svg</normaloff>:/navigate_next.svg</iconset>
       </property>
-      <property name="styleSheet">
-       <string notr="true">QPushButton {
-	background-color: transparent;
-	color: #1d1b20;
-	border: 1px solid #1d1b20;
-	border-radius: 16px;
-	
-	font: 12pt &quot;JetBrains Mono&quot;;
-}</string>
-      </property>
-      <property name="text">
-       <string>Выход</string>
+      <property name="iconSize">
+       <size>
+        <width>35</width>
+        <height>35</height>
+       </size>
       </property>
      </widget>
      <widget class="QLabel" name="label_clientname">
       <property name="geometry">
        <rect>
-        <x>465</x>
-        <y>53</y>
-        <width>390</width>
-        <height>25</height>
+        <x>191</x>
+        <y>25</y>
+        <width>801</width>
+        <height>31</height>
        </rect>
       </property>
       <property name="styleSheet">
@@ -95,45 +83,31 @@
        <string/>
       </property>
       <property name="alignment">
-       <set>Qt::AlignmentFlag::AlignRight|Qt::AlignmentFlag::AlignTrailing|Qt::AlignmentFlag::AlignVCenter</set>
+       <set>Qt::AlignmentFlag::AlignLeading|Qt::AlignmentFlag::AlignLeft|Qt::AlignmentFlag::AlignVCenter</set>
       </property>
      </widget>
      <widget class="QScrollArea" name="scrollArea_2">
       <property name="geometry">
        <rect>
-        <x>179</x>
-        <y>107</y>
-        <width>740</width>
-        <height>387</height>
+        <x>169</x>
+        <y>71</y>
+        <width>875</width>
+        <height>451</height>
        </rect>
       </property>
       <property name="styleSheet">
-       <string notr="true">QScrollArea{
-	background-color: transparent;
-	border: 0px;
-}
+       <string notr="true">QScrollArea {
+	background-color: #fafafa;
+    border-radius: 61px;
+} 
 
-QScrollBar:vertical {
-        border: none;
-        background: transparent;
-        width: 10px;
-        margin: 0px 0px 0px 0px;
-    }
-    QScrollBar::handle:vertical {
-        background: #9b9c9c;
-        min-height: 20px;
-        border-radius: 5px;
-    }
-    QScrollBar::add-line:vertical, QScrollBar::sub-line:vertical {
-        background: none;
-        height: 0px;
-    }
-    QScrollBar::add-page:vertical, QScrollBar::sub-page:vertical {
-        background: transparent;
-    }</string>
+QScrollArea &gt; QWidget {
+	background-color: #fafafa;
+    border-radius: 61px;
+} </string>
       </property>
       <property name="verticalScrollBarPolicy">
-       <enum>Qt::ScrollBarPolicy::ScrollBarAsNeeded</enum>
+       <enum>Qt::ScrollBarPolicy::ScrollBarAlwaysOff</enum>
       </property>
       <property name="horizontalScrollBarPolicy">
        <enum>Qt::ScrollBarPolicy::ScrollBarAlwaysOff</enum>
@@ -161,7 +135,7 @@ QScrollBar:vertical {
       <property name="geometry">
        <rect>
         <x>345</x>
-        <y>218</y>
+        <y>211</y>
         <width>409</width>
         <height>36</height>
        </rect>
@@ -187,7 +161,7 @@ QLineEdit:focus {
       <property name="geometry">
        <rect>
         <x>345</x>
-        <y>262</y>
+        <y>255</y>
         <width>409</width>
         <height>36</height>
        </rect>
@@ -219,7 +193,7 @@ QLineEdit:focus {
       <property name="geometry">
        <rect>
         <x>506</x>
-        <y>317</y>
+        <y>310</y>
         <width>89</width>
         <height>38</height>
        </rect>
@@ -236,34 +210,295 @@ QLineEdit:focus {
        <string>Вход</string>
       </property>
      </widget>
-     <widget class="QLabel" name="label">
-      <property name="geometry">
-       <rect>
-        <x>414</x>
-        <y>160</y>
-        <width>273</width>
-        <height>31</height>
-       </rect>
-      </property>
-      <property name="text">
-       <string/>
-      </property>
-      <property name="pixmap">
-       <pixmap resource="resources/resources.qrc">:/mercedez-benz.svg</pixmap>
-      </property>
-      <property name="scaledContents">
-       <bool>true</bool>
-      </property>
-     </widget>
     </widget>
     <widget class="QWidget" name="main">
      <widget class="QScrollArea" name="scrollArea">
       <property name="geometry">
        <rect>
-        <x>225</x>
-        <y>0</y>
+        <x>169</x>
+        <y>28</y>
         <width>875</width>
-        <height>504</height>
+        <height>505</height>
+       </rect>
+      </property>
+      <property name="styleSheet">
+       <string notr="true">QScrollArea  {
+	border-radius: 0px;
+}</string>
+      </property>
+      <property name="verticalScrollBarPolicy">
+       <enum>Qt::ScrollBarPolicy::ScrollBarAlwaysOff</enum>
+      </property>
+      <property name="horizontalScrollBarPolicy">
+       <enum>Qt::ScrollBarPolicy::ScrollBarAlwaysOff</enum>
+      </property>
+      <property name="widgetResizable">
+       <bool>false</bool>
+      </property>
+      <property name="alignment">
+       <set>Qt::AlignmentFlag::AlignHCenter|Qt::AlignmentFlag::AlignTop</set>
+      </property>
+      <widget class="QWidget" name="scrollAreaWidgetContents">
+       <property name="geometry">
+        <rect>
+         <x>0</x>
+         <y>0</y>
+         <width>981</width>
+         <height>685</height>
+        </rect>
+       </property>
+       <property name="styleSheet">
+        <string notr="true"/>
+       </property>
+      </widget>
+     </widget>
+    </widget>
+    <widget class="QWidget" name="personal">
+     <widget class="QLabel" name="label_car_image">
+      <property name="geometry">
+       <rect>
+        <x>353</x>
+        <y>90</y>
+        <width>394</width>
+        <height>222</height>
+       </rect>
+      </property>
+      <property name="styleSheet">
+       <string notr="true">QLabel {
+	background-color: transparent;
+	boreder: 0px;
+}</string>
+      </property>
+      <property name="text">
+       <string/>
+      </property>
+     </widget>
+     <widget class="QPushButton" name="pushButton_to_pay">
+      <property name="geometry">
+       <rect>
+        <x>664</x>
+        <y>426</y>
+        <width>155</width>
+        <height>38</height>
+       </rect>
+      </property>
+      <property name="styleSheet">
+       <string notr="true">QPushButton {
+	background-color: transparent;
+	color: #1d1b20;
+	border-radius: 18px; 
+	font: 14pt &quot;JetBrains Mono&quot;;
+}</string>
+      </property>
+      <property name="text">
+       <string>К оплате →</string>
+      </property>
+     </widget>
+     <widget class="QPushButton" name="pushButton_next_right">
+      <property name="geometry">
+       <rect>
+        <x>891</x>
+        <y>296</y>
+        <width>54</width>
+        <height>54</height>
+       </rect>
+      </property>
+      <property name="styleSheet">
+       <string notr="true">QPushButton {
+	background-color: transparent;  
+	border-radius: 25px; 
+	color: #1d1b20;
+	font: 28pt &quot;JetBrains Mono&quot;;
+}
+
+QPushButton::pressed {
+	background-color: transparent;  
+	border-radius: 25px; 
+	border: 2px solid #1d1b20;
+	color: #1d1b20;
+	font: 28pt &quot;JetBrains Mono&quot;;
+}</string>
+      </property>
+      <property name="text">
+       <string/>
+      </property>
+      <property name="icon">
+       <iconset resource="resources/resources.qrc">
+        <normaloff>:/navigate_next.svg</normaloff>:/navigate_next.svg</iconset>
+      </property>
+      <property name="iconSize">
+       <size>
+        <width>54</width>
+        <height>54</height>
+       </size>
+      </property>
+     </widget>
+     <widget class="QPushButton" name="pushButton_next_left">
+      <property name="geometry">
+       <rect>
+        <x>154</x>
+        <y>296</y>
+        <width>54</width>
+        <height>54</height>
+       </rect>
+      </property>
+      <property name="styleSheet">
+       <string notr="true">QPushButton {
+	background-color: transparent;  
+	border-radius: 25px; 
+	color: #1d1b20;
+	font: 28pt &quot;JetBrains Mono&quot;;
+}
+
+QPushButton::pressed {
+	background-color: transparent;  
+	border-radius: 25px; 
+	border: 2px solid #1d1b20;
+	color: #1d1b20;
+	font: 28pt &quot;JetBrains Mono&quot;;
+}</string>
+      </property>
+      <property name="text">
+       <string/>
+      </property>
+      <property name="icon">
+       <iconset resource="resources/resources.qrc">
+        <normaloff>:/navigate_before.svg</normaloff>:/navigate_before.svg</iconset>
+      </property>
+      <property name="iconSize">
+       <size>
+        <width>54</width>
+        <height>54</height>
+       </size>
+      </property>
+     </widget>
+     <widget class="QPushButton" name="pushButton_back">
+      <property name="geometry">
+       <rect>
+        <x>281</x>
+        <y>426</y>
+        <width>155</width>
+        <height>38</height>
+       </rect>
+      </property>
+      <property name="styleSheet">
+       <string notr="true">QPushButton {
+	background-color: transparent;
+	color: #1d1b20; 
+	border-radius: 18px;
+
+	font: 14pt &quot;JetBrains Mono&quot;;
+}</string>
+      </property>
+      <property name="text">
+       <string>← Назад</string>
+      </property>
+     </widget>
+     <widget class="QLabel" name="label_price">
+      <property name="geometry">
+       <rect>
+        <x>244</x>
+        <y>369</y>
+        <width>613</width>
+        <height>26</height>
+       </rect>
+      </property>
+      <property name="styleSheet">
+       <string notr="true">QLabel {
+	color: #1d1b20;
+	background-color: transparent;
+	font: 500 16pt &quot;JetBrains Mono&quot;;
+}</string>
+      </property>
+      <property name="text">
+       <string/>
+      </property>
+      <property name="alignment">
+       <set>Qt::AlignmentFlag::AlignCenter</set>
+      </property>
+     </widget>
+     <widget class="QLabel" name="label">
+      <property name="geometry">
+       <rect>
+        <x>220</x>
+        <y>220</y>
+        <width>659</width>
+        <height>194</height>
+       </rect>
+      </property>
+      <property name="styleSheet">
+       <string notr="true">QLabel {
+	background-color: #fafafa;
+	border-radius: 75px;
+}</string>
+      </property>
+      <property name="text">
+       <string/>
+      </property>
+     </widget>
+     <widget class="QLabel" name="label_name">
+      <property name="geometry">
+       <rect>
+        <x>244</x>
+        <y>330</y>
+        <width>613</width>
+        <height>35</height>
+       </rect>
+      </property>
+      <property name="styleSheet">
+       <string notr="true">QLabel {
+	color: #1d1b20;
+	background-color: transparent;
+	font: 700 22pt &quot;JetBrains Mono&quot;;
+}</string>
+      </property>
+      <property name="text">
+       <string/>
+      </property>
+      <property name="alignment">
+       <set>Qt::AlignmentFlag::AlignCenter</set>
+      </property>
+     </widget>
+     <widget class="QPushButton" name="pushButton_info">
+      <property name="geometry">
+       <rect>
+        <x>472</x>
+        <y>426</y>
+        <width>155</width>
+        <height>38</height>
+       </rect>
+      </property>
+      <property name="styleSheet">
+       <string notr="true">QPushButton {
+	background-color: transparent;
+	color: #1d1b20; 
+	border-radius: 18px;
+
+	font: 14pt &quot;JetBrains Mono&quot;;
+}</string>
+      </property>
+      <property name="text">
+       <string>Подробнее</string>
+      </property>
+     </widget>
+     <zorder>label</zorder>
+     <zorder>label_car_image</zorder>
+     <zorder>pushButton_to_pay</zorder>
+     <zorder>pushButton_next_right</zorder>
+     <zorder>pushButton_next_left</zorder>
+     <zorder>pushButton_back</zorder>
+     <zorder>label_price</zorder>
+     <zorder>label_name</zorder>
+     <zorder>pushButton_info</zorder>
+    </widget>
+    <widget class="QWidget" name="cart">
+     <widget class="QScrollArea" name="scrollArea_3">
+      <property name="geometry">
+       <rect>
+        <x>215</x>
+        <y>96</y>
+        <width>671</width>
+        <height>464</height>
        </rect>
       </property>
       <property name="styleSheet">
@@ -292,7 +527,7 @@ QScrollBar:vertical {
     }</string>
       </property>
       <property name="verticalScrollBarPolicy">
-       <enum>Qt::ScrollBarPolicy::ScrollBarAsNeeded</enum>
+       <enum>Qt::ScrollBarPolicy::ScrollBarAlwaysOff</enum>
       </property>
       <property name="horizontalScrollBarPolicy">
        <enum>Qt::ScrollBarPolicy::ScrollBarAlwaysOff</enum>
@@ -303,7 +538,7 @@ QScrollBar:vertical {
       <property name="alignment">
        <set>Qt::AlignmentFlag::AlignHCenter|Qt::AlignmentFlag::AlignTop</set>
       </property>
-      <widget class="QWidget" name="scrollAreaWidgetContents">
+      <widget class="QWidget" name="scrollAreaWidgetContents_3">
        <property name="geometry">
         <rect>
          <x>0</x>
@@ -314,95 +549,43 @@ QScrollBar:vertical {
        </property>
       </widget>
      </widget>
-    </widget>
-    <widget class="QWidget" name="personal">
-     <widget class="QLabel" name="label_2">
+     <widget class="QLabel" name="label_cart_total">
       <property name="geometry">
        <rect>
-        <x>220</x>
-        <y>180</y>
-        <width>659</width>
-        <height>194</height>
+        <x>56</x>
+        <y>40</y>
+        <width>473</width>
+        <height>31</height>
        </rect>
       </property>
       <property name="styleSheet">
        <string notr="true">QLabel {
+	color: #1d1b20;
+	background-color: transparent;
+	font: 700 21pt &quot;JetBrains Mono&quot;;
+}</string>
+      </property>
+      <property name="text">
+       <string/>
+      </property>
+      <property name="alignment">
+       <set>Qt::AlignmentFlag::AlignLeading|Qt::AlignmentFlag::AlignLeft|Qt::AlignmentFlag::AlignVCenter</set>
+      </property>
+     </widget>
+     <widget class="QPushButton" name="pushButton_clean_cart">
+      <property name="geometry">
+       <rect>
+        <x>970</x>
+        <y>19</y>
+        <width>75</width>
+        <height>75</height>
+       </rect>
+      </property>
+      <property name="styleSheet">
+       <string notr="true">QPushButton {
 	background-color: #fafafa;
-	border-radius: 30px;
-}</string>
-      </property>
-      <property name="text">
-       <string/>
-      </property>
-     </widget>
-     <widget class="QPushButton" name="pushButton_back">
-      <property name="geometry">
-       <rect>
-        <x>413</x>
-        <y>386</y>
-        <width>128</width>
-        <height>19</height>
-       </rect>
-      </property>
-      <property name="styleSheet">
-       <string notr="true">QPushButton {
-	background-color: transparent;
-	color: #1d1b20;
-	border: 1px solid #1d1b20;
-	border-radius: 7px;
-	
-	font: 10pt &quot;JetBrains Mono&quot;;
-}</string>
-      </property>
-      <property name="text">
-       <string>Назад</string>
-      </property>
-     </widget>
-     <widget class="QPushButton" name="pushButton_to_pay">
-      <property name="geometry">
-       <rect>
-        <x>559</x>
-        <y>386</y>
-        <width>128</width>
-        <height>19</height>
-       </rect>
-      </property>
-      <property name="styleSheet">
-       <string notr="true">QPushButton {
-	background-color: #1d1b20;
-	color: #ffffff;
 	border: 0px;
-	border-radius: 7px;
-	font: 10pt &quot;JetBrains Mono&quot;;
-}</string>
-      </property>
-      <property name="text">
-       <string>К оплате</string>
-      </property>
-     </widget>
-     <widget class="QPushButton" name="pushButton_next_right">
-      <property name="geometry">
-       <rect>
-        <x>891</x>
-        <y>250</y>
-        <width>54</width>
-        <height>54</height>
-       </rect>
-      </property>
-      <property name="styleSheet">
-       <string notr="true">QPushButton {
-	background-color: #fafafa;  
-	border-radius: 25px; 
-	color: #1d1b20;
-	font: 28pt &quot;JetBrains Mono&quot;;
-}
-
-QPushButton::pressed {
-	background-color: #fafafa;  
-	border-radius: 25px; 
-	border: 3px solid #1d1b20;
-	color: #1d1b20;
-	font: 28pt &quot;JetBrains Mono&quot;;
+	border-radius: 37px; 
 }</string>
       </property>
       <property name="text">
@@ -410,133 +593,55 @@ QPushButton::pressed {
       </property>
       <property name="icon">
        <iconset resource="resources/resources.qrc">
-        <normaloff>:/navigate_next.svg</normaloff>:/navigate_next.svg</iconset>
+        <normaloff>:/delete.svg</normaloff>:/delete.svg</iconset>
       </property>
       <property name="iconSize">
        <size>
-        <width>54</width>
-        <height>54</height>
-       </size>
-      </property>
-     </widget>
-     <widget class="QPushButton" name="pushButton_next_left">
-      <property name="geometry">
-       <rect>
-        <x>154</x>
-        <y>250</y>
-        <width>54</width>
-        <height>54</height>
-       </rect>
-      </property>
-      <property name="styleSheet">
-       <string notr="true">QPushButton {
-	background-color: #fafafa;  
-	border-radius: 25px; 
-	color: #1d1b20;
-	font: 28pt &quot;JetBrains Mono&quot;;
-}
-
-QPushButton::pressed {
-	background-color: #fafafa;  
-	border-radius: 25px; 
-	border: 3px solid #1d1b20;
-	color: #1d1b20;
-	font: 28pt &quot;JetBrains Mono&quot;;
-}</string>
-      </property>
-      <property name="text">
-       <string/>
-      </property>
-      <property name="icon">
-       <iconset resource="resources/resources.qrc">
-        <normaloff>:/navigate_before.svg</normaloff>:/navigate_before.svg</iconset>
-      </property>
-      <property name="iconSize">
-       <size>
-        <width>54</width>
-        <height>54</height>
-       </size>
-      </property>
-     </widget>
-     <widget class="QLabel" name="label_name">
-      <property name="geometry">
-       <rect>
-        <x>244</x>
-        <y>290</y>
-        <width>613</width>
+        <width>35</width>
         <height>35</height>
+       </size>
+      </property>
+     </widget>
+     <widget class="QPushButton" name="pushButton_submit_cart">
+      <property name="geometry">
+       <rect>
+        <x>970</x>
+        <y>469</y>
+        <width>75</width>
+        <height>75</height>
        </rect>
       </property>
       <property name="styleSheet">
-       <string notr="true">QLabel {
-	color: #1d1b20;
-	background-color: transparent;
-	font: 700 22pt &quot;JetBrains Mono&quot;;
+       <string notr="true">QPushButton {
+	background-color: #fafafa;
+	border: 0px;
+	border-radius: 37px; 
 }</string>
       </property>
       <property name="text">
        <string/>
       </property>
-      <property name="alignment">
-       <set>Qt::AlignmentFlag::AlignCenter</set>
+      <property name="iconSize">
+       <size>
+        <width>35</width>
+        <height>35</height>
+       </size>
       </property>
      </widget>
-     <widget class="QLabel" name="label_price">
+     <widget class="QLabel" name="label_cart_total_2">
       <property name="geometry">
        <rect>
-        <x>244</x>
-        <y>329</y>
-        <width>613</width>
-        <height>26</height>
+        <x>392</x>
+        <y>71</y>
+        <width>315</width>
+        <height>19</height>
        </rect>
       </property>
       <property name="styleSheet">
        <string notr="true">QLabel {
-	color: #1d1b20;
+	color: #9b9c9c;
 	background-color: transparent;
-	font: 500 16pt &quot;JetBrains Mono&quot;;
-}</string>
-      </property>
-      <property name="text">
-       <string/>
-      </property>
-      <property name="alignment">
-       <set>Qt::AlignmentFlag::AlignCenter</set>
-      </property>
-     </widget>
-     <widget class="QLabel" name="label_car_image">
-      <property name="geometry">
-       <rect>
-        <x>353</x>
-        <y>50</y>
-        <width>394</width>
-        <height>222</height>
-       </rect>
-      </property>
-      <property name="styleSheet">
-       <string notr="true">QLabel {
-	background-color: transparent;
-	boreder: 0px;
-}</string>
-      </property>
-      <property name="text">
-       <string/>
-      </property>
-     </widget>
-     <widget class="QLabel" name="label_color_index">
-      <property name="geometry">
-       <rect>
-        <x>782</x>
-        <y>191</y>
-        <width>92</width>
-        <height>26</height>
-       </rect>
-      </property>
-      <property name="styleSheet">
-       <string notr="true">QLabel {
-	color: #1d1b20;
-	background-color: transparent;
-	font: 500 16pt &quot;JetBrains Mono&quot;;
+	font: 12pt &quot;JetBrains Mono&quot;;
 }</string>
       </property>
       <property name="text">
