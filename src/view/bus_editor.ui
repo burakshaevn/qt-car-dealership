@@ -1,0 +1,1833 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<ui version="4.0">
+ <class>BusEditorClass</class>
+ <widget class="QDialog" name="BusEditorClass">
+  <property name="geometry">
+   <rect>
+    <x>0</x>
+    <y>0</y>
+    <width>657</width>
+    <height>671</height>
+   </rect>
+  </property>
+  <property name="windowTitle">
+   <string>BusEditor</string>
+  </property>
+  <widget class="QWidget" name="centralWidget" native="true">
+   <property name="geometry">
+    <rect>
+     <x>0</x>
+     <y>0</y>
+     <width>657</width>
+     <height>686</height>
+    </rect>
+   </property>
+   <widget class="QPushButton" name="button_append_2">
+    <property name="geometry">
+     <rect>
+      <x>228</x>
+      <y>16</y>
+      <width>201</width>
+      <height>30</height>
+     </rect>
+    </property>
+    <property name="styleSheet">
+     <string notr="true">QPushButton {
+	background-color: transparent;
+	border: 0px;
+	font: 500 11pt &quot;JetBrains Mono&quot;;
+	color: #FFFFFF;	 
+} </string>
+    </property>
+    <property name="text">
+     <string>Добавление</string>
+    </property>
+   </widget>
+   <widget class="QLabel" name="label">
+    <property name="geometry">
+     <rect>
+      <x>8</x>
+      <y>20</y>
+      <width>641</width>
+      <height>23</height>
+     </rect>
+    </property>
+    <property name="styleSheet">
+     <string notr="true">QLabel {
+	background-color: #363636;
+}</string>
+    </property>
+    <property name="text">
+     <string/>
+    </property>
+   </widget>
+   <widget class="QPushButton" name="button_settings">
+    <property name="geometry">
+     <rect>
+      <x>429</x>
+      <y>16</y>
+      <width>201</width>
+      <height>30</height>
+     </rect>
+    </property>
+    <property name="styleSheet">
+     <string notr="true">QPushButton {
+	background-color: transparent;
+	border: 0px;
+	font: 500 11pt &quot;JetBrains Mono&quot;;
+	color: #FFFFFF;	 
+} </string>
+    </property>
+    <property name="text">
+     <string>Общие настройки</string>
+    </property>
+   </widget>
+   <widget class="QPushButton" name="button_edit">
+    <property name="geometry">
+     <rect>
+      <x>27</x>
+      <y>16</y>
+      <width>201</width>
+      <height>30</height>
+     </rect>
+    </property>
+    <property name="styleSheet">
+     <string notr="true">QPushButton {
+	background-color: transparent;
+	border: 0px;
+	font: 500 11pt &quot;JetBrains Mono&quot;;
+	color: #FFFFFF;	 
+} </string>
+    </property>
+    <property name="text">
+     <string>Редактирование</string>
+    </property>
+   </widget>
+   <widget class="QStackedWidget" name="stackedWidget">
+    <property name="geometry">
+     <rect>
+      <x>0</x>
+      <y>46</y>
+      <width>657</width>
+      <height>624</height>
+     </rect>
+    </property>
+    <widget class="QWidget" name="edit">
+     <widget class="QLabel" name="label_2">
+      <property name="geometry">
+       <rect>
+        <x>46</x>
+        <y>29</y>
+        <width>572</width>
+        <height>23</height>
+       </rect>
+      </property>
+      <property name="styleSheet">
+       <string notr="true">QLabel {
+	color: #363636;  
+	font: 700 15pt &quot;JetBrains Mono&quot;;
+}</string>
+      </property>
+      <property name="text">
+       <string>Редактирование</string>
+      </property>
+      <property name="alignment">
+       <set>Qt::AlignmentFlag::AlignCenter</set>
+      </property>
+     </widget>
+     <widget class="QLabel" name="label_3">
+      <property name="geometry">
+       <rect>
+        <x>8</x>
+        <y>85</y>
+        <width>641</width>
+        <height>17</height>
+       </rect>
+      </property>
+      <property name="styleSheet">
+       <string notr="true">QLabel {
+	background-color: #F8F8F8;
+}</string>
+      </property>
+      <property name="text">
+       <string/>
+      </property>
+     </widget>
+     <widget class="QLabel" name="label_27">
+      <property name="geometry">
+       <rect>
+        <x>52</x>
+        <y>85</y>
+        <width>231</width>
+        <height>17</height>
+       </rect>
+      </property>
+      <property name="styleSheet">
+       <string notr="true">QLabel {
+	color: #363636;
+	font: 500 11pt &quot;JetBrains Mono&quot;; 
+}</string>
+      </property>
+      <property name="text">
+       <string>Название</string>
+      </property>
+     </widget>
+     <widget class="QLineEdit" name="lineEdit_busname_2">
+      <property name="geometry">
+       <rect>
+        <x>429</x>
+        <y>85</y>
+        <width>201</width>
+        <height>17</height>
+       </rect>
+      </property>
+      <property name="styleSheet">
+       <string notr="true">QLineEdit { 
+  background-color: #FFFFFF; 
+  border-radius: 0px;       
+  font: 11pt &quot;JetBrains Mono&quot;; 
+  color: #363636;
+} </string>
+      </property>
+      <property name="alignment">
+       <set>Qt::AlignmentFlag::AlignCenter</set>
+      </property>
+     </widget>
+     <widget class="QLabel" name="label_4">
+      <property name="geometry">
+       <rect>
+        <x>8</x>
+        <y>114</y>
+        <width>641</width>
+        <height>17</height>
+       </rect>
+      </property>
+      <property name="styleSheet">
+       <string notr="true">QLabel {
+	background-color: #F8F8F8;
+}</string>
+      </property>
+      <property name="text">
+       <string/>
+      </property>
+     </widget>
+     <widget class="QLabel" name="label_28">
+      <property name="geometry">
+       <rect>
+        <x>52</x>
+        <y>114</y>
+        <width>231</width>
+        <height>17</height>
+       </rect>
+      </property>
+      <property name="styleSheet">
+       <string notr="true">QLabel {
+	color: #363636;
+	font: 500 11pt &quot;JetBrains Mono&quot;; 
+}</string>
+      </property>
+      <property name="text">
+       <string>Тип маршрута</string>
+      </property>
+     </widget>
+     <widget class="QLabel" name="label_5">
+      <property name="geometry">
+       <rect>
+        <x>8</x>
+        <y>142</y>
+        <width>641</width>
+        <height>17</height>
+       </rect>
+      </property>
+      <property name="styleSheet">
+       <string notr="true">QLabel {
+	background-color: #F8F8F8;
+}</string>
+      </property>
+      <property name="text">
+       <string/>
+      </property>
+     </widget>
+     <widget class="QLabel" name="label_29">
+      <property name="geometry">
+       <rect>
+        <x>52</x>
+        <y>142</y>
+        <width>231</width>
+        <height>17</height>
+       </rect>
+      </property>
+      <property name="styleSheet">
+       <string notr="true">QLabel {
+	color: #363636;
+	font: 500 11pt &quot;JetBrains Mono&quot;; 
+}</string>
+      </property>
+      <property name="text">
+       <string>Вместимость</string>
+      </property>
+     </widget>
+     <widget class="QLineEdit" name="lineEdit_capacity_2">
+      <property name="geometry">
+       <rect>
+        <x>429</x>
+        <y>142</y>
+        <width>201</width>
+        <height>17</height>
+       </rect>
+      </property>
+      <property name="styleSheet">
+       <string notr="true">QLineEdit { 
+  background-color: #FFFFFF; 
+  border-radius: 0px;       
+  font: 11pt &quot;JetBrains Mono&quot;; 
+  color: #363636;
+} </string>
+      </property>
+      <property name="alignment">
+       <set>Qt::AlignmentFlag::AlignCenter</set>
+      </property>
+     </widget>
+     <widget class="QLabel" name="label_6">
+      <property name="geometry">
+       <rect>
+        <x>8</x>
+        <y>171</y>
+        <width>641</width>
+        <height>17</height>
+       </rect>
+      </property>
+      <property name="styleSheet">
+       <string notr="true">QLabel {
+	background-color: #F8F8F8;
+}</string>
+      </property>
+      <property name="text">
+       <string/>
+      </property>
+     </widget>
+     <widget class="QLabel" name="label_30">
+      <property name="geometry">
+       <rect>
+        <x>52</x>
+        <y>171</y>
+        <width>231</width>
+        <height>17</height>
+       </rect>
+      </property>
+      <property name="styleSheet">
+       <string notr="true">QLabel {
+	color: #363636;
+	font: 500 11pt &quot;JetBrains Mono&quot;; 
+}</string>
+      </property>
+      <property name="text">
+       <string>Кольцевой</string>
+      </property>
+     </widget>
+     <widget class="QLabel" name="label_7">
+      <property name="geometry">
+       <rect>
+        <x>8</x>
+        <y>199</y>
+        <width>641</width>
+        <height>17</height>
+       </rect>
+      </property>
+      <property name="styleSheet">
+       <string notr="true">QLabel {
+	background-color: #F8F8F8;
+}</string>
+      </property>
+      <property name="text">
+       <string/>
+      </property>
+     </widget>
+     <widget class="QLabel" name="label_31">
+      <property name="geometry">
+       <rect>
+        <x>52</x>
+        <y>199</y>
+        <width>231</width>
+        <height>17</height>
+       </rect>
+      </property>
+      <property name="styleSheet">
+       <string notr="true">QLabel {
+	color: #363636;
+	font: 500 11pt &quot;JetBrains Mono&quot;; 
+}</string>
+      </property>
+      <property name="text">
+       <string>Цветовой индекс</string>
+      </property>
+     </widget>
+     <widget class="QLineEdit" name="lineEdit_color_index_2">
+      <property name="geometry">
+       <rect>
+        <x>429</x>
+        <y>199</y>
+        <width>201</width>
+        <height>17</height>
+       </rect>
+      </property>
+      <property name="styleSheet">
+       <string notr="true">QLineEdit { 
+  background-color: #FFFFFF; 
+  border-radius: 0px;       
+  font: 11pt &quot;JetBrains Mono&quot;; 
+  color: #363636;
+} </string>
+      </property>
+      <property name="alignment">
+       <set>Qt::AlignmentFlag::AlignCenter</set>
+      </property>
+     </widget>
+     <widget class="QLabel" name="label_8">
+      <property name="geometry">
+       <rect>
+        <x>8</x>
+        <y>228</y>
+        <width>641</width>
+        <height>17</height>
+       </rect>
+      </property>
+      <property name="styleSheet">
+       <string notr="true">QLabel {
+	background-color: #F8F8F8;
+}</string>
+      </property>
+      <property name="text">
+       <string/>
+      </property>
+     </widget>
+     <widget class="QLabel" name="label_32">
+      <property name="geometry">
+       <rect>
+        <x>52</x>
+        <y>228</y>
+        <width>231</width>
+        <height>17</height>
+       </rect>
+      </property>
+      <property name="styleSheet">
+       <string notr="true">QLabel {
+	color: #363636;
+	font: 500 11pt &quot;JetBrains Mono&quot;; 
+}</string>
+      </property>
+      <property name="text">
+       <string>Есть Wi-Fi</string>
+      </property>
+     </widget>
+     <widget class="QLabel" name="label_9">
+      <property name="geometry">
+       <rect>
+        <x>8</x>
+        <y>256</y>
+        <width>641</width>
+        <height>17</height>
+       </rect>
+      </property>
+      <property name="styleSheet">
+       <string notr="true">QLabel {
+	background-color: #F8F8F8;
+}</string>
+      </property>
+      <property name="text">
+       <string/>
+      </property>
+     </widget>
+     <widget class="QLabel" name="label_33">
+      <property name="geometry">
+       <rect>
+        <x>52</x>
+        <y>256</y>
+        <width>231</width>
+        <height>17</height>
+       </rect>
+      </property>
+      <property name="styleSheet">
+       <string notr="true">QLabel {
+	color: #363636;
+	font: 500 11pt &quot;JetBrains Mono&quot;; 
+}</string>
+      </property>
+      <property name="text">
+       <string>Есть розетки</string>
+      </property>
+     </widget>
+     <widget class="QLabel" name="label_34">
+      <property name="geometry">
+       <rect>
+        <x>52</x>
+        <y>285</y>
+        <width>231</width>
+        <height>17</height>
+       </rect>
+      </property>
+      <property name="styleSheet">
+       <string notr="true">QLabel {
+	color: #363636;
+	font: 500 11pt &quot;JetBrains Mono&quot;; 
+}</string>
+      </property>
+      <property name="text">
+       <string>Дневной маршрут</string>
+      </property>
+     </widget>
+     <widget class="QLabel" name="label_10">
+      <property name="geometry">
+       <rect>
+        <x>8</x>
+        <y>285</y>
+        <width>641</width>
+        <height>17</height>
+       </rect>
+      </property>
+      <property name="styleSheet">
+       <string notr="true">QLabel {
+	background-color: #F8F8F8;
+}</string>
+      </property>
+      <property name="text">
+       <string/>
+      </property>
+     </widget>
+     <widget class="QLabel" name="label_35">
+      <property name="geometry">
+       <rect>
+        <x>52</x>
+        <y>314</y>
+        <width>231</width>
+        <height>17</height>
+       </rect>
+      </property>
+      <property name="styleSheet">
+       <string notr="true">QLabel {
+	color: #363636;
+	font: 500 11pt &quot;JetBrains Mono&quot;; 
+}</string>
+      </property>
+      <property name="text">
+       <string>Ночной маршрут</string>
+      </property>
+     </widget>
+     <widget class="QLabel" name="label_11">
+      <property name="geometry">
+       <rect>
+        <x>8</x>
+        <y>314</y>
+        <width>641</width>
+        <height>17</height>
+       </rect>
+      </property>
+      <property name="styleSheet">
+       <string notr="true">QLabel {
+	background-color: #F8F8F8;
+}</string>
+      </property>
+      <property name="text">
+       <string/>
+      </property>
+     </widget>
+     <widget class="QLabel" name="label_36">
+      <property name="geometry">
+       <rect>
+        <x>52</x>
+        <y>342</y>
+        <width>231</width>
+        <height>17</height>
+       </rect>
+      </property>
+      <property name="styleSheet">
+       <string notr="true">QLabel {
+	color: #363636;
+	font: 500 11pt &quot;JetBrains Mono&quot;; 
+}</string>
+      </property>
+      <property name="text">
+       <string>Доступен</string>
+      </property>
+     </widget>
+     <widget class="QLabel" name="label_12">
+      <property name="geometry">
+       <rect>
+        <x>8</x>
+        <y>342</y>
+        <width>641</width>
+        <height>17</height>
+       </rect>
+      </property>
+      <property name="styleSheet">
+       <string notr="true">QLabel {
+	background-color: #F8F8F8;
+}</string>
+      </property>
+      <property name="text">
+       <string/>
+      </property>
+     </widget>
+     <widget class="QLabel" name="label_37">
+      <property name="geometry">
+       <rect>
+        <x>52</x>
+        <y>371</y>
+        <width>231</width>
+        <height>17</height>
+       </rect>
+      </property>
+      <property name="styleSheet">
+       <string notr="true">QLabel {
+	color: #363636;
+	font: 500 11pt &quot;JetBrains Mono&quot;; 
+}</string>
+      </property>
+      <property name="text">
+       <string>Цена</string>
+      </property>
+     </widget>
+     <widget class="QLineEdit" name="lineEdit_price_2">
+      <property name="geometry">
+       <rect>
+        <x>429</x>
+        <y>371</y>
+        <width>201</width>
+        <height>17</height>
+       </rect>
+      </property>
+      <property name="styleSheet">
+       <string notr="true">QLineEdit { 
+  background-color: #FFFFFF; 
+  border-radius: 0px;       
+  font: 11pt &quot;JetBrains Mono&quot;; 
+  color: #363636;
+} </string>
+      </property>
+      <property name="alignment">
+       <set>Qt::AlignmentFlag::AlignCenter</set>
+      </property>
+     </widget>
+     <widget class="QLabel" name="label_13">
+      <property name="geometry">
+       <rect>
+        <x>8</x>
+        <y>371</y>
+        <width>641</width>
+        <height>17</height>
+       </rect>
+      </property>
+      <property name="styleSheet">
+       <string notr="true">QLabel {
+	background-color: #F8F8F8;
+}</string>
+      </property>
+      <property name="text">
+       <string/>
+      </property>
+     </widget>
+     <widget class="QLabel" name="label_38">
+      <property name="geometry">
+       <rect>
+        <x>207</x>
+        <y>404</y>
+        <width>231</width>
+        <height>17</height>
+       </rect>
+      </property>
+      <property name="styleSheet">
+       <string notr="true">QLabel {
+	color: #363636;
+	font: 500 11pt &quot;JetBrains Mono&quot;; 
+}</string>
+      </property>
+      <property name="text">
+       <string>Остановки</string>
+      </property>
+      <property name="alignment">
+       <set>Qt::AlignmentFlag::AlignCenter</set>
+      </property>
+     </widget>
+     <widget class="QPushButton" name="edit_save">
+      <property name="geometry">
+       <rect>
+        <x>256</x>
+        <y>590</y>
+        <width>145</width>
+        <height>20</height>
+       </rect>
+      </property>
+      <property name="styleSheet">
+       <string notr="true">QPushButton { 
+	font: 9pt &quot;JetBrains Mono&quot;; 
+	color: #FFFFFF;
+	background-color: #363636; 
+	border-radius: 5px;
+}</string>
+      </property>
+      <property name="text">
+       <string>Сохранить</string>
+      </property>
+     </widget>
+     <widget class="QComboBox" name="comboBox_is_sockets_2">
+      <property name="geometry">
+       <rect>
+        <x>429</x>
+        <y>256</y>
+        <width>201</width>
+        <height>17</height>
+       </rect>
+      </property>
+      <property name="styleSheet">
+       <string notr="true">QComboBox { 
+  background-color: #FFFFFF; 
+  border-radius: 0px;       
+  font: 10pt &quot;JetBrains Mono&quot;; 
+  color: #363636;
+} </string>
+      </property>
+     </widget>
+     <widget class="QComboBox" name="comboBox_bustype_2">
+      <property name="geometry">
+       <rect>
+        <x>429</x>
+        <y>114</y>
+        <width>201</width>
+        <height>17</height>
+       </rect>
+      </property>
+      <property name="styleSheet">
+       <string notr="true">QComboBox { 
+  background-color: #FFFFFF; 
+  border-radius: 0px;       
+  font: 10pt &quot;JetBrains Mono&quot;; 
+  color: #363636;
+} </string>
+      </property>
+     </widget>
+     <widget class="QComboBox" name="comboBox_is_roundtrip_2">
+      <property name="geometry">
+       <rect>
+        <x>429</x>
+        <y>171</y>
+        <width>201</width>
+        <height>17</height>
+       </rect>
+      </property>
+      <property name="styleSheet">
+       <string notr="true">QComboBox { 
+  background-color: #FFFFFF; 
+  border-radius: 0px;       
+  font: 10pt &quot;JetBrains Mono&quot;; 
+  color: #363636;
+} </string>
+      </property>
+     </widget>
+     <widget class="QComboBox" name="comboBox_is_available_2">
+      <property name="geometry">
+       <rect>
+        <x>429</x>
+        <y>342</y>
+        <width>201</width>
+        <height>17</height>
+       </rect>
+      </property>
+      <property name="styleSheet">
+       <string notr="true">QComboBox { 
+  background-color: #FFFFFF; 
+  border-radius: 0px;       
+  font: 10pt &quot;JetBrains Mono&quot;; 
+  color: #363636;
+} </string>
+      </property>
+     </widget>
+     <widget class="QComboBox" name="comboBox_is_day_bus_2">
+      <property name="geometry">
+       <rect>
+        <x>429</x>
+        <y>285</y>
+        <width>201</width>
+        <height>17</height>
+       </rect>
+      </property>
+      <property name="styleSheet">
+       <string notr="true">QComboBox { 
+  background-color: #FFFFFF; 
+  border-radius: 0px;       
+  font: 10pt &quot;JetBrains Mono&quot;; 
+  color: #363636;
+} </string>
+      </property>
+     </widget>
+     <widget class="QComboBox" name="comboBox_is_night_bus_2">
+      <property name="geometry">
+       <rect>
+        <x>429</x>
+        <y>314</y>
+        <width>201</width>
+        <height>17</height>
+       </rect>
+      </property>
+      <property name="styleSheet">
+       <string notr="true">QComboBox { 
+  background-color: #FFFFFF; 
+  border-radius: 0px;       
+  font: 10pt &quot;JetBrains Mono&quot;; 
+  color: #363636;
+} </string>
+      </property>
+     </widget>
+     <widget class="QComboBox" name="comboBox_is_wifi_2">
+      <property name="geometry">
+       <rect>
+        <x>429</x>
+        <y>228</y>
+        <width>201</width>
+        <height>17</height>
+       </rect>
+      </property>
+      <property name="styleSheet">
+       <string notr="true">QComboBox { 
+  background-color: #FFFFFF; 
+  border-radius: 0px;       
+  font: 10pt &quot;JetBrains Mono&quot;; 
+  color: #363636;
+} </string>
+      </property>
+     </widget>
+     <widget class="QPushButton" name="edit_append_stop">
+      <property name="geometry">
+       <rect>
+        <x>422</x>
+        <y>437</y>
+        <width>81</width>
+        <height>20</height>
+       </rect>
+      </property>
+      <property name="styleSheet">
+       <string notr="true">QPushButton { 
+	font: 9pt &quot;JetBrains Mono&quot;; 
+	color: #FFFFFF;
+	background-color: #363636; 
+	border-radius: 0px;
+}</string>
+      </property>
+      <property name="text">
+       <string>Добавить</string>
+      </property>
+     </widget>
+     <widget class="QLineEdit" name="lineEdit_find_stopname">
+      <property name="geometry">
+       <rect>
+        <x>153</x>
+        <y>437</y>
+        <width>266</width>
+        <height>20</height>
+       </rect>
+      </property>
+      <property name="styleSheet">
+       <string notr="true">QLineEdit { 
+  background-color: #FFFFFF; 
+  border-radius: 0px;   
+  font: 11pt &quot;JetBrains Mono&quot;; 
+} </string>
+      </property>
+      <property name="text">
+       <string/>
+      </property>
+      <property name="alignment">
+       <set>Qt::AlignmentFlag::AlignCenter</set>
+      </property>
+     </widget>
+     <widget class="QListWidget" name="listWidgetStops">
+      <property name="geometry">
+       <rect>
+        <x>153</x>
+        <y>458</y>
+        <width>351</width>
+        <height>115</height>
+       </rect>
+      </property>
+      <property name="styleSheet">
+       <string notr="true">QListWidget {
+	border-radius: 0px;
+	background-color: #f8f8f8;
+}</string>
+      </property>
+     </widget>
+     <zorder>label_13</zorder>
+     <zorder>label_12</zorder>
+     <zorder>label_11</zorder>
+     <zorder>label_10</zorder>
+     <zorder>label_2</zorder>
+     <zorder>label_3</zorder>
+     <zorder>label_27</zorder>
+     <zorder>lineEdit_busname_2</zorder>
+     <zorder>label_4</zorder>
+     <zorder>label_28</zorder>
+     <zorder>label_5</zorder>
+     <zorder>label_29</zorder>
+     <zorder>lineEdit_capacity_2</zorder>
+     <zorder>label_6</zorder>
+     <zorder>label_30</zorder>
+     <zorder>label_7</zorder>
+     <zorder>label_31</zorder>
+     <zorder>lineEdit_color_index_2</zorder>
+     <zorder>label_8</zorder>
+     <zorder>label_32</zorder>
+     <zorder>label_9</zorder>
+     <zorder>label_33</zorder>
+     <zorder>label_34</zorder>
+     <zorder>label_35</zorder>
+     <zorder>label_36</zorder>
+     <zorder>label_37</zorder>
+     <zorder>lineEdit_price_2</zorder>
+     <zorder>label_38</zorder>
+     <zorder>edit_save</zorder>
+     <zorder>comboBox_is_sockets_2</zorder>
+     <zorder>comboBox_bustype_2</zorder>
+     <zorder>comboBox_is_roundtrip_2</zorder>
+     <zorder>comboBox_is_available_2</zorder>
+     <zorder>comboBox_is_day_bus_2</zorder>
+     <zorder>comboBox_is_night_bus_2</zorder>
+     <zorder>comboBox_is_wifi_2</zorder>
+     <zorder>edit_append_stop</zorder>
+     <zorder>lineEdit_find_stopname</zorder>
+     <zorder>listWidgetStops</zorder>
+    </widget>
+    <widget class="QWidget" name="append">
+     <widget class="QLabel" name="label_40">
+      <property name="geometry">
+       <rect>
+        <x>52</x>
+        <y>142</y>
+        <width>231</width>
+        <height>17</height>
+       </rect>
+      </property>
+      <property name="styleSheet">
+       <string notr="true">QLabel {
+	color: #363636;
+	font: 500 11pt &quot;JetBrains Mono&quot;; 
+}</string>
+      </property>
+      <property name="text">
+       <string>Вместимость</string>
+      </property>
+     </widget>
+     <widget class="QLabel" name="label_41">
+      <property name="geometry">
+       <rect>
+        <x>52</x>
+        <y>228</y>
+        <width>231</width>
+        <height>17</height>
+       </rect>
+      </property>
+      <property name="styleSheet">
+       <string notr="true">QLabel {
+	color: #363636;
+	font: 500 11pt &quot;JetBrains Mono&quot;; 
+}</string>
+      </property>
+      <property name="text">
+       <string>Есть Wi-Fi</string>
+      </property>
+     </widget>
+     <widget class="QLabel" name="label_15">
+      <property name="geometry">
+       <rect>
+        <x>8</x>
+        <y>85</y>
+        <width>641</width>
+        <height>17</height>
+       </rect>
+      </property>
+      <property name="styleSheet">
+       <string notr="true">QLabel {
+	background-color: #F8F8F8;
+}</string>
+      </property>
+      <property name="text">
+       <string/>
+      </property>
+     </widget>
+     <widget class="QLabel" name="label_42">
+      <property name="geometry">
+       <rect>
+        <x>52</x>
+        <y>256</y>
+        <width>231</width>
+        <height>17</height>
+       </rect>
+      </property>
+      <property name="styleSheet">
+       <string notr="true">QLabel {
+	color: #363636;
+	font: 500 11pt &quot;JetBrains Mono&quot;; 
+}</string>
+      </property>
+      <property name="text">
+       <string>Есть розетки</string>
+      </property>
+     </widget>
+     <widget class="QLabel" name="label_16">
+      <property name="geometry">
+       <rect>
+        <x>8</x>
+        <y>342</y>
+        <width>641</width>
+        <height>17</height>
+       </rect>
+      </property>
+      <property name="styleSheet">
+       <string notr="true">QLabel {
+	background-color: #F8F8F8;
+}</string>
+      </property>
+      <property name="text">
+       <string/>
+      </property>
+     </widget>
+     <widget class="QLabel" name="label_43">
+      <property name="geometry">
+       <rect>
+        <x>52</x>
+        <y>171</y>
+        <width>231</width>
+        <height>17</height>
+       </rect>
+      </property>
+      <property name="styleSheet">
+       <string notr="true">QLabel {
+	color: #363636;
+	font: 500 11pt &quot;JetBrains Mono&quot;; 
+}</string>
+      </property>
+      <property name="text">
+       <string>Кольцевой</string>
+      </property>
+     </widget>
+     <widget class="QLabel" name="label_17">
+      <property name="geometry">
+       <rect>
+        <x>8</x>
+        <y>228</y>
+        <width>641</width>
+        <height>17</height>
+       </rect>
+      </property>
+      <property name="styleSheet">
+       <string notr="true">QLabel {
+	background-color: #F8F8F8;
+}</string>
+      </property>
+      <property name="text">
+       <string/>
+      </property>
+     </widget>
+     <widget class="QLabel" name="label_18">
+      <property name="geometry">
+       <rect>
+        <x>8</x>
+        <y>171</y>
+        <width>641</width>
+        <height>17</height>
+       </rect>
+      </property>
+      <property name="styleSheet">
+       <string notr="true">QLabel {
+	background-color: #F8F8F8;
+}</string>
+      </property>
+      <property name="text">
+       <string/>
+      </property>
+     </widget>
+     <widget class="QLabel" name="label_19">
+      <property name="geometry">
+       <rect>
+        <x>8</x>
+        <y>256</y>
+        <width>641</width>
+        <height>17</height>
+       </rect>
+      </property>
+      <property name="styleSheet">
+       <string notr="true">QLabel {
+	background-color: #F8F8F8;
+}</string>
+      </property>
+      <property name="text">
+       <string/>
+      </property>
+     </widget>
+     <widget class="QLabel" name="label_20">
+      <property name="geometry">
+       <rect>
+        <x>8</x>
+        <y>285</y>
+        <width>641</width>
+        <height>17</height>
+       </rect>
+      </property>
+      <property name="styleSheet">
+       <string notr="true">QLabel {
+	background-color: #F8F8F8;
+}</string>
+      </property>
+      <property name="text">
+       <string/>
+      </property>
+     </widget>
+     <widget class="QLabel" name="label_44">
+      <property name="geometry">
+       <rect>
+        <x>52</x>
+        <y>85</y>
+        <width>231</width>
+        <height>17</height>
+       </rect>
+      </property>
+      <property name="styleSheet">
+       <string notr="true">QLabel {
+	color: #363636;
+	font: 500 11pt &quot;JetBrains Mono&quot;; 
+}</string>
+      </property>
+      <property name="text">
+       <string>Название</string>
+      </property>
+     </widget>
+     <widget class="QLabel" name="label_21">
+      <property name="geometry">
+       <rect>
+        <x>8</x>
+        <y>199</y>
+        <width>641</width>
+        <height>17</height>
+       </rect>
+      </property>
+      <property name="styleSheet">
+       <string notr="true">QLabel {
+	background-color: #F8F8F8;
+}</string>
+      </property>
+      <property name="text">
+       <string/>
+      </property>
+     </widget>
+     <widget class="QLabel" name="label_22">
+      <property name="geometry">
+       <rect>
+        <x>8</x>
+        <y>371</y>
+        <width>641</width>
+        <height>17</height>
+       </rect>
+      </property>
+      <property name="styleSheet">
+       <string notr="true">QLabel {
+	background-color: #F8F8F8;
+}</string>
+      </property>
+      <property name="text">
+       <string/>
+      </property>
+     </widget>
+     <widget class="QLabel" name="label_45">
+      <property name="geometry">
+       <rect>
+        <x>52</x>
+        <y>342</y>
+        <width>231</width>
+        <height>17</height>
+       </rect>
+      </property>
+      <property name="styleSheet">
+       <string notr="true">QLabel {
+	color: #363636;
+	font: 500 11pt &quot;JetBrains Mono&quot;; 
+}</string>
+      </property>
+      <property name="text">
+       <string>Доступен</string>
+      </property>
+     </widget>
+     <widget class="QLabel" name="label_46">
+      <property name="geometry">
+       <rect>
+        <x>52</x>
+        <y>285</y>
+        <width>231</width>
+        <height>17</height>
+       </rect>
+      </property>
+      <property name="styleSheet">
+       <string notr="true">QLabel {
+	color: #363636;
+	font: 500 11pt &quot;JetBrains Mono&quot;; 
+}</string>
+      </property>
+      <property name="text">
+       <string>Дневной маршрут</string>
+      </property>
+     </widget>
+     <widget class="QLabel" name="label_23">
+      <property name="geometry">
+       <rect>
+        <x>8</x>
+        <y>314</y>
+        <width>641</width>
+        <height>17</height>
+       </rect>
+      </property>
+      <property name="styleSheet">
+       <string notr="true">QLabel {
+	background-color: #F8F8F8;
+}</string>
+      </property>
+      <property name="text">
+       <string/>
+      </property>
+     </widget>
+     <widget class="QLabel" name="label_47">
+      <property name="geometry">
+       <rect>
+        <x>52</x>
+        <y>199</y>
+        <width>231</width>
+        <height>17</height>
+       </rect>
+      </property>
+      <property name="styleSheet">
+       <string notr="true">QLabel {
+	color: #363636;
+	font: 500 11pt &quot;JetBrains Mono&quot;; 
+}</string>
+      </property>
+      <property name="text">
+       <string>Цветовой индекс</string>
+      </property>
+     </widget>
+     <widget class="QLabel" name="label_24">
+      <property name="geometry">
+       <rect>
+        <x>8</x>
+        <y>142</y>
+        <width>641</width>
+        <height>17</height>
+       </rect>
+      </property>
+      <property name="styleSheet">
+       <string notr="true">QLabel {
+	background-color: #F8F8F8;
+}</string>
+      </property>
+      <property name="text">
+       <string/>
+      </property>
+     </widget>
+     <widget class="QLabel" name="label_48">
+      <property name="geometry">
+       <rect>
+        <x>52</x>
+        <y>371</y>
+        <width>231</width>
+        <height>17</height>
+       </rect>
+      </property>
+      <property name="styleSheet">
+       <string notr="true">QLabel {
+	color: #363636;
+	font: 500 11pt &quot;JetBrains Mono&quot;; 
+}</string>
+      </property>
+      <property name="text">
+       <string>Цена</string>
+      </property>
+     </widget>
+     <widget class="QLabel" name="label_25">
+      <property name="geometry">
+       <rect>
+        <x>8</x>
+        <y>114</y>
+        <width>641</width>
+        <height>17</height>
+       </rect>
+      </property>
+      <property name="styleSheet">
+       <string notr="true">QLabel {
+	background-color: #F8F8F8;
+}</string>
+      </property>
+      <property name="text">
+       <string/>
+      </property>
+     </widget>
+     <widget class="QLabel" name="label_49">
+      <property name="geometry">
+       <rect>
+        <x>52</x>
+        <y>314</y>
+        <width>231</width>
+        <height>17</height>
+       </rect>
+      </property>
+      <property name="styleSheet">
+       <string notr="true">QLabel {
+	color: #363636;
+	font: 500 11pt &quot;JetBrains Mono&quot;; 
+}</string>
+      </property>
+      <property name="text">
+       <string>Ночной маршрут</string>
+      </property>
+     </widget>
+     <widget class="QLineEdit" name="lineEdit_busname">
+      <property name="geometry">
+       <rect>
+        <x>429</x>
+        <y>85</y>
+        <width>201</width>
+        <height>17</height>
+       </rect>
+      </property>
+      <property name="styleSheet">
+       <string notr="true">QLineEdit { 
+  background-color: #737373; 
+  border-radius: 0px;       
+  font: 11pt &quot;JetBrains Mono&quot;; 
+} </string>
+      </property>
+     </widget>
+     <widget class="QLabel" name="label_50">
+      <property name="geometry">
+       <rect>
+        <x>52</x>
+        <y>114</y>
+        <width>231</width>
+        <height>17</height>
+       </rect>
+      </property>
+      <property name="styleSheet">
+       <string notr="true">QLabel {
+	color: #363636;
+	font: 500 11pt &quot;JetBrains Mono&quot;; 
+}</string>
+      </property>
+      <property name="text">
+       <string>Тип маршрута</string>
+      </property>
+     </widget>
+     <widget class="QLabel" name="label_52">
+      <property name="geometry">
+       <rect>
+        <x>46</x>
+        <y>29</y>
+        <width>572</width>
+        <height>23</height>
+       </rect>
+      </property>
+      <property name="styleSheet">
+       <string notr="true">QLabel {
+	color: #363636;  
+	font: 700 15pt &quot;JetBrains Mono&quot;;
+}</string>
+      </property>
+      <property name="text">
+       <string>Добавление</string>
+      </property>
+      <property name="alignment">
+       <set>Qt::AlignmentFlag::AlignCenter</set>
+      </property>
+     </widget>
+     <widget class="QPushButton" name="append_append_bus">
+      <property name="geometry">
+       <rect>
+        <x>256</x>
+        <y>590</y>
+        <width>145</width>
+        <height>20</height>
+       </rect>
+      </property>
+      <property name="styleSheet">
+       <string notr="true">QPushButton { 
+	font: 9pt &quot;JetBrains Mono&quot;; 
+	color: #FFFFFF;
+	background-color: #363636; 
+	border-radius: 5px;
+}</string>
+      </property>
+      <property name="text">
+       <string>Добавить</string>
+      </property>
+     </widget>
+     <widget class="QLineEdit" name="lineEdit_capacity_3">
+      <property name="geometry">
+       <rect>
+        <x>429</x>
+        <y>142</y>
+        <width>201</width>
+        <height>17</height>
+       </rect>
+      </property>
+      <property name="styleSheet">
+       <string notr="true">QLineEdit { 
+  background-color: #FFFFFF; 
+  border-radius: 0px;       
+  font: 11pt &quot;JetBrains Mono&quot;; 
+  color: #363636;
+} </string>
+      </property>
+      <property name="alignment">
+       <set>Qt::AlignmentFlag::AlignCenter</set>
+      </property>
+     </widget>
+     <widget class="QLineEdit" name="lineEdit_busname_3">
+      <property name="geometry">
+       <rect>
+        <x>429</x>
+        <y>85</y>
+        <width>201</width>
+        <height>17</height>
+       </rect>
+      </property>
+      <property name="styleSheet">
+       <string notr="true">QLineEdit { 
+  background-color: #FFFFFF; 
+  border-radius: 0px;       
+  font: 11pt &quot;JetBrains Mono&quot;; 
+  color: #363636;
+} </string>
+      </property>
+      <property name="alignment">
+       <set>Qt::AlignmentFlag::AlignCenter</set>
+      </property>
+     </widget>
+     <widget class="QComboBox" name="comboBox_is_available_3">
+      <property name="geometry">
+       <rect>
+        <x>429</x>
+        <y>342</y>
+        <width>201</width>
+        <height>17</height>
+       </rect>
+      </property>
+      <property name="styleSheet">
+       <string notr="true">QComboBox { 
+  background-color: #FFFFFF; 
+  border-radius: 0px;       
+  font: 10pt &quot;JetBrains Mono&quot;; 
+  color: #363636;
+} </string>
+      </property>
+     </widget>
+     <widget class="QComboBox" name="comboBox_is_night_bus_3">
+      <property name="geometry">
+       <rect>
+        <x>429</x>
+        <y>314</y>
+        <width>201</width>
+        <height>17</height>
+       </rect>
+      </property>
+      <property name="styleSheet">
+       <string notr="true">QComboBox { 
+  background-color: #FFFFFF; 
+  border-radius: 0px;       
+  font: 10pt &quot;JetBrains Mono&quot;; 
+  color: #363636;
+} </string>
+      </property>
+     </widget>
+     <widget class="QLineEdit" name="lineEdit_color_index_3">
+      <property name="geometry">
+       <rect>
+        <x>429</x>
+        <y>199</y>
+        <width>201</width>
+        <height>17</height>
+       </rect>
+      </property>
+      <property name="styleSheet">
+       <string notr="true">QLineEdit { 
+  background-color: #FFFFFF; 
+  border-radius: 0px;       
+  font: 11pt &quot;JetBrains Mono&quot;; 
+  color: #363636;
+} </string>
+      </property>
+      <property name="alignment">
+       <set>Qt::AlignmentFlag::AlignCenter</set>
+      </property>
+     </widget>
+     <widget class="QComboBox" name="comboBox_is_wifi_3">
+      <property name="geometry">
+       <rect>
+        <x>429</x>
+        <y>228</y>
+        <width>201</width>
+        <height>17</height>
+       </rect>
+      </property>
+      <property name="styleSheet">
+       <string notr="true">QComboBox { 
+  background-color: #FFFFFF; 
+  border-radius: 0px;       
+  font: 10pt &quot;JetBrains Mono&quot;; 
+  color: #363636;
+} </string>
+      </property>
+     </widget>
+     <widget class="QListWidget" name="listWidgetStops_2">
+      <property name="geometry">
+       <rect>
+        <x>153</x>
+        <y>458</y>
+        <width>351</width>
+        <height>115</height>
+       </rect>
+      </property>
+      <property name="styleSheet">
+       <string notr="true">QListWidget {
+	border-radius: 0px;
+	background-color: #f8f8f8;
+}</string>
+      </property>
+     </widget>
+     <widget class="QComboBox" name="comboBox_is_sockets_3">
+      <property name="geometry">
+       <rect>
+        <x>429</x>
+        <y>256</y>
+        <width>201</width>
+        <height>17</height>
+       </rect>
+      </property>
+      <property name="styleSheet">
+       <string notr="true">QComboBox { 
+  background-color: #FFFFFF; 
+  border-radius: 0px;       
+  font: 10pt &quot;JetBrains Mono&quot;; 
+  color: #363636;
+} </string>
+      </property>
+     </widget>
+     <widget class="QComboBox" name="comboBox_bustype_3">
+      <property name="geometry">
+       <rect>
+        <x>429</x>
+        <y>114</y>
+        <width>201</width>
+        <height>17</height>
+       </rect>
+      </property>
+      <property name="styleSheet">
+       <string notr="true">QComboBox { 
+  background-color: #FFFFFF; 
+  border-radius: 0px;       
+  font: 10pt &quot;JetBrains Mono&quot;; 
+  color: #363636;
+} </string>
+      </property>
+     </widget>
+     <widget class="QLineEdit" name="lineEdit_find_stopname_2">
+      <property name="geometry">
+       <rect>
+        <x>153</x>
+        <y>437</y>
+        <width>266</width>
+        <height>20</height>
+       </rect>
+      </property>
+      <property name="styleSheet">
+       <string notr="true">QLineEdit { 
+  background-color: #FFFFFF; 
+  border-radius: 0px;   
+  font: 11pt &quot;JetBrains Mono&quot;; 
+} </string>
+      </property>
+      <property name="text">
+       <string/>
+      </property>
+      <property name="alignment">
+       <set>Qt::AlignmentFlag::AlignCenter</set>
+      </property>
+     </widget>
+     <widget class="QPushButton" name="append_append_stop">
+      <property name="geometry">
+       <rect>
+        <x>422</x>
+        <y>437</y>
+        <width>81</width>
+        <height>20</height>
+       </rect>
+      </property>
+      <property name="styleSheet">
+       <string notr="true">QPushButton { 
+	font: 9pt &quot;JetBrains Mono&quot;; 
+	color: #FFFFFF;
+	background-color: #363636; 
+	border-radius: 0px;
+}</string>
+      </property>
+      <property name="text">
+       <string>Добавить</string>
+      </property>
+     </widget>
+     <widget class="QComboBox" name="comboBox_is_day_bus_3">
+      <property name="geometry">
+       <rect>
+        <x>429</x>
+        <y>285</y>
+        <width>201</width>
+        <height>17</height>
+       </rect>
+      </property>
+      <property name="styleSheet">
+       <string notr="true">QComboBox { 
+  background-color: #FFFFFF; 
+  border-radius: 0px;       
+  font: 10pt &quot;JetBrains Mono&quot;; 
+  color: #363636;
+} </string>
+      </property>
+     </widget>
+     <widget class="QLineEdit" name="lineEdit_price_3">
+      <property name="geometry">
+       <rect>
+        <x>429</x>
+        <y>371</y>
+        <width>201</width>
+        <height>17</height>
+       </rect>
+      </property>
+      <property name="styleSheet">
+       <string notr="true">QLineEdit { 
+  background-color: #FFFFFF; 
+  border-radius: 0px;       
+  font: 11pt &quot;JetBrains Mono&quot;; 
+  color: #363636;
+} </string>
+      </property>
+      <property name="alignment">
+       <set>Qt::AlignmentFlag::AlignCenter</set>
+      </property>
+     </widget>
+     <widget class="QComboBox" name="comboBox_is_roundtrip_3">
+      <property name="geometry">
+       <rect>
+        <x>429</x>
+        <y>171</y>
+        <width>201</width>
+        <height>17</height>
+       </rect>
+      </property>
+      <property name="styleSheet">
+       <string notr="true">QComboBox { 
+  background-color: #FFFFFF; 
+  border-radius: 0px;       
+  font: 10pt &quot;JetBrains Mono&quot;; 
+  color: #363636;
+} </string>
+      </property>
+     </widget>
+     <widget class="QLabel" name="label_51">
+      <property name="geometry">
+       <rect>
+        <x>207</x>
+        <y>404</y>
+        <width>231</width>
+        <height>17</height>
+       </rect>
+      </property>
+      <property name="styleSheet">
+       <string notr="true">QLabel {
+	color: #363636;
+	font: 500 11pt &quot;JetBrains Mono&quot;; 
+}</string>
+      </property>
+      <property name="text">
+       <string>Остановки</string>
+      </property>
+      <property name="alignment">
+       <set>Qt::AlignmentFlag::AlignCenter</set>
+      </property>
+     </widget>
+     <zorder>label_24</zorder>
+     <zorder>label_18</zorder>
+     <zorder>label_21</zorder>
+     <zorder>label_17</zorder>
+     <zorder>label_19</zorder>
+     <zorder>label_20</zorder>
+     <zorder>label_23</zorder>
+     <zorder>label_25</zorder>
+     <zorder>label_15</zorder>
+     <zorder>label_40</zorder>
+     <zorder>label_41</zorder>
+     <zorder>label_42</zorder>
+     <zorder>label_16</zorder>
+     <zorder>label_43</zorder>
+     <zorder>label_44</zorder>
+     <zorder>label_22</zorder>
+     <zorder>label_45</zorder>
+     <zorder>label_46</zorder>
+     <zorder>label_47</zorder>
+     <zorder>label_48</zorder>
+     <zorder>label_49</zorder>
+     <zorder>lineEdit_busname</zorder>
+     <zorder>label_50</zorder>
+     <zorder>label_52</zorder>
+     <zorder>append_append_bus</zorder>
+     <zorder>lineEdit_capacity_3</zorder>
+     <zorder>lineEdit_busname_3</zorder>
+     <zorder>comboBox_is_available_3</zorder>
+     <zorder>comboBox_is_night_bus_3</zorder>
+     <zorder>lineEdit_color_index_3</zorder>
+     <zorder>comboBox_is_wifi_3</zorder>
+     <zorder>listWidgetStops_2</zorder>
+     <zorder>comboBox_is_sockets_3</zorder>
+     <zorder>comboBox_bustype_3</zorder>
+     <zorder>lineEdit_find_stopname_2</zorder>
+     <zorder>append_append_stop</zorder>
+     <zorder>comboBox_is_day_bus_3</zorder>
+     <zorder>lineEdit_price_3</zorder>
+     <zorder>comboBox_is_roundtrip_3</zorder>
+     <zorder>label_51</zorder>
+    </widget>
+    <widget class="QWidget" name="settings">
+     <widget class="QLabel" name="label_14">
+      <property name="geometry">
+       <rect>
+        <x>46</x>
+        <y>29</y>
+        <width>572</width>
+        <height>23</height>
+       </rect>
+      </property>
+      <property name="styleSheet">
+       <string notr="true">QLabel {
+	color: #363636;  
+	font: 700 15pt &quot;JetBrains Mono&quot;;
+}</string>
+      </property>
+      <property name="text">
+       <string>Настройки маршрутизации</string>
+      </property>
+      <property name="alignment">
+       <set>Qt::AlignmentFlag::AlignCenter</set>
+      </property>
+     </widget>
+     <widget class="QLabel" name="label_26">
+      <property name="geometry">
+       <rect>
+        <x>52</x>
+        <y>100</y>
+        <width>351</width>
+        <height>17</height>
+       </rect>
+      </property>
+      <property name="styleSheet">
+       <string notr="true">QLabel {
+	color: #363636;
+	font: 500 11pt &quot;JetBrains Mono&quot;; 
+}</string>
+      </property>
+      <property name="text">
+       <string>Максимально разрешённая скорость, км/ч</string>
+      </property>
+     </widget>
+     <widget class="QLineEdit" name="lineEdit_bus_wait_time">
+      <property name="geometry">
+       <rect>
+        <x>462</x>
+        <y>130</y>
+        <width>106</width>
+        <height>17</height>
+       </rect>
+      </property>
+      <property name="styleSheet">
+       <string notr="true">QLineEdit { 
+  background-color: #F8F8F8; 
+  border-radius: 0px;       
+  font: 11pt &quot;JetBrains Mono&quot;; 
+} </string>
+      </property>
+      <property name="alignment">
+       <set>Qt::AlignmentFlag::AlignCenter</set>
+      </property>
+     </widget>
+     <widget class="QLineEdit" name="lineEdit_bus_velocity">
+      <property name="geometry">
+       <rect>
+        <x>462</x>
+        <y>100</y>
+        <width>106</width>
+        <height>17</height>
+       </rect>
+      </property>
+      <property name="styleSheet">
+       <string notr="true">QLineEdit { 
+  background-color: #F8F8F8; 
+  border-radius: 0px;       
+  font: 11pt &quot;JetBrains Mono&quot;; 
+} </string>
+      </property>
+      <property name="alignment">
+       <set>Qt::AlignmentFlag::AlignCenter</set>
+      </property>
+     </widget>
+     <widget class="QLabel" name="label_39">
+      <property name="geometry">
+       <rect>
+        <x>52</x>
+        <y>130</y>
+        <width>351</width>
+        <height>17</height>
+       </rect>
+      </property>
+      <property name="styleSheet">
+       <string notr="true">QLabel {
+	color: #363636;
+	font: 500 11pt &quot;JetBrains Mono&quot;; 
+}</string>
+      </property>
+      <property name="text">
+       <string>Время ожидания на остановке, мин</string>
+      </property>
+     </widget>
+     <widget class="QPushButton" name="settings_save">
+      <property name="geometry">
+       <rect>
+        <x>256</x>
+        <y>590</y>
+        <width>145</width>
+        <height>20</height>
+       </rect>
+      </property>
+      <property name="styleSheet">
+       <string notr="true">QPushButton { 
+	font: 9pt &quot;JetBrains Mono&quot;; 
+	color: #FFFFFF;
+	background-color: #363636; 
+	border-radius: 5px;
+}</string>
+      </property>
+      <property name="text">
+       <string>Сохранить</string>
+      </property>
+     </widget>
+    </widget>
+   </widget>
+   <zorder>label</zorder>
+   <zorder>button_append_2</zorder>
+   <zorder>button_settings</zorder>
+   <zorder>button_edit</zorder>
+   <zorder>stackedWidget</zorder>
+  </widget>
+ </widget>
+ <layoutdefault spacing="6" margin="11"/>
+ <resources/>
+ <connections/>
+</ui>
