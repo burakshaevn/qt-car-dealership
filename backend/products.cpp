@@ -41,7 +41,6 @@ const ProductInfo* Products::FindProduct(const ProductKey& key) const {
 
 QList<ProductInfo> Products::FindProductsByName(const QString& product_name) const {
     QList<ProductInfo> result;
-    // for (const auto& [key, product] : products_) {
     for (const auto& product : products_) {
         if (product.name_ == product_name) {
             result.append(product);
@@ -92,8 +91,8 @@ void Products::PullProducts() {
             product.description_ = query.value("description").toString();
             product.type_id_ = query.value("type_id").toInt();
 
-            QString image_path = QDir::cleanPath(QCoreApplication::applicationDirPath() + "/" +
-                                                 "/../../resources/" + query.value("image_path").toString().replace("\\", "/"));
+            QString image_path = QDir::cleanPath(QCoreApplication::applicationDirPath() + "/../../resources/" + query.value("image_url").toString().replace("\\", "/"));
+
             product.image_path_ = image_path;
 
             PushProduct(product);
@@ -208,7 +207,7 @@ QList<ProductInfo> Products::PullAvailableColorsForProduct(const ProductInfo& pr
                 query.value("color").toString(),
                 query.value("price").toInt(),
                 query.value("description").toString(),
-                query.value("image_path").toString(),
+                query.value("image_url").toString(),
                 query.value("type_id").toInt()
             });
         }

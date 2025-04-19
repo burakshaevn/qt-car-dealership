@@ -22,7 +22,7 @@ void DatabaseHandler::UpdateConnection(const QString& host, int port, const QStr
 void DatabaseHandler::LoadDefault(){
     QString hostname = "localhost";
     int port = 5432;
-    QString dbname = "car-dealership";
+    QString dbname = "car_dealership";
     QString username = "postgres";
     QString password = "89274800234Nn";
     UpdateConnection(hostname, port, dbname, username, password);

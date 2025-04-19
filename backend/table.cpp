@@ -333,8 +333,7 @@ void Table::DeleteRecord() {
 
         // Подтверждение удаления
         QString warningMessage = "Are you sure you want to delete the selected record?";
-        if (QMessageBox::warning(this, "Confirm Deletion", warningMessage,
-                                 QMessageBox::Yes | QMessageBox::No) == QMessageBox::No) {
+        if (QMessageBox::warning(this, "Confirm Deletion", warningMessage, QMessageBox::Yes | QMessageBox::No) == QMessageBox::No) {
             return;
         }
 
@@ -391,8 +390,7 @@ void Table::EditRecord() {
 
     bool ok;
     int row = QInputDialog::getInt(
-        this, "Редактирование записи", "Укажите порядковый номер строки в таблице:", 1, 1, data_table_->model()->rowCount(), 1, &ok
-        );
+        this, "Редактирование записи", "Укажите порядковый номер строки в таблице:", 1, 1, data_table_->model()->rowCount(), 1, &ok);
 
     if (!ok) {
         return;

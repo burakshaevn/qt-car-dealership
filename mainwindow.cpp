@@ -472,3 +472,8 @@ void MainWindow::on_pushButton_back_clicked()
     }
 }
 
+void MainWindow::on_pushButton_to_pay_clicked()
+{
+    QMessageBox::information(this, "Заголовок уведомления", "Текст уведомления.");
+}
+

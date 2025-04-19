@@ -54,6 +54,8 @@ private slots:
 
     void on_pushButton_back_clicked();
 
+    void on_pushButton_to_pay_clicked();
+
 private:
     Ui::MainWindow *ui;
 

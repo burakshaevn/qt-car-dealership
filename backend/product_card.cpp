@@ -124,8 +124,6 @@ void ProductCard::EnsureContainerInScrollArea(QScrollArea* target_scroll_area) {
     // Лог текущего родителя
     QObject* current_parent = card_container_->parent();
     QString current_parent_name = current_parent ? current_parent->objectName() : QString();
-    // qDebug() << "Moving card_container_ from" << current_parent_name
-    //          << "to" << target_scroll_area->objectName();
 
     // Удаляем текущий виджет из ScrollArea, если он есть
     if (auto current_widget = target_scroll_area->widget()) {
@@ -151,8 +149,6 @@ void ProductCard::EnsureContainerInScrollArea(QScrollArea* target_scroll_area) {
     card_container_->adjustSize();
     card_container_->show();
     target_scroll_area->viewport()->update();
-
-    // qDebug() << "Successfully reparented card_container_ to" << target_scroll_area->objectName();
 }
 
 void ProductCard::HideOldCards() {
