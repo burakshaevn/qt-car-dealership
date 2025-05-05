@@ -218,8 +218,8 @@ void MainWindow::BuildDependencies() {
         // connect(products_.get(), &Products::OpenInfoPage, this, &MainWindow::ShowProductOnPersonalPage);
 
         connect(products_.get(), &Products::OpenInfoPage, this, [this](const ProductInfo& product) {
-            products_->PullAvailableColorsForProduct(product);
-            ShowProductOnPersonalPage(product);
+            auto current_product_colors_ = products_->PullAvailableColorsForProduct(product);
+            ShowProductOnPersonalPage(product, current_product_colors_);
         });
 
         // connect(products_.get(), &Products::CartUpdated, this, [this]{
@@ -415,10 +415,10 @@ void MainWindow::on_pushButton_submit_cart_clicked()
 }
 
 
-void MainWindow::ShowProductOnPersonalPage(const ProductInfo& product) {
+void MainWindow::ShowProductOnPersonalPage(const ProductInfo& product, QList<ProductInfo>& current_product_colors_) {
     ui->label_name->setText(product.name_);
     ui->label_price->setText(FormatPrice(product.price_) + " руб.");
-    auto current_product_colors_ = products_->PullAvailableColorsForProduct(current_product_); // Доступные варианты цветов для current_product
+    current_product_ = product;
     // ui->label_color_index->setText(QString::number(current_color_index_ + 1) + "/" + QString::number(current_product_colors_.size()));
 
     QString imagePath = QDir::cleanPath(product.image_path_);
@@ -446,10 +446,11 @@ void MainWindow::on_pushButton_next_left_clicked() {
     auto current_product_colors_ = products_->PullAvailableColorsForProduct(current_product_);
     if (!current_product_colors_.isEmpty()) {
         current_color_index_ = (current_color_index_ - 1 + current_product_colors_.size()) % current_product_colors_.size();
-        current_product_.id_ = current_product_colors_.at(current_color_index_).id_;
-        current_product_.color_ = current_product_colors_.at(current_color_index_).color_;
-        current_product_.image_path_ = current_product_colors_.at(current_color_index_).image_path_;
-        ShowProductOnPersonalPage(current_product_colors_.at(current_color_index_));
+        current_product_ = current_product_colors_.at(current_color_index_);
+        // current_product_.id_ = current_product_colors_.at(current_color_index_).id_;
+        // current_product_.color_ = current_product_colors_.at(current_color_index_).color_;
+        // current_product_.image_path_ = current_product_colors_.at(current_color_index_).image_path_;
+        ShowProductOnPersonalPage(current_product_colors_.at(current_color_index_), current_product_colors_);
     }
 }
 
@@ -458,10 +459,11 @@ void MainWindow::on_pushButton_next_right_clicked() {
     auto current_product_colors_ = products_->PullAvailableColorsForProduct(current_product_);
     if (!current_product_colors_.isEmpty()) {
         current_color_index_ = (current_color_index_ + 1) % current_product_colors_.size();
-        current_product_.id_ = current_product_colors_.at(current_color_index_).id_;
-        current_product_.color_ = current_product_colors_.at(current_color_index_).color_;
-        current_product_.image_path_ = current_product_colors_.at(current_color_index_).image_path_;
-        ShowProductOnPersonalPage(current_product_colors_.at(current_color_index_));
+        current_product_ = current_product_colors_.at(current_color_index_);
+        // current_product_.id_ = current_product_colors_.at(current_color_index_).id_;
+        // current_product_.color_ = current_product_colors_.at(current_color_index_).color_;
+        // current_product_.image_path_ = current_product_colors_.at(current_color_index_).image_path_;
+        ShowProductOnPersonalPage(current_product_colors_.at(current_color_index_), current_product_colors_);
     }
 }
 
@@ -469,6 +471,8 @@ void MainWindow::on_pushButton_back_clicked()
 {
     if (user_->GetRole() == Role::User) {
         ui->stackedWidget->setCurrentWidget(ui->main);
+        current_product_ = ProductInfo();
+        current_color_index_ = 0;
     }
 }
 

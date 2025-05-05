@@ -276,7 +276,7 @@ QLineEdit:focus {
      <widget class="QPushButton" name="pushButton_to_pay">
       <property name="geometry">
        <rect>
-        <x>664</x>
+        <x>737</x>
         <y>426</y>
         <width>155</width>
         <height>38</height>
@@ -291,7 +291,7 @@ QLineEdit:focus {
 }</string>
       </property>
       <property name="text">
-       <string>К оплате →</string>
+       <string>К заявке →</string>
       </property>
      </widget>
      <widget class="QPushButton" name="pushButton_next_right">
@@ -375,7 +375,7 @@ QPushButton::pressed {
      <widget class="QPushButton" name="pushButton_back">
       <property name="geometry">
        <rect>
-        <x>281</x>
+        <x>225</x>
         <y>426</y>
         <width>155</width>
         <height>38</height>
@@ -462,7 +462,7 @@ QPushButton::pressed {
      <widget class="QPushButton" name="pushButton_info">
       <property name="geometry">
        <rect>
-        <x>472</x>
+        <x>396</x>
         <y>426</y>
         <width>155</width>
         <height>38</height>
@@ -481,6 +481,28 @@ QPushButton::pressed {
        <string>Подробнее</string>
       </property>
      </widget>
+     <widget class="QPushButton" name="pushButton_test_drive">
+      <property name="geometry">
+       <rect>
+        <x>567</x>
+        <y>426</y>
+        <width>155</width>
+        <height>38</height>
+       </rect>
+      </property>
+      <property name="styleSheet">
+       <string notr="true">QPushButton {
+	background-color: transparent;
+	color: #1d1b20; 
+	border-radius: 18px;
+
+	font: 14pt &quot;JetBrains Mono&quot;;
+}</string>
+      </property>
+      <property name="text">
+       <string>Тест-драйв</string>
+      </property>
+     </widget>
      <zorder>label</zorder>
      <zorder>label_car_image</zorder>
      <zorder>pushButton_to_pay</zorder>
@@ -490,6 +512,7 @@ QPushButton::pressed {
      <zorder>label_price</zorder>
      <zorder>label_name</zorder>
      <zorder>pushButton_info</zorder>
+     <zorder>pushButton_test_drive</zorder>
     </widget>
     <widget class="QWidget" name="cart">
      <widget class="QScrollArea" name="scrollArea_3">

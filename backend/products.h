@@ -30,6 +30,7 @@ struct ProductInfo
         , image_path_(image_path)
         , type_id_(type_id)
     {}
+    ~ProductInfo() = default;
     int id_ = 0;
     QString name_ = "";
     QString color_ = "";

@@ -46,7 +46,7 @@ private slots:
 
     void on_pushButton_submit_cart_clicked();
 
-    void ShowProductOnPersonalPage(const ProductInfo&);
+    void ShowProductOnPersonalPage(const ProductInfo&, QList<ProductInfo>&);
 
     void on_pushButton_next_left_clicked();
 
