@@ -21,21 +21,26 @@ MainWindow::~MainWindow()
     delete ui;
 }
 
-void MainWindow::UpdateUser(const UserInfo& user, QWidget* parent){
+void MainWindow::UpdateUser(const UserInfo& user, QWidget* parent)
+{
     user_ = std::make_unique<User>(user, parent);
 }
 
-void MainWindow::on_pushButton_login_clicked() {
+void MainWindow::on_pushButton_login_clicked()
+{
     auto queryResult = db_manager_->ExecuteSelectQuery(QString("SELECT * FROM public.admins WHERE username = '%1';").arg(ui->lineEdit_login->text()));
 
-    if (queryResult.canConvert<QSqlQuery>()) {
+    if (queryResult.canConvert<QSqlQuery>())
+    {
         QSqlQuery query = queryResult.value<QSqlQuery>();
-        if (query.next()) {
+        if (query.next())
+        {
             UserInfo user;
             user.id_ = query.value("id").toInt();
             user.password_ = query.value("password").toString();
             user.role_ = Role::Admin;
-            if (user.password_ == ui->lineEdit_password->text()) {
+            if (user.password_ == ui->lineEdit_password->text())
+            {
                 ui->lineEdit_login->clear();
                 ui->lineEdit_password->clear();
                 QMessageBox::information(this, "Авторизация", "Выполнена авторизация как администратор.");
@@ -49,16 +54,20 @@ void MainWindow::on_pushButton_login_clicked() {
                 ui->stackedWidget->addWidget(table_.get());
                 ui->stackedWidget->setCurrentWidget(table_.get());
             }
-            else{
+            else
+            {
                 QMessageBox::critical(this, "Авторизация", "Неверный логин или пароль.");
             }
         }
-        else {
+        else
+        {
             auto queryResult = db_manager_->ExecuteSelectQuery(QString("SELECT * FROM public.clients WHERE email = '%1';").arg(ui->lineEdit_login->text()));
 
-            if (queryResult.canConvert<QSqlQuery>()) {
+            if (queryResult.canConvert<QSqlQuery>())
+            {
                 QSqlQuery query = queryResult.value<QSqlQuery>();
-                if (query.next()) {
+                if (query.next())
+                {
                     UserInfo user;
                     user.id_ = query.value("id").toInt();
                     user.full_name_ = query.value("first_name").toString();
@@ -68,7 +77,8 @@ void MainWindow::on_pushButton_login_clicked() {
                     user.role_ = Role::User;
                     user.products_ = GetPurchasedProducts(user.id_);
 
-                    if (user.password_ == ui->lineEdit_password->text()) {
+                    if (user.password_ == ui->lineEdit_password->text())
+                    {
                         ui->lineEdit_login->clear();
                         ui->lineEdit_password->clear();
                         QMessageBox::information(this, "Авторизация", "Выполнена авторизация как пользователь.");
@@ -78,33 +88,40 @@ void MainWindow::on_pushButton_login_clicked() {
 
                         products_->PullProducts();
 
-                        product_card_->UpdateProductsWidget(ui->scrollArea, "Смотреть всё", "Белый");
+                        product_card_->UpdateProductsWidget(ui->scrollArea_catalog, QString("Смотреть всё"), QString("Белый"));
                         ui->stackedWidget->setCurrentWidget(ui->main);
                     }
-                    else{
+                    else
+                    {
                         QMessageBox::critical(this, "Авторизация", "Неверный логин или пароль.");
                     }
                 }
-                else {
+                else
+                {
                     QMessageBox::critical(this, "Ошибка", "Пользователя с таким логином не существует.");
                 }
             }
-            else {
+            else
+            {
                 QMessageBox::critical(this, "Ошибка в базе данных", queryResult.toString());
             }
         }
     }
-    else {
+    else
+    {
         QMessageBox::critical(this, "Ошибка в базе данных", queryResult.toString());
     }
 }
 
-void MainWindow::on_pushButton_logout_clicked() {
-    if (!this->ui->stackedWidget) {
+void MainWindow::on_pushButton_logout_clicked()
+{
+    if (!this->ui->stackedWidget)
+    {
         return;
     }
 
-    if (user_  && user_->GetRole() == Role::User) {
+    if (user_  && user_->GetRole() == Role::User)
+    {
         // side_widget_.reset();
         // floating_menu_.reset();
         floating_widgets_.reset();
@@ -114,16 +131,19 @@ void MainWindow::on_pushButton_logout_clicked() {
         product_card_.reset();
         db_manager_.reset();
 
-
-        if (ui->scrollArea) {
-            QWidget* oldWidget = ui->scrollArea->takeWidget();
-            if (oldWidget) {
+        if (ui->scrollArea_catalog)
+        {
+            QWidget* oldWidget = ui->scrollArea_catalog->takeWidget();
+            if (oldWidget)
+            {
                 oldWidget->deleteLater();
             }
         }
-        if (ui->scrollArea_2) {
-            QWidget* oldWidget = ui->scrollArea_2->takeWidget();
-            if (oldWidget) {
+        if (ui->scrollArea_purchased_cars)
+        {
+            QWidget* oldWidget = ui->scrollArea_purchased_cars->takeWidget();
+            if (oldWidget)
+            {
                 oldWidget->deleteLater();
             }
         }
@@ -132,18 +152,17 @@ void MainWindow::on_pushButton_logout_clicked() {
     table_.reset();
 
     // Переключение на экран логина
-    if (this->ui->stackedWidget && this->ui->login) {
+    if (this->ui->stackedWidget && this->ui->login)
+    {
         this->ui->stackedWidget->setCurrentWidget(this->ui->login);
     }
 }
 
 void MainWindow::SetupFloatingMenu() {
     floating_widgets_->BuildFloatingMenu(
-        // Обработка кнопки "More"
-        [this]() { this->MoreClicked(); },
-
-        // Обработка кнопки "Search"
-        [this]() {
+        [this]() { this->MoreClicked(); }, // Обработка кнопки "More"
+        [this]() // Обработка кнопки "Search"
+        {
             bool ok;
             QString term = QInputDialog::getText(
                 this,
@@ -154,39 +173,32 @@ void MainWindow::SetupFloatingMenu() {
                 &ok
                 );
 
-            if (ok && !term.isEmpty()) {
+            if (ok && !term.isEmpty())
+            {
                 ProductInfo product;
                 product.name_ = term;
 
-                int relevant_results = product_card_->DrawRelevantProducts(ui->scrollArea, product.name_);
-                if (relevant_results > 0) {
+                int relevant_results = product_card_->DrawRelevantProducts(ui->scrollArea_catalog, product.name_);
+                if (relevant_results > 0)
+                {
                     QMessageBox::information(this, "Поиск", "Найдено " + QString::number(relevant_results) + " результатов по запросу «" + term + "».");
-                    MoreClicked();
-                } else {
+                }
+                else
+                {
                     QMessageBox::warning(this, "Поиск", "Отсутствуют релевантные результаты.");
                 }
-            } else {
-                QMessageBox::warning(
-                    this,
-                    "Предупреждение",
-                    "Запрос не может быть пустым."
-                    );
             }
         },
-
-        // Обработка кнопки "Сортировка по цветам"
-        [this]() { this->SortByColorClicked(); },
-
-        // Обработка кнопки "User Profile"
-        [this]() { this->ProfileClicked(); }
-        );
+        [this]() { this->SortByColorClicked(); }, // Обработка кнопки "Сортировка по цветам"
+        [this]() { this->ProfileClicked(); } // Обработка кнопки "User Profile"
+    );
 }
 
 QList<Products::ProductKey> MainWindow::GetPurchasedProducts(int user_id) const {
     QList<Products::ProductKey> products_; // Список названий купленных инструментов
 
     QSqlQuery query;
-    QString query_str = QString("select * from cars where id in (select car_id from purchases where client_id = %1);").arg(user_id);
+    QString query_str = QString("SELECT * FROM CARS WHERE id IN (SELECT car_id FROM purchases WHERE client_id = %1);").arg(user_id);
     if (!query.exec(query_str)) {
         qWarning() << "Failed to execute query:" << query.lastError().text();
         return products_;
@@ -231,23 +243,26 @@ void MainWindow::BuildDependencies() {
     }
 }
 
-void MainWindow::MoreClicked() {
-    if (user_.get()) {
-        if (!product_card_->hidden_to_cart_buttons_IsEmpty()) {
+void MainWindow::MoreClicked()
+{
+    if (user_.get())
+    {
+        if (!product_card_->hidden_to_cart_buttons_IsEmpty())
+        {
             product_card_->RestoreHiddenToCartButtons();
         }
-        if (user_->GetRole() == Role::User) {
-            // Создаем список типов для выпадающего списка
-            QStringList types;
+        if (user_->GetRole() == Role::User)
+        {
+            QStringList types;  // Список типов для выпадающего списка
+
             QSqlQuery query("SELECT name FROM car_types");
             while (query.next()) {
                 types << query.value("name").toString();
             }
-            types << "Смотреть всё"; // Добавляем пункт "Смотреть всё"
+            types << "Смотреть всё"; // В конец добавляем пункт "Смотреть всё"
 
-            // Создаем модальное окно с выпадающим списком
             bool ok;
-            QString selectedType = QInputDialog::getItem(
+            QString selected_type = QInputDialog::getItem(
                 this, // Родительский виджет (this, чтобы окно было модальным относительно MainWindow)
                 "Выберите тип", // Заголовок окна
                 "Тип:", // Текст перед выпадающим списком
@@ -256,20 +271,9 @@ void MainWindow::MoreClicked() {
                 false, // Редактируемый ли список
                 &ok // Успешно ли выбрано значение
                 );
-            qDebug() << selectedType;
-            // Обработка выбора
-            if (ok && !selectedType.isEmpty()) {
-                if (selectedType == "Смотреть всё") {
-                    product_card_->UpdateProductsWidget(ui->scrollArea, "Смотреть всё", "Белый");
-                    ui->stackedWidget->setCurrentWidget(ui->main);
-                    qDebug() << "Выбрано: Смотреть всё";
-                } else {
-                    product_card_->UpdateProductsWidget(ui->scrollArea, selectedType, "Белый");
-                    ui->stackedWidget->setCurrentWidget(ui->main);
-                    qDebug() << "Выбран тип:" << selectedType;
-                }
-            }
 
+            // Обработка выбора
+            SelectionProcessing(ok, selected_type);
             return;
         }
     }
@@ -277,43 +281,117 @@ void MainWindow::MoreClicked() {
 }
 
 void MainWindow::ProfileClicked() {
-    if (user_->GetRole() == Role::User) {
+    if (user_->GetRole() == Role::User)
+    {
         floating_widgets_->GetSideMenu()->setVisible(false);
 
         product_card_->HideOldCards();
-        product_card_->EnsureContainerInScrollArea(ui->scrollArea_2);
+        product_card_->EnsureContainerInScrollArea(ui->scrollArea_purchased_cars);
 
         const QList<Products::ProductKey>& purchases_products_ = GetPurchasedProducts(user_->GetId());
-        for (auto& key : purchases_products_) {
-            qDebug() << purchases_products_.size();
+        for (auto& key : purchases_products_)
+        {
             const ProductInfo* found_product_struct = products_->FindProduct(key);
-            if (!found_product_struct){
+            if (!found_product_struct)
+            {
                 qDebug() << "found_product_struct is empty";
                 break;
             }
 
             product_card_->DrawItem(*found_product_struct);
             auto to_cart_button = product_card_->FindProductCard(key)->findChild<QPushButton*>("to_cart_", Qt::FindChildrenRecursively);
-            if (to_cart_button) {
+            if (to_cart_button)
+            {
                 to_cart_button->hide();
                 product_card_->hidden_to_cart_buttons_Push(key);
-                qDebug() << "Добавлена карточка: " << found_product_struct->name_;
             }
         }
         product_card_->card_container_PerformAdjustSize();
+
+        SetupServicesScrollArea();
 
         ui->label_clientname->setText(user_->GetName() + " — профиль");
         ui->stackedWidget->setCurrentWidget(ui->user_page);
     }
 }
 
+void MainWindow::SetupServicesScrollArea() {
+    // Настройка QScrollArea
+    ui->scrollArea_services->setHorizontalScrollBarPolicy(Qt::ScrollBarAlwaysOff);
+    ui->scrollArea_services->setVerticalScrollBarPolicy(Qt::ScrollBarAlwaysOff);
+    ui->scrollArea_services->setWidgetResizable(false); // Отключаем авторесайз, чтобы прокрутка зависела от размера контейнера
+    ui->scrollArea_services->setFocusPolicy(Qt::WheelFocus); // Разрешаем прокрутку колесом
+
+    // Стили для QScrollArea
+    ui->scrollArea_services->setStyleSheet(
+        "QScrollArea {"
+        "    background: transparent;"
+        "    border: none;"
+        "}"
+        "QScrollArea > QWidget {"
+        "    background: transparent;"
+        "}"
+        "QScrollArea::viewport {"
+        "    background: transparent;"
+        "}"
+        "QScrollBar:horizontal {"
+        "    height: 0px;" // Скрываем полосу прокрутки
+        "}"
+        );
+
+    // Создаём контейнер для карточек
+    QWidget* container = new QWidget();
+    QHBoxLayout* layout = new QHBoxLayout(container);
+    layout->setSpacing(21);
+    layout->setContentsMargins(0, 0, 0, 0);
+
+    // Список названий карточек
+    QStringList services = {"Обслуживание", "Продажа", "Кредитование", "Страхование"};
+
+    // Создаём карточки
+    for (const QString& service : services) {
+        QWidget* card = new QWidget(container);
+        card->setFixedSize(360, 175);
+        card->setStyleSheet(
+            "background-color: #fafafa;"
+            "border-radius: 39px;"
+            );
+
+        QLabel* label = new QLabel(service, card);
+        label->setStyleSheet(
+            "color: #1d1b20;"
+            "font: 700 20pt 'JetBrains Mono';"
+            "background: transparent;"
+            );
+        label->move(14, 105);
+        label->setAlignment(Qt::AlignLeft);
+
+        layout->addWidget(card);
+    }
+
+    // Устанавливаем минимальный размер контейнера, чтобы он был шире QScrollArea
+    container->setMinimumWidth((360 + 21) * services.size()); // 360 (ширина карточки) + 21 (spacing) на каждую карточку
+    container->setFixedHeight(175); // Высота контейнера равна высоте карточек
+
+    // Устанавливаем контейнер в QScrollArea
+    ui->scrollArea_services->setWidget(container);
+
+    // Убедимся, что QScrollArea может принимать фокус для прокрутки
+    ui->scrollArea_services->setFocus();
+
+    // Отладка: проверяем размеры
+    qDebug() << "Container size:" << container->size();
+    qDebug() << "ScrollArea size:" << ui->scrollArea_services->size();
+}
+
 void MainWindow::SortByColorClicked(){
     if (user_.get()) {
-        if (!product_card_->hidden_to_cart_buttons_IsEmpty()) {
+        if (!product_card_->hidden_to_cart_buttons_IsEmpty())
+        {
             product_card_->RestoreHiddenToCartButtons();
         }
-        if (user_->GetRole() == Role::User) {
-            // Создаем модальное окно с выпадающим списком
+        if (user_->GetRole() == Role::User)
+        {
             bool ok;
             QString selectedColor = QInputDialog::getItem(
                 this, // Родительский виджет (this, чтобы окно было модальным относительно MainWindow)
@@ -324,24 +402,43 @@ void MainWindow::SortByColorClicked(){
                 false, // Редактируемый ли список
                 &ok // Успешно ли выбрано значение
                 );
-            qDebug() << selectedColor;
+
             // Обработка выбора
-            if (ok && !selectedColor.isEmpty()) {
-                product_card_->UpdateProductsWidget(ui->scrollArea, "Смотреть всё", selectedColor);
-                ui->stackedWidget->setCurrentWidget(ui->main);
-                qDebug() << "Выбран цвет:" << selectedColor;
-            }
+            SelectionProcessing(ok, QString("Смотреть всё"), selectedColor);
             return;
         }
     }
     QMessageBox::warning(this, "Ошибка", "Чтобы переключаться по остальным разделам, необходимо авторизоваться как пользователь.");
 }
 
-void MainWindow::CleanCart() {
-    for (auto& [name_, card_] : cart_->GetCart()) {
-        if (card_) {
+void MainWindow::SelectionProcessing(const bool ok, const QStringView selected_type, const QStringView selected_color)
+{
+    if (ok && !selected_type.isEmpty())
+    {
+        if (selected_type == "Смотреть всё")
+        {
+            product_card_->UpdateProductsWidget(ui->scrollArea_catalog, QString("Смотреть всё"), selected_color);
+            ui->stackedWidget->setCurrentWidget(ui->main);
+            qDebug() << "Выбрано: Смотреть всё";
+        }
+        else
+        {
+            product_card_->UpdateProductsWidget(ui->scrollArea_catalog, selected_type.toString(), QString("Белый"));
+            ui->stackedWidget->setCurrentWidget(ui->main);
+            qDebug() << "Выбран тип:" << selected_type;
+        }
+    }
+}
+
+void MainWindow::CleanCart()
+{
+    for (auto& [name_, card_] : cart_->GetCart())
+    {
+        if (card_)
+        {
             auto to_cart_button = card_->findChild<QPushButton*>("to_cart_", Qt::FindChildrenRecursively);
-            if (to_cart_button) {
+            if (to_cart_button)
+            {
                 to_cart_button->setIcon(QIcon(":/bookmark.svg"));
             }
         }
@@ -377,17 +474,21 @@ void MainWindow::ToPayCart()
     }
 
     // Если все операции успешны, фиксируем транзакцию
-    if (success) {
-        if (!db.commit()) {
+    if (success)
+    {
+        if (!db.commit())
+        {
             QMessageBox::critical(this, "Ошибка", "Не удалось зафиксировать транзакцию: " + db.lastError().text());
         }
-        else {
+        else
+        {
             // All succsess
         }
     }
-    else {
-        // Если есть ошибки, откатываем транзакцию
-        if (!db.rollback()) {
+    else
+    {
+        if (!db.rollback()) // Если есть ошибки, откатываем транзакцию
+        {
             QMessageBox::critical(this, "Ошибка", "Не удалось откатить транзакцию: " + db.lastError().text());
         }
     }
@@ -395,7 +496,8 @@ void MainWindow::ToPayCart()
 
 void MainWindow::on_pushButton_clean_cart_clicked()
 {
-    if (cart_->CartIsEmpty()){
+    if (cart_->CartIsEmpty())
+    {
         QMessageBox::warning(this, "Предупреждение", "Невозможно очистить корзину: отсутствует содержимое.");
         return;
     }
@@ -405,7 +507,8 @@ void MainWindow::on_pushButton_clean_cart_clicked()
 
 void MainWindow::on_pushButton_submit_cart_clicked()
 {
-    if (cart_->CartIsEmpty()){
+    if (cart_->CartIsEmpty())
+    {
         QMessageBox::warning(this, "Предупреждение", "Невозможно выполить оплату: отсутствует содержимое.");
         return;
     }
@@ -415,7 +518,8 @@ void MainWindow::on_pushButton_submit_cart_clicked()
 }
 
 
-void MainWindow::ShowProductOnPersonalPage(const ProductInfo& product, QList<ProductInfo>& current_product_colors_) {
+void MainWindow::ShowProductOnPersonalPage(const ProductInfo& product, QList<ProductInfo>& current_product_colors_)
+{
     ui->label_name->setText(product.name_);
     ui->label_price->setText(FormatPrice(product.price_) + " руб.");
     current_product_ = product;
@@ -424,7 +528,8 @@ void MainWindow::ShowProductOnPersonalPage(const ProductInfo& product, QList<Pro
     QString imagePath = QDir::cleanPath(product.image_path_);
     QPixmap originalPixmap(imagePath);
 
-    if (!originalPixmap.isNull()) {
+    if (!originalPixmap.isNull())
+    {
         int fixedWidth = 394;
         QPixmap scaledPixmap = originalPixmap.scaled(fixedWidth, originalPixmap.height(), Qt::KeepAspectRatio, Qt::SmoothTransformation);
 
@@ -441,28 +546,26 @@ void MainWindow::ShowProductOnPersonalPage(const ProductInfo& product, QList<Pro
     ui->stackedWidget->setCurrentWidget(ui->personal);
 }
 
-void MainWindow::on_pushButton_next_left_clicked() {
+void MainWindow::on_pushButton_next_left_clicked()
+{
     // Доступные варианты цветов для current_product
     auto current_product_colors_ = products_->PullAvailableColorsForProduct(current_product_);
-    if (!current_product_colors_.isEmpty()) {
+    if (!current_product_colors_.isEmpty())
+    {
         current_color_index_ = (current_color_index_ - 1 + current_product_colors_.size()) % current_product_colors_.size();
         current_product_ = current_product_colors_.at(current_color_index_);
-        // current_product_.id_ = current_product_colors_.at(current_color_index_).id_;
-        // current_product_.color_ = current_product_colors_.at(current_color_index_).color_;
-        // current_product_.image_path_ = current_product_colors_.at(current_color_index_).image_path_;
         ShowProductOnPersonalPage(current_product_colors_.at(current_color_index_), current_product_colors_);
     }
 }
 
-void MainWindow::on_pushButton_next_right_clicked() {
+void MainWindow::on_pushButton_next_right_clicked()
+{
     // Доступные варианты цветов для current_product
     auto current_product_colors_ = products_->PullAvailableColorsForProduct(current_product_);
-    if (!current_product_colors_.isEmpty()) {
+    if (!current_product_colors_.isEmpty())
+    {
         current_color_index_ = (current_color_index_ + 1) % current_product_colors_.size();
         current_product_ = current_product_colors_.at(current_color_index_);
-        // current_product_.id_ = current_product_colors_.at(current_color_index_).id_;
-        // current_product_.color_ = current_product_colors_.at(current_color_index_).color_;
-        // current_product_.image_path_ = current_product_colors_.at(current_color_index_).image_path_;
         ShowProductOnPersonalPage(current_product_colors_.at(current_color_index_), current_product_colors_);
     }
 }
@@ -476,8 +579,102 @@ void MainWindow::on_pushButton_back_clicked()
     }
 }
 
+void MainWindow::on_pushButton_info_clicked()
+{
+    if (current_product_.name_.isEmpty()) {
+        QMessageBox::warning(this, "Ошибка", "Не выбран автомобиль для просмотра информации.");
+        return;
+    }
+
+    // Формируем детальную информацию об автомобиле
+    QString info = QString("Название: %1\nЦена: %2 руб.\nЦвет: %3\nОписание: %4")
+                       .arg(current_product_.name_)
+                       .arg(FormatPrice(current_product_.price_))
+                       .arg(current_product_.color_)
+                       .arg(current_product_.description_.isEmpty() ? "Описание отсутствует." : current_product_.description_);
+
+    QMessageBox::information(this, "Информация об автомобиле", info);
+}
+
+void MainWindow::on_pushButton_test_drive_clicked()
+{
+    if (current_product_.name_.isEmpty()) {
+        QMessageBox::warning(this, "Ошибка", "Не выбран автомобиль для записи на тест-драйв.");
+        return;
+    }
+
+    // Запрашиваем у пользователя дату и время для тест-драйва
+    bool ok;
+    QString dateTime = QInputDialog::getText(
+        this,
+        "Запись на тест-драйв",
+        "Введите дату и время (например, 2025-05-15 14:00):",
+        QLineEdit::Normal,
+        "",
+        &ok
+        );
+
+    if (ok && !dateTime.isEmpty()) {
+        // Здесь можно добавить запись в базу данных (например, в таблицу test_drives)
+        QSqlQuery query;
+        QString queryStr = QString("INSERT INTO test_drives (client_id, car_id, date_time) VALUES (%1, %2, '%3');")
+                               .arg(user_->GetId())
+                               .arg(current_product_.id_)
+                               .arg(dateTime);
+
+        if (query.exec(queryStr)) {
+            QMessageBox::information(this, "Успех", QString("Вы записаны на тест-драйв автомобиля %1 на %2.").arg(current_product_.name_, dateTime));
+        } else {
+            QMessageBox::critical(this, "Ошибка", "Не удалось записаться на тест-драйв: " + query.lastError().text());
+        }
+    } else if (ok) {
+        QMessageBox::warning(this, "Ошибка", "Не указана дата и время тест-драйва.");
+    }
+}
+
 void MainWindow::on_pushButton_to_pay_clicked()
 {
-    QMessageBox::information(this, "Заголовок уведомления", "Текст уведомления.");
+    if (current_product_.name_.isEmpty()) {
+        QMessageBox::warning(this, "Ошибка", "Не выбран автомобиль для покупки.");
+        return;
+    }
+
+    // Подтверждение покупки
+    QMessageBox::StandardButton reply = QMessageBox::question(
+        this,
+        "Подтверждение покупки",
+        QString("Вы уверены, что хотите купить %1 за %2 руб.?").arg(current_product_.name_, FormatPrice(current_product_.price_)),
+        QMessageBox::Yes | QMessageBox::No
+        );
+
+    if (reply == QMessageBox::Yes) {
+        // Начало транзакции
+        QSqlDatabase db = QSqlDatabase::database();
+        if (!db.transaction()) {
+            QMessageBox::critical(this, "Ошибка", "Не удалось начать транзакцию: " + db.lastError().text());
+            return;
+        }
+
+        // Добавляем покупку в таблицу purchases
+        int new_id = db_manager_->GetMaxOrMinValueFromTable("MAX", "id", "purchases") + 1;
+        QString queryStr = QString("INSERT INTO public.purchases (id, client_id, car_id) VALUES (%1, %2, %3);")
+                               .arg(new_id)
+                               .arg(user_->GetId())
+                               .arg(current_product_.id_);
+
+        if (db_manager_->ExecuteQuery(queryStr)) {
+            if (db.commit()) {
+                QMessageBox::information(this, "Успех", QString("Автомобиль %1 успешно куплен!").arg(current_product_.name_));
+                // Обновляем список покупок пользователя
+                user_->SetProducts(GetPurchasedProducts(user_->GetId()));
+            } else {
+                QMessageBox::critical(this, "Ошибка", "Не удалось зафиксировать транзакцию: " + db.lastError().text());
+                db.rollback();
+            }
+        } else {
+            QMessageBox::critical(this, "Ошибка", "Не удалось выполнить покупку: " + db_manager_->GetLastError());
+            db.rollback();
+        }
+    }
 }
 

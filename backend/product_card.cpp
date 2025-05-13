@@ -9,12 +9,12 @@ ProductCard::ProductCard(std::shared_ptr<DatabaseHandler> db_manager, std::share
     card_container_ = new QWidget();
     card_container_->setSizePolicy(QSizePolicy::Expanding, QSizePolicy::Minimum);
 
-
     // Создаём layout для карточек
     layout_ = new QVBoxLayout(card_container_);
     layout_->setAlignment(Qt::AlignTop);
     layout_->setSpacing(22);
     layout_->setContentsMargins(22, 22, 22, 22);
+    // layout_->setContentsMargins(0, 0, 0, 0);
 }
 
 void ProductCard::SetProductsPtr(std::shared_ptr<Products> products) {
@@ -64,7 +64,7 @@ void ProductCard::RestoreHiddenToCartButtons() {
     hidden_to_cart_buttons_.clear();
 }
 
-void ProductCard::UpdateProductsWidget(QScrollArea* scrollArea, const QString& typeFilter, const QString& colorFilter) {
+void ProductCard::UpdateProductsWidget(QScrollArea* scrollArea, const QStringView typeFilter, const QStringView colorFilter) {
     int typeId = -1;
 
     // Фильтрация по типу машины

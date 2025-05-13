@@ -56,6 +56,10 @@ private slots:
 
     void on_pushButton_to_pay_clicked();
 
+    void on_pushButton_info_clicked();
+
+    void on_pushButton_test_drive_clicked();
+
 private:
     Ui::MainWindow *ui;
 
@@ -90,6 +94,9 @@ private:
     void MoreClicked();
     void ProfileClicked();
     void SortByColorClicked();
+
+    void SelectionProcessing(const bool ok, const QStringView selected_type, const QStringView selected_color = QStringView());
+    void SetupServicesScrollArea();
 
     // Функции обработки кнопок оплаты/очистки корзины
     void CleanCart();

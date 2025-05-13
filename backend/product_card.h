@@ -30,7 +30,7 @@ public:
 
     void RestoreHiddenToCartButtons();
 
-    void UpdateProductsWidget(QScrollArea* scrollArea, const QString& typeFilter, const QString& colorFilter = "");
+    void UpdateProductsWidget(QScrollArea* scrollArea, const QStringView typeFilter, const QStringView colorFilter = QStringView());
 
     void EnsureContainerInScrollArea(QScrollArea* targetScrollArea);
 

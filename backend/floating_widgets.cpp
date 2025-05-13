@@ -1,4 +1,5 @@
 #include "floating_widgets.h"
+#include <QGraphicsBlurEffect>
 
 FloatingWidgets::FloatingWidgets(std::shared_ptr<DatabaseHandler> db_manager, QWidget* parent)
     : db_manager_(std::move(db_manager))
@@ -11,28 +12,40 @@ FloatingWidgets::FloatingWidgets(std::shared_ptr<DatabaseHandler> db_manager, QW
 void FloatingWidgets::BuildFloatingMenu(
     const std::function<void()>& onMoreClicked,
     const std::function<void()>& onSearchClicked,
-    // const std::function<void()>& onCartClicked,
     const std::function<void()>& onColorFilterClicked,
     const std::function<void()>& onUserProfileClicked
     ) {
-
-    floating_menu_->setStyleSheet("background-color: #fafafa; border-radius: 39px;");
+    // Создаём основной контейнер для меню
+    floating_menu_ = std::make_unique<QWidget>(parentWidget());
     floating_menu_->setFixedSize(88, 485);
     floating_menu_->setGeometry(0, 0, 88, 485);
 
+    // Создаём виджет для фона с эффектом блюра
+    QWidget* background_widget = new QWidget(floating_menu_.get());
+    background_widget->setFixedSize(88, 485);
+    background_widget->setStyleSheet("background-color: #fafafa; border-radius: 39px;");
+
+    // Применяем эффект блюра только к фоновому виджету
+    // QGraphicsBlurEffect* blurEffect = new QGraphicsBlurEffect;
+    // blurEffect->setBlurRadius(10);
+    // background_widget->setGraphicsEffect(blurEffect);
+
+    // Создаём layout для кнопок
     QVBoxLayout* menuLayout = new QVBoxLayout(floating_menu_.get());
+    menuLayout->setContentsMargins(0, 0, 0, 0);
+    menuLayout->setSpacing(0);
 
     // Логотип
     QPushButton* logo_ = new QPushButton(floating_menu_.get());
     logo_->setIcon(QIcon(":/logo.svg"));
     logo_->setIconSize(QSize(41, 41));
-    logo_->setStyleSheet("border: none; outline: none;");
+    logo_->setStyleSheet("border: none; outline: none; background: transparent;");
 
     // Модели
     QPushButton* models_ = new QPushButton(floating_menu_.get());
     models_->setIcon(QIcon(":/directions_car.svg"));
     models_->setIconSize(QSize(41, 41));
-    models_->setStyleSheet("border: none; outline: none;");
+    models_->setStyleSheet("border: none; outline: none; background: transparent;");
     connect(models_, &QPushButton::clicked, this, [onMoreClicked]() {
         if (onMoreClicked) onMoreClicked();
     });
@@ -41,7 +54,7 @@ void FloatingWidgets::BuildFloatingMenu(
     QPushButton* searchButton = new QPushButton(floating_menu_.get());
     searchButton->setIcon(QIcon(":/search.svg"));
     searchButton->setIconSize(QSize(41, 41));
-    searchButton->setStyleSheet("border: none; outline: none;");
+    searchButton->setStyleSheet("border: none; outline: none; background: transparent;");
     connect(searchButton, &QPushButton::clicked, this, [onSearchClicked]() {
         if (onSearchClicked) onSearchClicked();
     });
@@ -50,7 +63,7 @@ void FloatingWidgets::BuildFloatingMenu(
     QPushButton* sort_by_color_ = new QPushButton(floating_menu_.get());
     sort_by_color_->setIcon(QIcon(":/Color Swatch 02.svg"));
     sort_by_color_->setIconSize(QSize(41, 41));
-    sort_by_color_->setStyleSheet("border: none; outline: none;");
+    sort_by_color_->setStyleSheet("border: none; outline: none; background: transparent;");
     connect(sort_by_color_, &QPushButton::clicked, this, [onColorFilterClicked]() {
         if (onColorFilterClicked) onColorFilterClicked();
     });
@@ -59,7 +72,7 @@ void FloatingWidgets::BuildFloatingMenu(
     QPushButton* userButton = new QPushButton(floating_menu_.get());
     userButton->setIcon(QIcon(":/person.svg"));
     userButton->setIconSize(QSize(41, 41));
-    userButton->setStyleSheet("border: none; outline: none;");
+    userButton->setStyleSheet("border: none; outline: none; background: transparent;");
     connect(userButton, &QPushButton::clicked, this, [onUserProfileClicked]() {
         if (onUserProfileClicked) onUserProfileClicked();
     });
@@ -75,6 +88,78 @@ void FloatingWidgets::BuildFloatingMenu(
     floating_menu_->move(37, 37);
     floating_menu_->show();
 }
+
+// void FloatingWidgets::BuildFloatingMenu(
+//     const std::function<void()>& onMoreClicked,
+//     const std::function<void()>& onSearchClicked,
+//     // const std::function<void()>& onCartClicked,
+//     const std::function<void()>& onColorFilterClicked,
+//     const std::function<void()>& onUserProfileClicked
+//     ) {
+
+//     floating_menu_->setStyleSheet("background-color: #fafafa; border-radius: 39px;");
+//     QGraphicsBlurEffect *blurEffect = new QGraphicsBlurEffect;
+//     blurEffect->setBlurRadius(10);
+//     floating_menu_->setGraphicsEffect(blurEffect);
+//     floating_menu_->setFixedSize(88, 485);
+//     floating_menu_->setGeometry(0, 0, 88, 485);
+//     // floating_menu_->lower();
+
+//     QVBoxLayout* menuLayout = new QVBoxLayout(floating_menu_.get());
+
+//     // Логотип
+//     QPushButton* logo_ = new QPushButton(floating_menu_.get());
+//     logo_->setIcon(QIcon(":/logo.svg"));
+//     logo_->setIconSize(QSize(41, 41));
+//     logo_->setStyleSheet("border: none; outline: none;");
+
+//     // Модели
+//     QPushButton* models_ = new QPushButton(floating_menu_.get());
+//     models_->setIcon(QIcon(":/directions_car.svg"));
+//     models_->setIconSize(QSize(41, 41));
+//     models_->setStyleSheet("border: none; outline: none;");
+//     connect(models_, &QPushButton::clicked, this, [onMoreClicked]() {
+//         if (onMoreClicked) onMoreClicked();
+//     });
+
+//     // Поиск
+//     QPushButton* searchButton = new QPushButton(floating_menu_.get());
+//     searchButton->setIcon(QIcon(":/search.svg"));
+//     searchButton->setIconSize(QSize(41, 41));
+//     searchButton->setStyleSheet("border: none; outline: none;");
+//     connect(searchButton, &QPushButton::clicked, this, [onSearchClicked]() {
+//         if (onSearchClicked) onSearchClicked();
+//     });
+
+//     // Сортировка по цветам
+//     QPushButton* sort_by_color_ = new QPushButton(floating_menu_.get());
+//     sort_by_color_->setIcon(QIcon(":/Color Swatch 02.svg"));
+//     sort_by_color_->setIconSize(QSize(41, 41));
+//     sort_by_color_->setStyleSheet("border: none; outline: none;");
+//     connect(sort_by_color_, &QPushButton::clicked, this, [onColorFilterClicked]() {
+//         if (onColorFilterClicked) onColorFilterClicked();
+//     });
+
+//     // Кнопка User Profile
+//     QPushButton* userButton = new QPushButton(floating_menu_.get());
+//     userButton->setIcon(QIcon(":/person.svg"));
+//     userButton->setIconSize(QSize(41, 41));
+//     userButton->setStyleSheet("border: none; outline: none;");
+//     connect(userButton, &QPushButton::clicked, this, [onUserProfileClicked]() {
+//         if (onUserProfileClicked) onUserProfileClicked();
+//     });
+
+//     // Добавляем кнопки в макет
+//     menuLayout->addWidget(logo_);
+//     menuLayout->addWidget(models_);
+//     menuLayout->addWidget(searchButton);
+//     menuLayout->addWidget(sort_by_color_);
+//     menuLayout->addWidget(userButton);
+
+//     // Устанавливаем позицию и показываем меню
+//     floating_menu_->move(37, 37);
+//     floating_menu_->show();
+// }
 
 // void FloatingWidgets::BuildSideMenu(
 //     const std::function<void(const QString&)>& onItemClicked,

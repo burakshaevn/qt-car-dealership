@@ -86,13 +86,13 @@
        <set>Qt::AlignmentFlag::AlignLeading|Qt::AlignmentFlag::AlignLeft|Qt::AlignmentFlag::AlignVCenter</set>
       </property>
      </widget>
-     <widget class="QScrollArea" name="scrollArea_2">
+     <widget class="QScrollArea" name="scrollArea_purchased_cars">
       <property name="geometry">
        <rect>
         <x>169</x>
-        <y>71</y>
+        <y>326</y>
         <width>875</width>
-        <height>451</height>
+        <height>197</height>
        </rect>
       </property>
       <property name="styleSheet">
@@ -119,6 +119,67 @@ QScrollArea &gt; QWidget {
        <set>Qt::AlignmentFlag::AlignHCenter|Qt::AlignmentFlag::AlignTop</set>
       </property>
       <widget class="QWidget" name="scrollAreaWidgetContents_2">
+       <property name="geometry">
+        <rect>
+         <x>0</x>
+         <y>0</y>
+         <width>981</width>
+         <height>685</height>
+        </rect>
+       </property>
+      </widget>
+     </widget>
+     <widget class="QLabel" name="label_clientname_2">
+      <property name="geometry">
+       <rect>
+        <x>169</x>
+        <y>284</y>
+        <width>411</width>
+        <height>31</height>
+       </rect>
+      </property>
+      <property name="styleSheet">
+       <string notr="true">QLabel {
+	color: #1d1b20;
+	background-color: transparent;
+	font: 700 21pt &quot;JetBrains Mono&quot;;
+}</string>
+      </property>
+      <property name="text">
+       <string>Приобретено ранее</string>
+      </property>
+      <property name="alignment">
+       <set>Qt::AlignmentFlag::AlignLeading|Qt::AlignmentFlag::AlignLeft|Qt::AlignmentFlag::AlignVCenter</set>
+      </property>
+     </widget>
+     <widget class="QScrollArea" name="scrollArea_services">
+      <property name="geometry">
+       <rect>
+        <x>169</x>
+        <y>77</y>
+        <width>875</width>
+        <height>175</height>
+       </rect>
+      </property>
+      <property name="styleSheet">
+       <string notr="true">QScrollArea {
+	background-color: transparent;
+    border-radius: 39px;
+} </string>
+      </property>
+      <property name="verticalScrollBarPolicy">
+       <enum>Qt::ScrollBarPolicy::ScrollBarAlwaysOff</enum>
+      </property>
+      <property name="horizontalScrollBarPolicy">
+       <enum>Qt::ScrollBarPolicy::ScrollBarAlwaysOff</enum>
+      </property>
+      <property name="widgetResizable">
+       <bool>false</bool>
+      </property>
+      <property name="alignment">
+       <set>Qt::AlignmentFlag::AlignLeading|Qt::AlignmentFlag::AlignLeft|Qt::AlignmentFlag::AlignTop</set>
+      </property>
+      <widget class="QWidget" name="scrollAreaWidgetContents_4">
        <property name="geometry">
         <rect>
          <x>0</x>
@@ -212,7 +273,7 @@ QLineEdit:focus {
      </widget>
     </widget>
     <widget class="QWidget" name="main">
-     <widget class="QScrollArea" name="scrollArea">
+     <widget class="QScrollArea" name="scrollArea_catalog">
       <property name="geometry">
        <rect>
         <x>169</x>
@@ -222,9 +283,24 @@ QLineEdit:focus {
        </rect>
       </property>
       <property name="styleSheet">
-       <string notr="true">QScrollArea  {
-	border-radius: 0px;
-}</string>
+       <string notr="true">QScrollArea#scrollArea {
+	background:  #fafafa;
+	border: none;
+	border-radius: 61px;
+}
+
+QScrollArea#scrollArea &gt; QWidget {
+	border-radius: 39px; 
+	background: transparent;
+}
+
+QScrollArea#scrollArea::viewport {
+	border-radius: 39px; 
+	background: transparent;
+}  </string>
+      </property>
+      <property name="frameShape">
+       <enum>QFrame::Shape::StyledPanel</enum>
       </property>
       <property name="verticalScrollBarPolicy">
        <enum>Qt::ScrollBarPolicy::ScrollBarAlwaysOff</enum>
@@ -233,7 +309,7 @@ QLineEdit:focus {
        <enum>Qt::ScrollBarPolicy::ScrollBarAlwaysOff</enum>
       </property>
       <property name="widgetResizable">
-       <bool>false</bool>
+       <bool>true</bool>
       </property>
       <property name="alignment">
        <set>Qt::AlignmentFlag::AlignHCenter|Qt::AlignmentFlag::AlignTop</set>
@@ -243,12 +319,14 @@ QLineEdit:focus {
         <rect>
          <x>0</x>
          <y>0</y>
-         <width>981</width>
-         <height>685</height>
+         <width>875</width>
+         <height>505</height>
         </rect>
        </property>
        <property name="styleSheet">
-        <string notr="true"/>
+        <string notr="true">QWidget#scrollAreaWidgetContents {
+                        background: transparent;
+                    }</string>
        </property>
       </widget>
      </widget>

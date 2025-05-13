@@ -4,6 +4,7 @@
 #include "cart.h"
 #include "domain.h"
 #include "product_card.h"
+#include <QGraphicsBlurEffect>
 
 Products::Products(std::shared_ptr<ProductCard> product_card,
                          std::shared_ptr<Cart> cart,
@@ -74,15 +75,18 @@ QList<ProductInfo> Products::FindRelevantProducts(const QString& term) const {
     return result;
 }
 
-void Products::PullProducts() {
+void Products::PullProducts()
+{
     // Выполняем запрос к базе данных
     auto queryResult = db_manager_->ExecuteSelectQuery(QString("SELECT * FROM public.cars ORDER BY id ASC"));
-    if (queryResult.canConvert<QSqlQuery>()) {
+    if (queryResult.canConvert<QSqlQuery>())
+    {
         QSqlQuery query = queryResult.value<QSqlQuery>();
 
         // Загружаем инструменты в Products_
         Clear();
-        while (query.next()) {
+        while (query.next())
+        {
             ProductInfo product;
             product.id_ = query.value("id").toInt();
             product.name_ = query.value("name").toString();
@@ -99,17 +103,19 @@ void Products::PullProducts() {
         }
 
         // Создаем карточки для инструментов
-        for (const auto& product_info : GetProducts()) {
+        for (const auto& product_info : GetProducts())
+        {
             Products::ProductKey key = std::make_tuple(product_info.name_, product_info.color_);
             if (product_card_.lock()->FindProductCard(key) == nullptr) {
+
                 QWidget* card = new QWidget(product_card_.lock()->GetCardContainer());
                 product_card_.lock()->AddProductCard(key, card);
-
                 card->setStyleSheet("background-color: #ffffff; border-radius: 39px;");
                 card->setFixedSize(831, 152);
 
                 QPixmap originalPixmap(product_info.image_path_);
-                if (!originalPixmap.isNull()) {
+                if (!originalPixmap.isNull())
+                {
                     // Масштабируем изображение с фиксированной высотой 147
                     QPixmap scaledPixmap = originalPixmap.scaledToHeight(130, Qt::SmoothTransformation);
 
