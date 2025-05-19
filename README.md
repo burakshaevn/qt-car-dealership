@@ -52,14 +52,14 @@
 
 ## Пример  
 <div align="center">
-  <img src="https://github.com/user-attachments/assets/bc853db6-c2e1-401b-a2ab-cda654d56ae7" alt="image">
+  <img src="https://github.com/user-attachments/assets/79bfd779-09a3-4bd9-9c9a-1a0c9d4626d7" alt="image">
   <p>Рис. 1 — Главный экран.</p>
 </div> 
 
 ## Авторизация
 Для всех видов пользователя единое окно авторизации.
 <div align="center">
-  <img src="https://github.com/user-attachments/assets/67a30c84-0cd7-4dee-854d-a5c2414cbfdd" alt="image" width = "70%">
+  <img src="https://github.com/user-attachments/assets/606e60a3-009e-41dd-8c16-e74f858d446b" alt="image">
   <p>Рис. 2 — Окно авторизации.</p>
 </div> 
 
@@ -100,22 +100,18 @@
 
 * **Главна страница**. Здесь все автомобили по умолчанию отображаются в белом цвете.
   <div align="center">
-    <img src="https://github.com/user-attachments/assets/d816cd7c-a3d5-4bf5-95e9-e1c73af36c99" alt="GIF Image" width="50%">
+    <img src="https://github.com/user-attachments/assets/4f4dcaae-bcf2-4507-85ee-a557bffd4777" alt="GIF Image">
     <p>Рис. 3 — Главная страница после авторизации как пользователь.</p>
   </div>  
-  После выбора автомобиля в прокручиваемом меню, осуществляется переход на отдельную страницу, где пользователю предосталяется возможность выбрать цвет автомобиля и при необходимости произвести оплату. 
+  После выбора автомобиля в прокручиваемом меню, осуществляется переход на отдельную страницу, где пользователю предосталяется возможность выбрать цвет автомобиля и при необходимости произвести оплату. В правом верхем углу карточки автомобиля отображается доступное количество цветов.
   <div align="center">
-    <img src="https://github.com/user-attachments/assets/5b170d61-ec35-4c35-9aab-a3b0325ddc44" alt="Image" width="50%">
+    <img src="https://github.com/user-attachments/assets/9d8296c8-3465-444d-993b-88599374d5da"alt="GIF Image">
     <p>Рис. 4 — Главная страница после авторизации как пользователь.</p>
   </div> 
-  В правом верхем углу карточки автомобиля отображается доступное количество цветов.
-  <div align="center">
-    <img src="https://github.com/user-attachments/assets/194d2e44-b0bc-457b-a23d-de0d56d26c67" alt="GIF Image" width="50%">
-    <p>Рис. 5 — Главная страница после авторизации как пользователь.</p>
-  </div> 
+
 * **Сортировка по цветам**.
   <div align="center">
-    <img src="https://github.com/user-attachments/assets/012c00f8-50ea-4b43-9111-bc45df9c9bec" alt="GIF Image" width="50%">
+    <img src="https://github.com/user-attachments/assets/468a77ef-6706-4df9-8362-61387c73fee6" alt="GIF Image">
     <p>Рис. 6 — Главная страница после авторизации как пользователь.</p>
   </div> 
 
@@ -133,9 +129,9 @@
     <p>Рис. 8 — Подтверждение операции.</p>
   </div> 
   
-* **Профиль**. Здесь отображается прокручиваемый вниз виджет, который содержит в себе карточки купленных автомобилей клиентом. 
+* **Профиль**. Здесь отображаются доступные услуги для клиентов (обслуживание, продажа, кредитование, страхование) и прокручиваемый вниз виджет, который содержит в себе карточки ранее купленных автомобилей клиентом. 
   <div align="center">
-    <img src="https://github.com/user-attachments/assets/e44b73a2-3d1f-4303-9877-7e4df31be462" alt="Image" width="50%">
+    <img src="https://github.com/user-attachments/assets/f52c20fc-3182-414e-8a30-860db94cc7a6" alt="Image">
     <p>Рис. 9 — Страница профиля.</p>
   </div> 
   
