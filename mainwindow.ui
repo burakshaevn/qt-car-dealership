@@ -11,7 +11,7 @@
    </rect>
   </property>
   <property name="windowTitle">
-   <string>Mercedez-Benz</string>
+   <string>Mercedez-Benz Car Dealership</string>
   </property>
   <property name="windowIcon">
    <iconset resource="resources/resources.qrc">
@@ -196,7 +196,7 @@ QScrollArea &gt; QWidget {
       <property name="geometry">
        <rect>
         <x>345</x>
-        <y>211</y>
+        <y>233</y>
         <width>409</width>
         <height>36</height>
        </rect>
@@ -222,7 +222,7 @@ QLineEdit:focus {
       <property name="geometry">
        <rect>
         <x>345</x>
-        <y>255</y>
+        <y>277</y>
         <width>409</width>
         <height>36</height>
        </rect>
@@ -254,7 +254,7 @@ QLineEdit:focus {
       <property name="geometry">
        <rect>
         <x>506</x>
-        <y>310</y>
+        <y>332</y>
         <width>89</width>
         <height>38</height>
        </rect>
@@ -269,6 +269,39 @@ QLineEdit:focus {
       </property>
       <property name="text">
        <string>Вход</string>
+      </property>
+     </widget>
+     <widget class="QLabel" name="label_2">
+      <property name="geometry">
+       <rect>
+        <x>414</x>
+        <y>182</y>
+        <width>273</width>
+        <height>31</height>
+       </rect>
+      </property>
+      <property name="sizePolicy">
+       <sizepolicy hsizetype="Expanding" vsizetype="Expanding">
+        <horstretch>0</horstretch>
+        <verstretch>0</verstretch>
+       </sizepolicy>
+      </property>
+      <property name="autoFillBackground">
+       <bool>false</bool>
+      </property>
+      <property name="styleSheet">
+       <string notr="true">QLabel {
+	image: url(:/mercedez-benz.svg);
+}</string>
+      </property>
+      <property name="text">
+       <string/>
+      </property>
+      <property name="scaledContents">
+       <bool>true</bool>
+      </property>
+      <property name="alignment">
+       <set>Qt::AlignmentFlag::AlignCenter</set>
       </property>
      </widget>
     </widget>
@@ -319,8 +352,8 @@ QScrollArea#scrollArea::viewport {
         <rect>
          <x>0</x>
          <y>0</y>
-         <width>875</width>
-         <height>505</height>
+         <width>873</width>
+         <height>503</height>
         </rect>
        </property>
        <property name="styleSheet">
