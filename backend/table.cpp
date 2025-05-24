@@ -1,3 +1,4 @@
+
 #include "table.h"
 
 Table::Table(std::shared_ptr<DatabaseHandler> db_manager, const User* user, QWidget* parent)

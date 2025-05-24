@@ -167,7 +167,6 @@ void Products::PullProducts()
                     emit OpenInfoPage(product_info);
                 });
 
-
                 // QPushButton* to_cart_ = new QPushButton(card);
                 // to_cart_->setObjectName("to_cart_");
                 // to_cart_->setIcon(QIcon("://Information Circle Contained.svg"));
@@ -187,6 +186,7 @@ void Products::PullProducts()
                 //     }
                 //     emit CartUpdated(cart_->GetTotalCost());
                 // });
+
                 info_->move(779, 15);
 
                 // Добавляем карточку в компоновку

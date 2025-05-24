@@ -134,7 +134,6 @@ void ProductCard::EnsureContainerInScrollArea(QScrollArea* target_scroll_area) {
     // Устанавливаем card_container_ в QScrollArea
     target_scroll_area->setWidget(card_container_);
 
-
     target_scroll_area->setStyleSheet(
         "QScrollArea {"
         "    background-color: #fafafa;"
@@ -144,6 +143,9 @@ void ProductCard::EnsureContainerInScrollArea(QScrollArea* target_scroll_area) {
         "    background-color: transparent;"
         "}"
         );
+
+    target_scroll_area->setWidgetResizable(true);
+    // container->setSizePolicy(QSizePolicy::Expanding, QSizePolicy::Fixed); // Контейнер растягивается по горизонтали
 
     // Обновляем размеры и видимость
     card_container_->adjustSize();
