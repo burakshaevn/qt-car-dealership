@@ -14,7 +14,11 @@ enum class Tables {
     cars,
     car_types,
     clients,
-    purchases
+    purchases,
+    service_requests,
+    insurance_requests,
+    loan_requests,
+    sell_requests
 };
 
 inline Tables StringToTables(const QString& table){
@@ -33,6 +37,18 @@ inline Tables StringToTables(const QString& table){
     else if (table == "purchases"){
         return Tables::purchases;
     }
+    else if (table == "service_requests"){
+        return Tables::service_requests;
+    }
+    else if (table == "insurance_requests"){
+        return Tables::insurance_requests;
+    }
+    else if (table == "loan_requests"){
+        return Tables::loan_requests;
+    }
+    else if (table == "sell_requests"){
+        return Tables::sell_requests;
+    }
     else{
         return Tables::unknown;
     }
@@ -50,6 +66,14 @@ inline QString TablesToString(const Tables& table){
             return "clients";
         case Tables::purchases:
             return "purchases";
+        case Tables::service_requests:
+            return "service_requests";
+        case Tables::insurance_requests:
+            return "insurance_requests";
+        case Tables::loan_requests:
+            return "loan_requests";
+        case Tables::sell_requests:
+            return "sell_requests";
         default:
             return "unknown";
     }

@@ -241,6 +241,9 @@ void MainWindow::BuildDependencies() {
         // Устанавливаем связь между ProductCard и Instruments
         product_card_->SetProductsPtr(products_);
     }
+
+    // Устанавливаем фильтр событий для панели уведомлений
+    ui->notifications_panel->installEventFilter(this);
 }
 
 void MainWindow::MoreClicked()
@@ -320,12 +323,12 @@ void MainWindow::ProfileClicked() {
 
 void MainWindow::SetupServicesScrollArea() {
     // Настройка QScrollArea
-    ui->scrollArea_services->setHorizontalScrollBarPolicy(Qt::ScrollBarAsNeeded); // Включить горизонтальную прокрутку
+    ui->scrollArea_services->setHorizontalScrollBarPolicy(Qt::ScrollBarAsNeeded);
     ui->scrollArea_services->setVerticalScrollBarPolicy(Qt::ScrollBarAlwaysOff);
     ui->scrollArea_services->setWidgetResizable(false);
     ui->scrollArea_services->setFocusPolicy(Qt::WheelFocus);
 
-    // Стили для QScrollArea
+    // Стили для QScrollArea с появлением скроллбара при наведении
     ui->scrollArea_services->setStyleSheet(
         "QScrollArea {"
         "    background: transparent;"
@@ -338,19 +341,46 @@ void MainWindow::SetupServicesScrollArea() {
         "    background: transparent;"
         "}"
         "QScrollBar:horizontal {"
-        "    height: 0px;"
+        "    height: 15px;"
+        "    background: transparent;"
+        "    margin: 3px 0px 3px 0px;"
+        "    border-radius: 7px;"
+        "}"
+        "QScrollBar::handle:horizontal {"
+        "    background: #9b9c9c;"
+        "    min-width: 20px;"
+        "    border-radius: 7px;"
+        "}"
+        "QScrollBar::add-line:horizontal {"
+        "    border: none;"
+        "    background: none;"
+        "    width: 0px;"
+        "}"
+        "QScrollBar::sub-line:horizontal {"
+        "    border: none;"
+        "    background: none;"
+        "    width: 0px;"
+        "}"
+        "QScrollBar::add-page:horizontal, QScrollBar::sub-page:horizontal {"
+        "    background: none;"
+        "}"
+        "QScrollBar:horizontal {"
+        "    opacity: 0;"
+        "}"
+        "QScrollArea:hover QScrollBar:horizontal {"
+        "    opacity: 1;"
         "}"
         );
 
     // Создаём контейнер для карточек
     QWidget* container = new QWidget();
     QHBoxLayout* layout = new QHBoxLayout(container);
-    layout->setAlignment(Qt::AlignLeft); // Set alignment correctly
+    layout->setAlignment(Qt::AlignLeft);
     layout->setSpacing(21);
     layout->setContentsMargins(0, 0, 0, 0);
 
     // Список названий карточек
-    QStringList services = { "Обслуживание", "Аренда", "Кредитование", "Страхование" };
+    QStringList services = { "Обслуживание", "Аренда", "Кредитование", "Страхование", "Настройки" };
 
     // Создаём карточки
     for (const QString& service : services) {
@@ -361,6 +391,7 @@ void MainWindow::SetupServicesScrollArea() {
             "    background-color: #fafafa;"
             "    border-radius: 39px;"
             "    border: none;"
+            "    transition: background-color 0.2s;"
             "}"
             "QPushButton:hover {"
             "    background-color: #e0e0e0;"
@@ -377,22 +408,91 @@ void MainWindow::SetupServicesScrollArea() {
         label->setAlignment(Qt::AlignLeft);
 
         // Connect click event
-        connect(card, &QPushButton::clicked, this, [=]() {
+        connect(card, &QPushButton::clicked, this, [this, service]() {
             if (!user_) {
-                QMessageBox::warning(this, "Ошибка", "Авторизуйтесь для подачи заявки.");
+                QMessageBox::warning(this, "Ошибка", "Авторизуйтесь для доступа к этому разделу.");
                 return;
             }
 
-            if (service == "Обслуживание") {
+            if (service == "Настройки") {
+                on_pushButton_settings_clicked();
+            }
+            else if (service == "Обслуживание") {
                 QDialog dialog(this);
                 dialog.setWindowTitle("Заявка на сервисное обслуживание");
-                dialog.setFixedSize(400, 400);
-                QVBoxLayout* dialogLayout = new QVBoxLayout(&dialog);
+                dialog.setFixedSize(500, 600);
+                dialog.setStyleSheet(
+                    "QDialog {"
+                    "    background-color: #ffffff;"
+                    "}"
+                    "QLabel {"
+                    "    color: #1d1b20;"
+                    "    font: 500 12pt 'JetBrains Mono';"
+                    "    margin-top: 10px;"
+                    "}"
+                    "QComboBox, QLineEdit, QTimeEdit {"
+                    "    padding: 8px;"
+                    "    border: 2px solid #e0e0e0;"
+                    "    border-radius: 8px;"
+                    "    background: #fafafa;"
+                    "    font: 11pt 'JetBrains Mono';"
+                    "    min-height: 30px;"
+                    "}"
+                    "QComboBox:focus, QLineEdit:focus, QTimeEdit:focus {"
+                    "    border: 2px solid #2196F3;"
+                    "}"
+                    "QPushButton {"
+                    "    padding: 10px 20px;"
+                    "    border-radius: 8px;"
+                    "    font: 600 11pt 'JetBrains Mono';"
+                    "    min-width: 100px;"
+                    "}"
+                    "QPushButton[type='primary'] {"
+                    "    background-color: #2196F3;"
+                    "    color: white;"
+                    "    border: none;"
+                    "}"
+                    "QPushButton[type='primary']:hover {"
+                    "    background-color: #1976D2;"
+                    "}"
+                    "QPushButton[type='secondary'] {"
+                    "    background-color: #fafafa;"
+                    "    color: #1d1b20;"
+                    "    border: 2px solid #e0e0e0;"
+                    "}"
+                    "QPushButton[type='secondary']:hover {"
+                    "    background-color: #e0e0e0;"
+                    "}"
+                    "QCalendarWidget {"
+                    "    background-color: white;"
+                    "    font: 10pt 'JetBrains Mono';"
+                    "}"
+                    "QCalendarWidget QToolButton {"
+                    "    color: #1d1b20;"
+                    "    font: 10pt 'JetBrains Mono';"
+                    "    padding: 5px;"
+                    "}"
+                    "QCalendarWidget QMenu {"
+                    "    background-color: white;"
+                    "    font: 10pt 'JetBrains Mono';"
+                    "}"
+                );
 
-                // Populate QComboBox with unique car names
+                QVBoxLayout* dialogLayout = new QVBoxLayout(&dialog);
+                dialogLayout->setSpacing(15);
+                dialogLayout->setContentsMargins(30, 30, 30, 30);
+
+                // Заголовок
+                QLabel* titleLabel = new QLabel("Запись на сервисное обслуживание", &dialog);
+                titleLabel->setStyleSheet("font: 700 16pt 'JetBrains Mono'; margin-bottom: 20px;");
+                dialogLayout->addWidget(titleLabel);
+
+                // Выбор автомобиля
+                QLabel* carLabel = new QLabel("Выберите автомобиль:", &dialog);
+                dialogLayout->addWidget(carLabel);
+
                 QComboBox* carCombo = new QComboBox(&dialog);
                 QSqlQuery carQuery;
-                // Select the minimum id for each unique car name
                 QString queryStr = "SELECT MIN(id) AS id, name FROM cars GROUP BY name ORDER BY name";
                 if (!carQuery.exec(queryStr)) {
                     QMessageBox::critical(this, "Ошибка", "Не удалось загрузить список автомобилей: " + carQuery.lastError().text());
@@ -401,33 +501,45 @@ void MainWindow::SetupServicesScrollArea() {
                 while (carQuery.next()) {
                     carCombo->addItem(carQuery.value("name").toString(), carQuery.value("id").toInt());
                 }
-                if (carCombo->count() == 0) {
-                    QMessageBox::warning(this, "Ошибка", "Нет доступных автомобилей для обслуживания.");
-                    return;
-                }
+                dialogLayout->addWidget(carCombo);
+
+                // Тип обслуживания
+                QLabel* serviceLabel = new QLabel("Тип обслуживания:", &dialog);
+                dialogLayout->addWidget(serviceLabel);
 
                 QLineEdit* serviceTypeEdit = new QLineEdit(&dialog);
-                serviceTypeEdit->setPlaceholderText("Тип обслуживания (напр., замена масла)");
+                serviceTypeEdit->setPlaceholderText("Например: замена масла, диагностика");
+                dialogLayout->addWidget(serviceTypeEdit);
 
-                QCalendarWidget* calendar = new QCalendarWidget(&dialog);
-                calendar->setMinimumDate(QDate::currentDate());
+                // Выбор времени
+                QLabel* timeLabel = new QLabel("Выберите время:", &dialog);
+                dialogLayout->addWidget(timeLabel);
 
                 QTimeEdit* timeEdit = new QTimeEdit(&dialog);
                 timeEdit->setDisplayFormat("HH:mm");
                 timeEdit->setTime(QTime(9, 0));
-                timeEdit->setMinimumTime(QTime(9, 0));
-                timeEdit->setMaximumTime(QTime(18, 0));
-
-                dialogLayout->addWidget(carCombo);
-                dialogLayout->addWidget(serviceTypeEdit);
                 dialogLayout->addWidget(timeEdit);
+
+                // Выбор даты
+                QLabel* dateLabel = new QLabel("Выберите дату:", &dialog);
+                dialogLayout->addWidget(dateLabel);
+
+                QCalendarWidget* calendar = new QCalendarWidget(&dialog);
+                calendar->setMinimumDate(QDate::currentDate());
                 dialogLayout->addWidget(calendar);
 
+                // Кнопки
                 QHBoxLayout* buttonLayout = new QHBoxLayout();
-                QPushButton* okButton = new QPushButton("OK", &dialog);
+                buttonLayout->setSpacing(15);
+
+                QPushButton* okButton = new QPushButton("Подтвердить", &dialog);
+                okButton->setProperty("type", "primary");
+                
                 QPushButton* cancelButton = new QPushButton("Отмена", &dialog);
-                buttonLayout->addWidget(okButton);
+                cancelButton->setProperty("type", "secondary");
+
                 buttonLayout->addWidget(cancelButton);
+                buttonLayout->addWidget(okButton);
                 dialogLayout->addLayout(buttonLayout);
 
                 bool accepted = false;
@@ -459,39 +571,115 @@ void MainWindow::SetupServicesScrollArea() {
                     }
                 }
             }
-            else if (service == "Аренда")
-            {
+            else if (service == "Аренда") {
                 QMessageBox::information(this, "Информация", "Для оформления заявки на аренду необходимо выбрать автомобиль.");
             }
-            else if (service == "Кредитование")
-            {
+            else if (service == "Кредитование") {
                 QDialog dialog(this);
                 dialog.setWindowTitle("Заявка на кредитование");
-                dialog.setFixedSize(400, 300);
+                dialog.setFixedSize(500, 400);
+                dialog.setStyleSheet(
+                    "QDialog {"
+                    "    background-color: #ffffff;"
+                    "}"
+                    "QLabel {"
+                    "    color: #1d1b20;"
+                    "    font: 500 12pt 'JetBrains Mono';"
+                    "}"
+                    "QLabel[type='header'] {"
+                    "    font: 700 16pt 'JetBrains Mono';"
+                    "    padding-bottom: 20px;"
+                    "}"
+                    "QComboBox, QSpinBox, QDoubleSpinBox {"
+                    "    padding: 8px;"
+                    "    border: 2px solid #e0e0e0;"
+                    "    border-radius: 8px;"
+                    "    background: #fafafa;"
+                    "    font: 11pt 'JetBrains Mono';"
+                    "    min-height: 30px;"
+                    "    margin-bottom: 15px;"
+                    "}"
+                    "QComboBox:focus, QSpinBox:focus, QDoubleSpinBox:focus {"
+                    "    border: 2px solid #2196F3;"
+                    "}"
+                    "QPushButton {"
+                    "    padding: 10px 20px;"
+                    "    border-radius: 8px;"
+                    "    font: 600 11pt 'JetBrains Mono';"
+                    "    min-width: 100px;"
+                    "}"
+                    "QPushButton[type='primary'] {"
+                    "    background-color: #2196F3;"
+                    "    color: white;"
+                    "    border: none;"
+                    "}"
+                    "QPushButton[type='primary']:hover {"
+                    "    background-color: #1976D2;"
+                    "}"
+                    "QPushButton[type='secondary'] {"
+                    "    background-color: #fafafa;"
+                    "    color: #1d1b20;"
+                    "    border: 2px solid #e0e0e0;"
+                    "}"
+                    "QPushButton[type='secondary']:hover {"
+                    "    background-color: #e0e0e0;"
+                    "}"
+                );
+
                 QVBoxLayout* dialogLayout = new QVBoxLayout(&dialog);
+                dialogLayout->setSpacing(10);
+                dialogLayout->setContentsMargins(30, 30, 30, 30);
+
+                // Заголовок
+                QLabel* titleLabel = new QLabel("Оформление кредита", &dialog);
+                titleLabel->setProperty("type", "header");
+                dialogLayout->addWidget(titleLabel);
+
+                // Выбор автомобиля
+                QLabel* carLabel = new QLabel("Выберите автомобиль:", &dialog);
+                dialogLayout->addWidget(carLabel);
 
                 QComboBox* carCombo = new QComboBox(&dialog);
                 QSqlQuery carQuery("SELECT MIN(id) AS id, name FROM cars GROUP BY name ORDER BY name");
-                while (carQuery.next())
-                {
+                while (carQuery.next()) {
                     carCombo->addItem(carQuery.value("name").toString(), carQuery.value("id").toInt());
                 }
+                dialogLayout->addWidget(carCombo);
+
+                // Сумма кредита
+                QLabel* amountLabel = new QLabel("Сумма кредита:", &dialog);
+                dialogLayout->addWidget(amountLabel);
+
                 QDoubleSpinBox* amountEdit = new QDoubleSpinBox(&dialog);
                 amountEdit->setRange(100000, 50000000);
                 amountEdit->setSuffix(" руб.");
+                amountEdit->setSpecialValueText("Выберите сумму");
+                dialogLayout->addWidget(amountEdit);
+
+                // Срок кредита
+                QLabel* termLabel = new QLabel("Срок кредита:", &dialog);
+                dialogLayout->addWidget(termLabel);
+
                 QSpinBox* termEdit = new QSpinBox(&dialog);
                 termEdit->setRange(1, 360);
                 termEdit->setSuffix(" мес.");
-
-                dialogLayout->addWidget(carCombo);
-                dialogLayout->addWidget(amountEdit);
                 dialogLayout->addWidget(termEdit);
 
+                // Растягивающийся элемент для заполнения пространства
+                dialogLayout->addStretch();
+
+                // Кнопки
                 QHBoxLayout* buttonLayout = new QHBoxLayout();
-                QPushButton* okButton = new QPushButton("OK", &dialog);
+                buttonLayout->setSpacing(15);
+
+                QPushButton* okButton = new QPushButton("Подтвердить", &dialog);
+                okButton->setProperty("type", "primary");
+                
                 QPushButton* cancelButton = new QPushButton("Отмена", &dialog);
-                buttonLayout->addWidget(okButton);
+                cancelButton->setProperty("type", "secondary");
+
                 buttonLayout->addWidget(cancelButton);
+                buttonLayout->addWidget(okButton);
                 dialogLayout->addLayout(buttonLayout);
 
                 bool accepted = false;
@@ -501,50 +689,118 @@ void MainWindow::SetupServicesScrollArea() {
                 });
                 connect(cancelButton, &QPushButton::clicked, [&]() { dialog.reject(); });
 
-                if (dialog.exec() == QDialog::Accepted && accepted)
-                {
+                if (dialog.exec() == QDialog::Accepted && accepted) {
                     QSqlQuery query;
                     QString queryStr = QString(
                                            "INSERT INTO loan_requests (client_id, car_id, loan_amount, loan_term_months, status) "
                                            "VALUES (%1, %2, %3, %4, 'не обработано');")
                                            .arg(user_->GetId())
                                            .arg(carCombo->currentData().toInt())
-                                           .arg(amountEdit->value() * 1000)
+                                           .arg(amountEdit->value())
                                            .arg(termEdit->value());
 
-                    if (query.exec(queryStr))
-                    {
+                    if (query.exec(queryStr)) {
                         QMessageBox::information(this, "Успех", "Заявка на кредитование подана.");
-                    } else
-                    {
+                    } else {
                         QMessageBox::critical(this, "Ошибка", "Не удалось подать заявку: " + query.lastError().text());
                     }
                 }
             }
-            else if (service == "Страхование")
-            {
+            else if (service == "Страхование") {
                 QDialog dialog(this);
                 dialog.setWindowTitle("Заявка на страхование");
-                dialog.setFixedSize(400, 300);
+                dialog.setFixedSize(500, 400);
+                dialog.setStyleSheet(
+                    "QDialog {"
+                    "    background-color: #ffffff;"
+                    "}"
+                    "QLabel {"
+                    "    color: #1d1b20;"
+                    "    font: 500 12pt 'JetBrains Mono';"
+                    "}"
+                    "QLabel[type='header'] {"
+                    "    font: 700 16pt 'JetBrains Mono';"
+                    "    padding-bottom: 20px;"
+                    "}"
+                    "QComboBox {"
+                    "    padding: 8px;"
+                    "    border: 2px solid #e0e0e0;"
+                    "    border-radius: 8px;"
+                    "    background: #fafafa;"
+                    "    font: 11pt 'JetBrains Mono';"
+                    "    min-height: 30px;"
+                    "    margin-bottom: 15px;"
+                    "}"
+                    "QComboBox:focus {"
+                    "    border: 2px solid #2196F3;"
+                    "}"
+                    "QPushButton {"
+                    "    padding: 10px 20px;"
+                    "    border-radius: 8px;"
+                    "    font: 600 11pt 'JetBrains Mono';"
+                    "    min-width: 100px;"
+                    "}"
+                    "QPushButton[type='primary'] {"
+                    "    background-color: #2196F3;"
+                    "    color: white;"
+                    "    border: none;"
+                    "}"
+                    "QPushButton[type='primary']:hover {"
+                    "    background-color: #1976D2;"
+                    "}"
+                    "QPushButton[type='secondary'] {"
+                    "    background-color: #fafafa;"
+                    "    color: #1d1b20;"
+                    "    border: 2px solid #e0e0e0;"
+                    "}"
+                    "QPushButton[type='secondary']:hover {"
+                    "    background-color: #e0e0e0;"
+                    "}"
+                );
+
                 QVBoxLayout* dialogLayout = new QVBoxLayout(&dialog);
+                dialogLayout->setSpacing(10);
+                dialogLayout->setContentsMargins(30, 30, 30, 30);
+
+                // Заголовок
+                QLabel* titleLabel = new QLabel("Оформление страховки", &dialog);
+                titleLabel->setProperty("type", "header");
+                dialogLayout->addWidget(titleLabel);
+
+                // Выбор автомобиля
+                QLabel* carLabel = new QLabel("Выберите автомобиль:", &dialog);
+                dialogLayout->addWidget(carLabel);
 
                 QComboBox* carCombo = new QComboBox(&dialog);
                 QSqlQuery carQuery("SELECT MIN(id) AS id, name FROM cars GROUP BY name ORDER BY name");
-                while (carQuery.next())
-                {
+                while (carQuery.next()) {
                     carCombo->addItem(carQuery.value("name").toString(), carQuery.value("id").toInt());
                 }
+                dialogLayout->addWidget(carCombo);
+
+                // Тип страховки
+                QLabel* insuranceLabel = new QLabel("Тип страховки:", &dialog);
+                dialogLayout->addWidget(insuranceLabel);
+
                 QComboBox* insuranceTypeCombo = new QComboBox(&dialog);
                 insuranceTypeCombo->addItems({"ОСАГО", "КАСКО", "Комплекс"});
-
-                dialogLayout->addWidget(carCombo);
                 dialogLayout->addWidget(insuranceTypeCombo);
 
+                // Растягивающийся элемент для заполнения пространства
+                dialogLayout->addStretch();
+
+                // Кнопки
                 QHBoxLayout* buttonLayout = new QHBoxLayout();
-                QPushButton* okButton = new QPushButton("OK", &dialog);
+                buttonLayout->setSpacing(15);
+
+                QPushButton* okButton = new QPushButton("Подтвердить", &dialog);
+                okButton->setProperty("type", "primary");
+                
                 QPushButton* cancelButton = new QPushButton("Отмена", &dialog);
-                buttonLayout->addWidget(okButton);
+                cancelButton->setProperty("type", "secondary");
+
                 buttonLayout->addWidget(cancelButton);
+                buttonLayout->addWidget(okButton);
                 dialogLayout->addLayout(buttonLayout);
 
                 bool accepted = false;
@@ -554,8 +810,7 @@ void MainWindow::SetupServicesScrollArea() {
                 });
                 connect(cancelButton, &QPushButton::clicked, [&]() { dialog.reject(); });
 
-                if (dialog.exec() == QDialog::Accepted && accepted)
-                {
+                if (dialog.exec() == QDialog::Accepted && accepted) {
                     QSqlQuery query;
                     QString queryStr = QString(
                                            "INSERT INTO insurance_requests (client_id, car_id, insurance_type, status) "
@@ -576,15 +831,13 @@ void MainWindow::SetupServicesScrollArea() {
         layout->addWidget(card);
     }
 
-    // Устанавливаем минимальный размер контейнера
-    container->setMinimumWidth((360 + 21) * services.size());
+    // Устанавливаем размер контейнера
+    int containerWidth = (360 + layout->spacing()) * services.size();
+    container->setMinimumWidth(containerWidth);
     container->setFixedHeight(175);
 
     // Устанавливаем контейнер в QScrollArea
     ui->scrollArea_services->setWidget(container);
-
-    // Убедимся, что QScrollArea может принимать фокус
-    ui->scrollArea_services->setFocus();
 }
 
 void MainWindow::SortByColorClicked()
@@ -976,5 +1229,465 @@ void MainWindow::on_pushButton_to_pay_clicked()
             QMessageBox::critical(this, "Ошибка", "Не удалось подать заявку: " + query.lastError().text());
         }
     }
+}
+
+void MainWindow::on_pushButton_notifications_clicked()
+{
+    bool isVisible = ui->notifications_panel->isVisible();
+    ui->notifications_panel->setVisible(!isVisible);
+    
+    if (!isVisible) {
+        // Проверяем наличие новых уведомлений
+        CheckNotifications();
+        
+        // Обновляем уведомления
+        UpdateNotifications();
+        
+        // Поднимаем панель поверх других виджетов
+        ui->notifications_panel->raise();
+        
+        // Устанавливаем фокус на панель, чтобы она оставалась поверх
+        ui->notifications_panel->setFocus();
+    }
+}
+
+// Добавляем обработчик события показа для панели уведомлений
+bool MainWindow::eventFilter(QObject* obj, QEvent* event)
+{
+    if (obj == ui->notifications_panel) {
+        if (event->type() == QEvent::Show) {
+            // При показе панели поднимаем её поверх других виджетов
+            ui->notifications_panel->raise();
+            return true;
+        }
+    }
+    return QMainWindow::eventFilter(obj, event);
+}
+
+void MainWindow::CheckNotifications()
+{
+    if (!user_ || user_->GetRole() != Role::User) {
+        return;
+    }
+
+    // Получаем количество необработанных уведомлений
+    QVariant result = db_manager_->ExecuteSelectQuery(
+        QString("SELECT COUNT(*) as count FROM ("
+                "    SELECT id FROM service_requests "
+                "    WHERE client_id = %1 AND status != 'не обработано' AND (notification_shown = false OR notification_shown IS NULL) "
+                "    UNION ALL "
+                "    SELECT id FROM insurance_requests "
+                "    WHERE client_id = %1 AND status != 'не обработано' AND (notification_shown = false OR notification_shown IS NULL) "
+                "    UNION ALL "
+                "    SELECT id FROM loan_requests "
+                "    WHERE client_id = %1 AND status != 'не обработано' AND (notification_shown = false OR notification_shown IS NULL) "
+                "    UNION ALL "
+                ") as notifications")
+            .arg(user_->GetId()));
+
+    if (result.canConvert<QSqlQuery>()) {
+        QSqlQuery query = result.value<QSqlQuery>();
+        if (query.next()) {
+            int count = query.value("count").toInt();
+            if (count > 0) {
+                // Есть новые уведомления - меняем иконку
+                ui->pushButton_notifications->setStyleSheet(
+                    "QPushButton {"
+                    "   background-color: #fafafa;"
+                    "   border: 2px solid #ff4081;"  // Розовая рамка для индикации
+                    "   border-radius: 17px;"
+                    "}"
+                );
+                
+                // Показываем всплывающее уведомление
+                QMessageBox::information(this, "Новые уведомления", 
+                    QString("У вас есть %1 новых уведомлений о статусе заявок").arg(count));
+            }
+        }
+    }
+}
+
+void MainWindow::UpdateNotifications()
+{
+    if (!user_) {
+        return;
+    }
+
+    // Очищаем текущие уведомления
+    ClearNotifications();
+
+    // Получаем все заявки пользователя с измененным статусом
+    QString debugQuery = QString("WITH updated_notifications AS ("
+            "    (SELECT id, 'service' as request_type, service_type as details, status, created_at, scheduled_date "
+            "    FROM public.service_requests "
+            "    WHERE client_id = %1 AND status != 'не обработано')"
+            "    UNION ALL "
+            "    (SELECT id, 'insurance' as request_type, insurance_type as details, status, created_at, NULL as scheduled_date "
+            "    FROM public.insurance_requests "
+            "    WHERE client_id = %1 AND status != 'не обработано')"
+            "    UNION ALL "
+            "    (SELECT id, 'loan' as request_type, CAST(loan_amount AS TEXT) as details, status, created_at, NULL as scheduled_date "
+            "    FROM public.loan_requests "
+            "    WHERE client_id = %1 AND status != 'не обработано')"
+            ") "
+            "SELECT * FROM updated_notifications "
+            "ORDER BY created_at DESC LIMIT 10")
+        .arg(user_->GetId());
+
+    qDebug() << "Executing query:" << debugQuery;
+
+    QVariant result = db_manager_->ExecuteSelectQuery(debugQuery);
+
+    if (!result.canConvert<QSqlQuery>()) {
+        qDebug() << "Query failed to convert to QSqlQuery";
+        qDebug() << "Result:" << result.toString();
+        return;
+    }
+
+    QSqlQuery query = result.value<QSqlQuery>();
+    if (!query.isActive()) {
+        qDebug() << "Query is not active";
+        qDebug() << "Last error:" << query.lastError().text();
+        return;
+    }
+
+    int notificationCount = 0;
+    while (query.next()) {
+        notificationCount++;
+        QString type = query.value("request_type").toString();
+        QString details = query.value("details").toString();
+        QString status = query.value("status").toString();
+        QDateTime createdAt = query.value("created_at").toDateTime();
+        int id = query.value("id").toInt();
+        
+        qDebug() << "Processing notification:" << type << details << status;
+        
+        QString title;
+        QString message;
+        bool updateSuccess = false;
+
+        // Формируем сообщение в зависимости от типа заявки
+        if (type == "service") {
+            title = "Заявка на обслуживание";
+            QDateTime scheduledDate = query.value("scheduled_date").toDateTime();
+            message = QString("Статус заявки на %1\nЗапланировано на: %2\nСтатус: %3")
+                         .arg(details)
+                         .arg(scheduledDate.toString("dd.MM.yyyy HH:mm"))
+                         .arg(status);
+            
+            // Обновляем статус уведомления
+            updateSuccess = db_manager_->ExecuteQuery(
+                QString("UPDATE service_requests SET notification_shown = true WHERE id = %1 AND client_id = %2")
+                    .arg(id)
+                    .arg(user_->GetId()));
+        } 
+        else if (type == "insurance") {
+            title = "Заявка на страхование";
+            message = QString("Статус заявки на %1\nСтатус: %2")
+                         .arg(details)
+                         .arg(status);
+            
+            updateSuccess = db_manager_->ExecuteQuery(
+                QString("UPDATE insurance_requests SET notification_shown = true WHERE id = %1 AND client_id = %2")
+                    .arg(id)
+                    .arg(user_->GetId()));
+        } 
+        else if (type == "loan") {
+            title = "Заявка на кредит";
+            message = QString("Статус заявки на сумму %1 руб.\nСтатус: %2")
+                         .arg(FormatPrice(details.toLongLong()))
+                         .arg(status);
+            
+            updateSuccess = db_manager_->ExecuteQuery(
+                QString("UPDATE loan_requests SET notification_shown = true WHERE id = %1 AND client_id = %2")
+                    .arg(id)
+                    .arg(user_->GetId()));
+        } 
+        else if (type == "sell") {
+            title = "Заявка на продажу";
+            message = QString("Статус заявки на продажу %1\nСтатус: %2")
+                         .arg(details)
+                         .arg(status);
+            
+            updateSuccess = db_manager_->ExecuteQuery(
+                QString("UPDATE sell_requests SET notification_shown = true WHERE id = %1 AND client_id = %2")
+                    .arg(id)
+                    .arg(user_->GetId()));
+        }
+
+        if (!updateSuccess) {
+            qDebug() << "Failed to update notification_shown status for" << type << "request with id" << id;
+            qDebug() << "Error:" << db_manager_->GetLastError();
+        }
+
+        message += QString("\nДата создания: %1").arg(createdAt.toString("dd.MM.yyyy HH:mm"));
+        AddNotification(title, message);
+    }
+
+    qDebug() << "Total notifications found:" << notificationCount;
+
+    // Возвращаем обычный стиль кнопки уведомлений
+    ui->pushButton_notifications->setStyleSheet(
+        "QPushButton {"
+        "   background-color: #fafafa;"
+        "   border: 0px;"
+        "   border-radius: 17px;"
+        "}"
+    );
+}
+
+void MainWindow::AddNotification(const QString& title, const QString& message)
+{
+    qDebug() << "Adding notification:" << title << message;
+
+    // Создаем виджет для уведомления
+    QWidget* notification = new QWidget();
+    notification->setStyleSheet(
+        "QWidget { "
+        "   background-color: white;"
+        "   border-radius: 10px;"
+        "   border: 1px solid #e0e0e0;"
+        "   margin: 5px;"
+        "   padding: 10px;"
+        "}"
+    );
+    
+    QVBoxLayout* layout = new QVBoxLayout(notification);
+    layout->setContentsMargins(10, 10, 10, 10);
+    layout->setSpacing(5);
+
+    // Заголовок уведомления
+    QLabel* titleLabel = new QLabel(title);
+    titleLabel->setStyleSheet(
+        "QLabel { "
+        "   color: #1d1b20;"
+        "   font: 700 12pt 'JetBrains Mono';"
+        "   background: transparent;"
+        "}"
+    );
+    titleLabel->setWordWrap(true);
+    layout->addWidget(titleLabel);
+
+    // Текст уведомления
+    QLabel* messageLabel = new QLabel(message);
+    messageLabel->setStyleSheet(
+        "QLabel { "
+        "   color: #1d1b20;"
+        "   font: 11pt 'Open Sans';"
+        "   background: transparent;"
+        "}"
+    );
+    messageLabel->setWordWrap(true);
+    layout->addWidget(messageLabel);
+
+    // Проверяем, что у нас есть контейнер для уведомлений
+    QVBoxLayout* notificationsLayout = qobject_cast<QVBoxLayout*>(
+        ui->scrollAreaWidgetContents_notifications->layout());
+    
+    if (!notificationsLayout) {
+        qDebug() << "Creating new notifications layout";
+        notificationsLayout = new QVBoxLayout(ui->scrollAreaWidgetContents_notifications);
+        notificationsLayout->setAlignment(Qt::AlignTop);
+        notificationsLayout->setSpacing(10);
+        notificationsLayout->setContentsMargins(10, 10, 10, 10);
+    }
+
+    qDebug() << "Adding notification widget to layout";
+    notificationsLayout->addWidget(notification);
+    
+    // Устанавливаем минимальную ширину для контейнера уведомлений
+    ui->scrollAreaWidgetContents_notifications->setMinimumWidth(
+        ui->scrollArea_notifications->width() - 30); // 30 пикселей для скроллбара
+}
+
+void MainWindow::ClearNotifications()
+{
+    QVBoxLayout* layout = qobject_cast<QVBoxLayout*>(
+        ui->scrollAreaWidgetContents_notifications->layout());
+    if (!layout) {
+        return;
+    }
+
+    // Удаляем все виджеты из layout
+    QLayoutItem* item;
+    while ((item = layout->takeAt(0)) != nullptr) {
+        if (item->widget()) {
+            item->widget()->deleteLater();
+        }
+        delete item;
+    }
+}
+
+void MainWindow::on_pushButton_settings_clicked()
+{
+    if (!user_) {
+        QMessageBox::warning(this, "Ошибка", "Авторизуйтесь для доступа к настройкам.");
+        return;
+    }
+
+    QDialog dialog(this);
+    dialog.setWindowTitle("Настройки профиля");
+    dialog.setFixedSize(450, 600);  // Уменьшаем размер окна
+    dialog.setStyleSheet(
+        "QDialog {"
+        "    background-color: #ffffff;"
+        "}"
+        "QLabel {"
+        "    color: #1d1b20;"
+        "    font: 500 12pt 'JetBrains Mono';"
+        "    min-height: 20px;"  // Уменьшаем минимальную высоту
+        "    margin: 3px 0px;"   // Уменьшаем отступы
+        "}"
+        "QLabel[type='header'] {"
+        "    font: 700 16pt 'JetBrains Mono';"
+        "    min-height: 30px;"  // Уменьшаем минимальную высоту
+        "    margin: 0px 0px 15px 0px;"  // Уменьшаем нижний отступ
+        "}"
+        "QLineEdit {"
+        "    padding: 5px 8px;"  // Уменьшаем вертикальный padding
+        "    border: 2px solid #e0e0e0;"
+        "    border-radius: 8px;"
+        "    background: #fafafa;"
+        "    font: 11pt 'JetBrains Mono';"
+        "    min-height: 16px;"  // Уменьшаем минимальную высоту
+        "    margin-bottom: 10px;"  // Уменьшаем отступ снизу
+        "}"
+        "QLineEdit:focus {"
+        "    border: 2px solid #2196F3;"
+        "}"
+        "QPushButton {"
+        "    padding: 8px 16px;"  // Уменьшаем padding
+        "    border-radius: 8px;"
+        "    font: 600 11pt 'JetBrains Mono';"
+        "    min-width: 90px;"   // Уменьшаем минимальную ширину
+        "    min-height: 32px;"  // Уменьшаем минимальную высоту
+        "}"
+        "QPushButton[type='primary'] {"
+        "    background-color: #2196F3;"
+        "    color: white;"
+        "    border: none;"
+        "}"
+        "QPushButton[type='primary']:hover {"
+        "    background-color: #1976D2;"
+        "}"
+        "QPushButton[type='secondary'] {"
+        "    background-color: #fafafa;"
+        "    color: #1d1b20;"
+        "    border: 2px solid #e0e0e0;"
+        "}"
+        "QPushButton[type='secondary']:hover {"
+        "    background-color: #e0e0e0;"
+        "}"
+    );
+
+    QVBoxLayout* dialogLayout = new QVBoxLayout(&dialog);
+    dialogLayout->setSpacing(10);  // Уменьшаем spacing
+    dialogLayout->setContentsMargins(20, 20, 20, 20);  // Уменьшаем отступы
+
+    // Заголовок
+    QLabel* titleLabel = new QLabel("Редактирование профиля", &dialog);
+    titleLabel->setProperty("type", "header");
+    titleLabel->setAlignment(Qt::AlignLeft | Qt::AlignVCenter);  // Выравнивание по вертикали и горизонтали
+    dialogLayout->addWidget(titleLabel);
+
+    // Получаем информацию о пользователе из базы данных
+    QSqlQuery query;
+    QString queryStr = QString(
+        "SELECT first_name, last_name, email, phone, password "
+        "FROM clients WHERE id = %1")
+        .arg(user_->GetId());
+
+    QLineEdit* firstNameEdit = new QLineEdit(&dialog);
+    QLineEdit* lastNameEdit = new QLineEdit(&dialog);
+    QLineEdit* emailEdit = new QLineEdit(&dialog);
+    QLineEdit* phoneEdit = new QLineEdit(&dialog);
+    QLineEdit* passwordEdit = new QLineEdit(&dialog);
+    passwordEdit->setEchoMode(QLineEdit::Password);
+
+    if (query.exec(queryStr) && query.next()) {
+        // Имя
+        QLabel* firstNameLabel = new QLabel("Имя:", &dialog);
+        dialogLayout->addWidget(firstNameLabel);
+        firstNameEdit->setText(query.value("first_name").toString());
+        dialogLayout->addWidget(firstNameEdit);
+
+        // Фамилия
+        QLabel* lastNameLabel = new QLabel("Фамилия:", &dialog);
+        dialogLayout->addWidget(lastNameLabel);
+        lastNameEdit->setText(query.value("last_name").toString());
+        dialogLayout->addWidget(lastNameEdit);
+
+        // Email
+        QLabel* emailLabel = new QLabel("Email:", &dialog);
+        dialogLayout->addWidget(emailLabel);
+        emailEdit->setText(query.value("email").toString());
+        dialogLayout->addWidget(emailEdit);
+
+        // Телефон
+        QLabel* phoneLabel = new QLabel("Телефон:", &dialog);
+        dialogLayout->addWidget(phoneLabel);
+        phoneEdit->setText(query.value("phone").toString());
+        dialogLayout->addWidget(phoneEdit);
+
+        // Пароль
+        QLabel* passwordLabel = new QLabel("Пароль:", &dialog);
+        dialogLayout->addWidget(passwordLabel);
+        passwordEdit->setText(query.value("password").toString());
+        dialogLayout->addWidget(passwordEdit);
+    }
+
+    // Растягивающийся элемент
+    dialogLayout->addStretch();
+
+    // Кнопки
+    QHBoxLayout* buttonLayout = new QHBoxLayout();
+    buttonLayout->setSpacing(15);
+
+    QPushButton* saveButton = new QPushButton("Сохранить", &dialog);
+    saveButton->setProperty("type", "primary");
+    QPushButton* cancelButton = new QPushButton("Отмена", &dialog);
+    cancelButton->setProperty("type", "secondary");
+
+    buttonLayout->addWidget(cancelButton);
+    buttonLayout->addWidget(saveButton);
+    dialogLayout->addLayout(buttonLayout);
+
+    // Обработка нажатия кнопки "Сохранить"
+    connect(saveButton, &QPushButton::clicked, [&]() {
+        // Проверяем, что все поля заполнены
+        if (firstNameEdit->text().isEmpty() || lastNameEdit->text().isEmpty() ||
+            emailEdit->text().isEmpty() || phoneEdit->text().isEmpty() ||
+            passwordEdit->text().isEmpty()) {
+            QMessageBox::warning(&dialog, "Ошибка", "Все поля должны быть заполнены.");
+            return;
+        }
+
+        // Обновляем данные в базе
+        QString updateQuery = QString(
+            "UPDATE clients SET "
+            "first_name = '%1', "
+            "last_name = '%2', "
+            "email = '%3', "
+            "phone = '%4', "
+            "password = '%5' "
+            "WHERE id = %6")
+            .arg(firstNameEdit->text())
+            .arg(lastNameEdit->text())
+            .arg(emailEdit->text())
+            .arg(phoneEdit->text())
+            .arg(passwordEdit->text())
+            .arg(user_->GetId());
+
+        if (db_manager_->ExecuteQuery(updateQuery)) {
+            QMessageBox::information(&dialog, "Успех", "Данные профиля обновлены.");
+            dialog.accept();
+        } else {
+            QMessageBox::critical(&dialog, "Ошибка", "Не удалось обновить данные профиля: " + db_manager_->GetLastError());
+        }
+    });
+
+    connect(cancelButton, &QPushButton::clicked, &dialog, &QDialog::reject);
+
+    dialog.exec();
 }
 

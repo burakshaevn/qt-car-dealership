@@ -40,8 +40,15 @@ protected:
     QPushButton* delete_button_;
     QPushButton* edit_button_;
     QPushButton* logout_button_;
+    QPushButton* approve_button_;
+    QPushButton* reject_button_;
+    QPushButton* complete_button_;
 
     std::unique_ptr<QWidget> floating_menu_;
+
+    void UpdateRequestStatus(const QString& table_name, int request_id, const QString& new_status);
+    bool IsRequestTable(const QString& table_name) const;
+    void ShowRequestButtons(bool show);
 
 public:
     explicit Table(std::shared_ptr<DatabaseHandler> db_manager, const User* user, QWidget* parent = nullptr);
@@ -59,6 +66,11 @@ public:
     bool GetConfirmation(const QString& table_name, const QString& primary_key_column, int id);
 
     bool eventFilter(QObject* obj, QEvent* event);
+
+private slots:
+    void ApproveRequest();
+    void RejectRequest();
+    void CompleteRequest();
 
 signals:
     void Logout();

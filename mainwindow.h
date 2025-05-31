@@ -36,6 +36,9 @@ public:
     ~MainWindow();
 
     void UpdateUser(const UserInfo& user, QWidget* parent);
+    
+protected:
+    bool eventFilter(QObject* obj, QEvent* event) override;
 
 private slots:
     void on_pushButton_login_clicked();
@@ -59,6 +62,12 @@ private slots:
     void on_pushButton_info_clicked();
 
     void on_pushButton_test_drive_clicked();
+
+    void on_pushButton_notifications_clicked();
+
+    void on_pushButton_settings_clicked();
+
+    void CheckNotifications();
 
 private:
     Ui::MainWindow *ui;
@@ -108,6 +117,10 @@ private:
     // Получить список названий купленных товаров
     QList<Products::ProductKey> GetPurchasedProducts(int user_id) const;
 
+    // Функции для работы с уведомлениями
+    void UpdateNotifications();
+    void AddNotification(const QString& title, const QString& message);
+    void ClearNotifications();
 };
 
 #endif // MAINWINDOW_H

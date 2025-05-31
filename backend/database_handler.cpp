@@ -60,7 +60,11 @@ QStringList DatabaseHandler::GetTables() const {
 
 bool DatabaseHandler::ExecuteQuery(const QStringView string_query) {
     QSqlQuery query;
-    return query.exec(string_query.toString());
+    bool success = query.exec(string_query.toString());
+    if (!success) {
+        qDebug() << "Query execution failed:" << query.lastError().text();
+    }
+    return success;
 }
 
 QVariant DatabaseHandler::ExecuteSelectQuery(const QStringView string_query) const {

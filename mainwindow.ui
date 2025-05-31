@@ -86,6 +86,107 @@
        <set>Qt::AlignmentFlag::AlignLeading|Qt::AlignmentFlag::AlignLeft|Qt::AlignmentFlag::AlignVCenter</set>
       </property>
      </widget>
+     <widget class="QPushButton" name="pushButton_notifications">
+      <property name="geometry">
+       <rect>
+        <x>970</x>
+        <y>25</y>
+        <width>41</width>
+        <height>41</height>
+       </rect>
+      </property>
+      <property name="styleSheet">
+       <string notr="true">QPushButton {
+	background-color: #fafafa;
+	border: 0px;
+	border-radius: 17px; 
+}</string>
+      </property>
+      <property name="text">
+       <string/>
+      </property>
+      <property name="icon">
+       <iconset resource="resources/resources.qrc">
+        <normaloff>:/notifications.svg</normaloff>:/notifications.svg</iconset>
+      </property>
+      <property name="iconSize">
+       <size>
+        <width>25</width>
+        <height>25</height>
+       </size>
+      </property>
+     </widget>
+     <widget class="QWidget" name="notifications_panel" native="true">
+      <property name="geometry">
+       <rect>
+        <x>750</x>
+        <y>70</y>
+        <width>300</width>
+        <height>400</height>
+       </rect>
+      </property>
+      <property name="visible">
+       <bool>false</bool>
+      </property>
+      <property name="styleSheet">
+       <string notr="true">QWidget {
+     background-color: #fafafa;
+     border-radius: 20px;
+     border: 1px solid #e0e0e0;
+ }</string>
+      </property>
+      <layout class="QVBoxLayout" name="verticalLayout_notifications">
+       <item>
+        <widget class="QLabel" name="label_notifications">
+         <property name="styleSheet">
+          <string notr="true">QLabel {
+     color: #1d1b20;
+     background-color: transparent;
+     font: 700 16pt &quot;JetBrains Mono&quot;;
+     padding: 10px;
+ }</string>
+         </property>
+         <property name="text">
+          <string>Уведомления</string>
+         </property>
+         <property name="alignment">
+          <set>Qt::AlignmentFlag::AlignLeading|Qt::AlignmentFlag::AlignLeft|Qt::AlignmentFlag::AlignTop</set>
+         </property>
+        </widget>
+       </item>
+       <item>
+        <widget class="QScrollArea" name="scrollArea_notifications">
+         <property name="styleSheet">
+          <string notr="true">QScrollArea {
+     background-color: transparent;
+     border: none;
+ }
+ QScrollArea &gt; QWidget {
+     background-color: transparent;
+ }</string>
+         </property>
+         <property name="widgetResizable">
+          <bool>true</bool>
+         </property>
+         <widget class="QWidget" name="scrollAreaWidgetContents_notifications">
+          <property name="geometry">
+           <rect>
+            <x>0</x>
+            <y>0</y>
+            <width>282</width>
+            <height>316</height>
+           </rect>
+          </property>
+          <layout class="QVBoxLayout" name="verticalLayout_notifications_content">
+           <property name="spacing">
+            <number>10</number>
+           </property>
+          </layout>
+         </widget>
+        </widget>
+       </item>
+      </layout>
+     </widget>
      <widget class="QScrollArea" name="scrollArea_purchased_cars">
       <property name="geometry">
        <rect>
@@ -158,7 +259,7 @@ QScrollArea &gt; QWidget {
         <x>169</x>
         <y>77</y>
         <width>875</width>
-        <height>175</height>
+        <height>191</height>
        </rect>
       </property>
       <property name="styleSheet">
@@ -179,10 +280,40 @@ QScrollArea &gt; QWidget {
          <x>0</x>
          <y>0</y>
          <width>875</width>
-         <height>158</height>
+         <height>174</height>
         </rect>
        </property>
       </widget>
+     </widget>
+     <widget class="QPushButton" name="pushButton_settings">
+      <property name="geometry">
+       <rect>
+        <x>908</x>
+        <y>25</y>
+        <width>41</width>
+        <height>41</height>
+       </rect>
+      </property>
+      <property name="styleSheet">
+       <string notr="true">QPushButton {
+	background-color: #fafafa;
+	border: 0px;
+	border-radius: 17px; 
+}</string>
+      </property>
+      <property name="text">
+       <string/>
+      </property>
+      <property name="icon">
+       <iconset resource="resources/resources.qrc">
+        <normaloff>:/settings.svg</normaloff>:/settings.svg</iconset>
+      </property>
+      <property name="iconSize">
+       <size>
+        <width>25</width>
+        <height>25</height>
+       </size>
+      </property>
      </widget>
     </widget>
     <widget class="QWidget" name="login">

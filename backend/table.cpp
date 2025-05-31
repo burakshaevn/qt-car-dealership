@@ -1,4 +1,3 @@
-
 #include "table.h"
 
 Table::Table(std::shared_ptr<DatabaseHandler> db_manager, const User* user, QWidget* parent)
@@ -6,7 +5,11 @@ Table::Table(std::shared_ptr<DatabaseHandler> db_manager, const User* user, QWid
     , db_manager_(std::move(db_manager))
     , data_table_(new QTableView(this))
     , description_table(new QLabel(this))
-{}
+{
+    approve_button_ = nullptr;
+    reject_button_ = nullptr;
+    complete_button_ = nullptr;
+}
 
 void Table::BuildAdminTables(){
     table_selector_ = new QComboBox(this);
@@ -72,10 +75,32 @@ void Table::BuildAdminTables(){
     logout_button_->setIconSize(QSize(35, 35));
     logout_button_->setStyleSheet("QPushButton { border: none; outline: none; }");
 
+    // Создаем кнопки для обработки заявок
+    approve_button_ = new QPushButton(QIcon(":/check.svg"), "", floating_menu_.get());
+    approve_button_->setIconSize(QSize(35, 35));
+    approve_button_->setStyleSheet("QPushButton { border: none; outline: none; }");
+    approve_button_->setToolTip("Подтвердить заявку");
+
+    reject_button_ = new QPushButton(QIcon(":/close.svg"), "", floating_menu_.get());
+    reject_button_->setIconSize(QSize(35, 35));
+    reject_button_->setStyleSheet("QPushButton { border: none; outline: none; }");
+    reject_button_->setToolTip("Отклонить заявку");
+
+    complete_button_ = new QPushButton(QIcon(":/done_all.svg"), "", floating_menu_.get());
+    complete_button_->setIconSize(QSize(35, 35));
+    complete_button_->setStyleSheet("QPushButton { border: none; outline: none; }");
+    complete_button_->setToolTip("Отметить как выполненную");
+
+    menuLayout->addWidget(approve_button_);
+    menuLayout->addWidget(reject_button_);
+    menuLayout->addWidget(complete_button_);
     menuLayout->addWidget(add_button_);
     menuLayout->addWidget(edit_button_);
     menuLayout->addWidget(delete_button_);
     menuLayout->addWidget(logout_button_);
+
+    // Скрываем кнопки обработки заявок по умолчанию
+    ShowRequestButtons(false);
 
     // Установим позицию меню (по центру внизу)
     floating_menu_->move(378, 460);
@@ -86,6 +111,9 @@ void Table::BuildAdminTables(){
     connect(edit_button_, &QPushButton::clicked, this, &Table::EditRecord);
     connect(delete_button_, &QPushButton::clicked, this, &Table::DeleteRecord);
     connect(logout_button_, &QPushButton::clicked, this, &Table::Logout);
+    connect(approve_button_, &QPushButton::clicked, this, &Table::ApproveRequest);
+    connect(reject_button_, &QPushButton::clicked, this, &Table::RejectRequest);
+    connect(complete_button_, &QPushButton::clicked, this, &Table::CompleteRequest);
 
     floating_menu_->installEventFilter(this);
 }
@@ -132,7 +160,56 @@ bool Table::eventFilter(QObject* obj, QEvent* event) {
 void Table::LoadTable() {
     QString table_name = table_selector_->currentText();
 
-    QVariant result = db_manager_->ExecuteSelectQuery(QString("SELECT * FROM public.%1").arg(table_name));
+    // Показываем или скрываем кнопки обработки заявок в зависимости от выбранной таблицы
+    ShowRequestButtons(IsRequestTable(table_name));
+
+    QString query_str;
+    if (table_name == "service_requests") {
+        query_str = "SELECT sr.id as \"№\", CONCAT(c.first_name, ' ', c.last_name) as \"Клиент\", "
+                   "c.phone as \"Телефон\", "
+                   "cars.name as \"Автомобиль\", "
+                   "sr.service_type as \"Тип услуги\", sr.status as \"Статус\", "
+                   "sr.created_at as \"Дата создания\", sr.scheduled_date as \"Запланированная дата\" "
+                   "FROM service_requests sr "
+                   "LEFT JOIN clients c ON sr.client_id = c.id "
+                   "LEFT JOIN cars ON sr.car_id = cars.id";
+    }
+    else if (table_name == "insurance_requests") {
+        query_str = "SELECT ir.id as \"№\", CONCAT(c.first_name, ' ', c.last_name) as \"Клиент\", "
+                   "c.phone as \"Телефон\", "
+                   "cars.name as \"Автомобиль\", "
+                   "ir.insurance_type as \"Тип страховки\", ir.status as \"Статус\", "
+                   "ir.created_at as \"Дата создания\" "
+                   "FROM insurance_requests ir "
+                   "LEFT JOIN clients c ON ir.client_id = c.id "
+                   "LEFT JOIN cars ON ir.car_id = cars.id";
+    }
+    else if (table_name == "loan_requests") {
+        query_str = "SELECT lr.id as \"№\", CONCAT(c.first_name, ' ', c.last_name) as \"Клиент\", "
+                   "c.phone as \"Телефон\", "
+                   "cars.name as \"Автомобиль\", cars.price as \"Цена автомобиля\", "
+                   "lr.loan_amount as \"Сумма кредита\", lr.loan_term_months as \"Срок (месяцев)\", "
+                   "lr.status as \"Статус\", lr.created_at as \"Дата создания\" "
+                   "FROM loan_requests lr "
+                   "LEFT JOIN clients c ON lr.client_id = c.id "
+                   "LEFT JOIN cars ON lr.car_id = cars.id";
+    }
+    else if (table_name == "sell_requests") {
+        query_str = "SELECT sr.id as \"№\", CONCAT(c.first_name, ' ', c.last_name) as \"Клиент\", "
+                   "c.phone as \"Телефон\", "
+                   "cars.name as \"Автомобиль\", cars.price as \"Цена\", cars.color as \"Цвет\", "
+                   "sr.status as \"Статус\", sr.created_at as \"Дата создания\" "
+                   "FROM sell_requests sr "
+                   "LEFT JOIN clients c ON sr.client_id = c.id "
+                   "LEFT JOIN cars ON sr.car_id = cars.id";
+    }
+    else {
+        query_str = QString("SELECT * FROM %1").arg(table_name);
+    }
+
+    qDebug() << "Executing query:" << query_str;
+
+    QVariant result = db_manager_->ExecuteSelectQuery(query_str);
     if (result.canConvert<QSqlQuery>()) {
         QSqlQuery query = result.value<QSqlQuery>();
 
@@ -167,7 +244,7 @@ void Table::LoadTable() {
         // Установка заголовков
         QStringList headers;
         for (int i = 0; i < column_count; ++i) {
-            headers << record.fieldName(i); // Имена столбцов
+            headers << record.fieldName(i); // Имена столбцов уже на русском из SQL запроса
         }
         model->setHorizontalHeaderLabels(headers);
 
@@ -231,16 +308,19 @@ void Table::AddRecord() {
         newRecord.append(field);
     }
 
-    try{
+    try
+    {
         // Открываем диалог EditDialog для ввода данных
         EditDialog dialog(newRecord, this);
-        if (dialog.exec() == QDialog::Accepted) {
+        if (dialog.exec() == QDialog::Accepted)
+        {
             QSqlRecord updatedRecord;
             updatedRecord = dialog.GetUpdatedRecord();
 
             // Формируем SQL-запрос для вставки данных
             QStringList fieldNames, fieldValues;
-            for (int col = 0; col < updatedRecord.count(); ++col) {
+            for (int col = 0; col < updatedRecord.count(); ++col)
+            {
                 QString fieldName = updatedRecord.fieldName(col);
                 QString fieldValue = updatedRecord.value(col).toString();
 
@@ -552,4 +632,87 @@ bool Table::GetConfirmation(const QString& table_name, const QString& primary_ke
     // Отображаем окно
     int result = dialog.exec();
     return (result == QDialog::Accepted);
+}
+
+bool Table::IsRequestTable(const QString& table_name) const {
+    return table_name == "service_requests" ||
+           table_name == "insurance_requests" ||
+           table_name == "loan_requests" ||
+           table_name == "sell_requests";
+}
+
+void Table::ShowRequestButtons(bool show) {
+    if (approve_button_) approve_button_->setVisible(show);
+    if (reject_button_) reject_button_->setVisible(show);
+    if (complete_button_) complete_button_->setVisible(show);
+}
+
+void Table::UpdateRequestStatus(const QString& table_name, int request_id, const QString& new_status) {
+    QString query = QString("UPDATE %1 SET status = '%2', notification_shown = false WHERE id = %3")
+            .arg(table_name)
+            .arg(new_status)
+            .arg(request_id);
+
+    qDebug() << "Executing update query:" << query;
+    
+    QVariant result = db_manager_->ExecuteQuery(query);
+    if (!result.toBool()) {
+        QString error = db_manager_->GetLastError();
+        QMessageBox::critical(this, "Ошибка", "Не удалось обновить статус заявки: " + error);
+        qDebug() << "Update failed:" << error;
+        return;
+    }
+
+    LoadTable(); // Перезагружаем таблицу для отображения изменений
+}
+
+void Table::ApproveRequest()
+{
+    QModelIndex currentIndex = data_table_->currentIndex();
+    if (!currentIndex.isValid())
+    {
+        QMessageBox::warning(this, "Предупреждение", "Выберите заявку для подтверждения.");
+        return;
+    }
+
+    int row = currentIndex.row();
+    int id = data_table_->model()->data(data_table_->model()->index(row, 0)).toInt();
+    QString table_name = table_selector_->currentText();
+
+    // Используем русские значения статусов для всех таблиц
+    UpdateRequestStatus(table_name, id, "одобрено");
+}
+
+void Table::RejectRequest()
+{
+    QModelIndex currentIndex = data_table_->currentIndex();
+    if (!currentIndex.isValid())
+    {
+        QMessageBox::warning(this, "Предупреждение", "Выберите заявку для отклонения.");
+        return;
+    }
+
+    int row = currentIndex.row();
+    int id = data_table_->model()->data(data_table_->model()->index(row, 0)).toInt();
+    QString table_name = table_selector_->currentText();
+
+    // Используем русские значения статусов для всех таблиц
+    UpdateRequestStatus(table_name, id, "отклонено");
+}
+
+void Table::CompleteRequest()
+{
+    QModelIndex currentIndex = data_table_->currentIndex();
+    if (!currentIndex.isValid())
+    {
+        QMessageBox::warning(this, "Предупреждение", "Выберите заявку для завершения.");
+        return;
+    }
+
+    int row = currentIndex.row();
+    int id = data_table_->model()->data(data_table_->model()->index(row, 0)).toInt();
+    QString table_name = table_selector_->currentText();
+
+    // Используем русские значения статусов для всех таблиц
+    UpdateRequestStatus(table_name, id, "завершено");
 }
