@@ -284,11 +284,21 @@ void MainWindow::MoreClicked()
 }
 
 void MainWindow::ProfileClicked() {
-    if (user_->GetRole() == Role::User)
+    if (ui->stackedWidget->currentWidget() != ui->user_page && user_->GetRole() == Role::User)
     {
+        // Hide the side menu first
         floating_widgets_->GetSideMenu()->setVisible(false);
 
+        // Clear existing content before adding new
         product_card_->HideOldCards();
+        
+        // Important: Clear the container before adding new content
+        QWidget* container = ui->scrollArea_purchased_cars->widget();
+        if (container) {
+            // Delete all child widgets
+            qDeleteAll(container->children());
+        }
+        
         product_card_->EnsureContainerInScrollArea(ui->scrollArea_purchased_cars);
 
         const QList<Products::ProductKey>& purchases_products_ = GetPurchasedProducts(user_->GetId());
@@ -380,7 +390,7 @@ void MainWindow::SetupServicesScrollArea() {
     layout->setContentsMargins(0, 0, 0, 0);
 
     // Список названий карточек
-    QStringList services = { "Обслуживание", "Аренда", "Кредитование", "Страхование", "Настройки" };
+    QStringList services = { "Обслуживание", "Аренда", "Кредитование", "Страхование" };
 
     // Создаём карточки
     for (const QString& service : services) {
@@ -414,10 +424,7 @@ void MainWindow::SetupServicesScrollArea() {
                 return;
             }
 
-            if (service == "Настройки") {
-                on_pushButton_settings_clicked();
-            }
-            else if (service == "Обслуживание") {
+            if (service == "Обслуживание") {
                 QDialog dialog(this);
                 dialog.setWindowTitle("Заявка на сервисное обслуживание");
                 dialog.setFixedSize(500, 600);
@@ -1525,10 +1532,18 @@ void MainWindow::on_pushButton_settings_clicked()
         return;
     }
 
-    QDialog dialog(this);
-    dialog.setWindowTitle("Настройки профиля");
-    dialog.setFixedSize(450, 600);  // Уменьшаем размер окна
-    dialog.setStyleSheet(
+    // Проверяем, существует ли уже открытый диалог
+    if (settings_dialog_) {
+        settings_dialog_->activateWindow();
+        return;
+    }
+
+    // Создаем диалог
+    settings_dialog_ = new QDialog(this);
+    settings_dialog_->setAttribute(Qt::WA_DeleteOnClose);
+    settings_dialog_->setWindowTitle("Настройки профиля");
+    settings_dialog_->setFixedSize(450, 600);
+    settings_dialog_->setStyleSheet(
         "QDialog {"
         "    background-color: #ffffff;"
         "}"
@@ -1580,15 +1595,23 @@ void MainWindow::on_pushButton_settings_clicked()
         "}"
     );
 
-    QVBoxLayout* dialogLayout = new QVBoxLayout(&dialog);
-    dialogLayout->setSpacing(10);  // Уменьшаем spacing
-    dialogLayout->setContentsMargins(20, 20, 20, 20);  // Уменьшаем отступы
+    QVBoxLayout* dialogLayout = new QVBoxLayout(settings_dialog_);
+    dialogLayout->setSpacing(10);
+    dialogLayout->setContentsMargins(20, 20, 20, 20);
 
     // Заголовок
-    QLabel* titleLabel = new QLabel("Редактирование профиля", &dialog);
+    QLabel* titleLabel = new QLabel("Редактирование профиля", settings_dialog_);
     titleLabel->setProperty("type", "header");
-    titleLabel->setAlignment(Qt::AlignLeft | Qt::AlignVCenter);  // Выравнивание по вертикали и горизонтали
+    titleLabel->setAlignment(Qt::AlignLeft | Qt::AlignVCenter);
     dialogLayout->addWidget(titleLabel);
+
+    // Создаем поля ввода
+    settings_first_name_ = new QLineEdit(settings_dialog_);
+    settings_last_name_ = new QLineEdit(settings_dialog_);
+    settings_email_ = new QLineEdit(settings_dialog_);
+    settings_phone_ = new QLineEdit(settings_dialog_);
+    settings_password_ = new QLineEdit(settings_dialog_);
+    settings_password_->setEchoMode(QLineEdit::Password);
 
     // Получаем информацию о пользователе из базы данных
     QSqlQuery query;
@@ -1597,43 +1620,36 @@ void MainWindow::on_pushButton_settings_clicked()
         "FROM clients WHERE id = %1")
         .arg(user_->GetId());
 
-    QLineEdit* firstNameEdit = new QLineEdit(&dialog);
-    QLineEdit* lastNameEdit = new QLineEdit(&dialog);
-    QLineEdit* emailEdit = new QLineEdit(&dialog);
-    QLineEdit* phoneEdit = new QLineEdit(&dialog);
-    QLineEdit* passwordEdit = new QLineEdit(&dialog);
-    passwordEdit->setEchoMode(QLineEdit::Password);
-
     if (query.exec(queryStr) && query.next()) {
         // Имя
-        QLabel* firstNameLabel = new QLabel("Имя:", &dialog);
+        QLabel* firstNameLabel = new QLabel("Имя:", settings_dialog_);
         dialogLayout->addWidget(firstNameLabel);
-        firstNameEdit->setText(query.value("first_name").toString());
-        dialogLayout->addWidget(firstNameEdit);
+        settings_first_name_->setText(query.value("first_name").toString());
+        dialogLayout->addWidget(settings_first_name_);
 
         // Фамилия
-        QLabel* lastNameLabel = new QLabel("Фамилия:", &dialog);
+        QLabel* lastNameLabel = new QLabel("Фамилия:", settings_dialog_);
         dialogLayout->addWidget(lastNameLabel);
-        lastNameEdit->setText(query.value("last_name").toString());
-        dialogLayout->addWidget(lastNameEdit);
+        settings_last_name_->setText(query.value("last_name").toString());
+        dialogLayout->addWidget(settings_last_name_);
 
         // Email
-        QLabel* emailLabel = new QLabel("Email:", &dialog);
+        QLabel* emailLabel = new QLabel("Email:", settings_dialog_);
         dialogLayout->addWidget(emailLabel);
-        emailEdit->setText(query.value("email").toString());
-        dialogLayout->addWidget(emailEdit);
+        settings_email_->setText(query.value("email").toString());
+        dialogLayout->addWidget(settings_email_);
 
         // Телефон
-        QLabel* phoneLabel = new QLabel("Телефон:", &dialog);
+        QLabel* phoneLabel = new QLabel("Телефон:", settings_dialog_);
         dialogLayout->addWidget(phoneLabel);
-        phoneEdit->setText(query.value("phone").toString());
-        dialogLayout->addWidget(phoneEdit);
+        settings_phone_->setText(query.value("phone").toString());
+        dialogLayout->addWidget(settings_phone_);
 
         // Пароль
-        QLabel* passwordLabel = new QLabel("Пароль:", &dialog);
+        QLabel* passwordLabel = new QLabel("Пароль:", settings_dialog_);
         dialogLayout->addWidget(passwordLabel);
-        passwordEdit->setText(query.value("password").toString());
-        dialogLayout->addWidget(passwordEdit);
+        settings_password_->setText(query.value("password").toString());
+        dialogLayout->addWidget(settings_password_);
     }
 
     // Растягивающийся элемент
@@ -1643,9 +1659,9 @@ void MainWindow::on_pushButton_settings_clicked()
     QHBoxLayout* buttonLayout = new QHBoxLayout();
     buttonLayout->setSpacing(15);
 
-    QPushButton* saveButton = new QPushButton("Сохранить", &dialog);
+    QPushButton* saveButton = new QPushButton("Сохранить", settings_dialog_);
     saveButton->setProperty("type", "primary");
-    QPushButton* cancelButton = new QPushButton("Отмена", &dialog);
+    QPushButton* cancelButton = new QPushButton("Отмена", settings_dialog_);
     cancelButton->setProperty("type", "secondary");
 
     buttonLayout->addWidget(cancelButton);
@@ -1653,14 +1669,21 @@ void MainWindow::on_pushButton_settings_clicked()
     dialogLayout->addLayout(buttonLayout);
 
     // Обработка нажатия кнопки "Сохранить"
-    connect(saveButton, &QPushButton::clicked, [&]() {
+    connect(saveButton, &QPushButton::clicked, this, [this]() {
         // Проверяем, что все поля заполнены
-        if (firstNameEdit->text().isEmpty() || lastNameEdit->text().isEmpty() ||
-            emailEdit->text().isEmpty() || phoneEdit->text().isEmpty() ||
-            passwordEdit->text().isEmpty()) {
-            QMessageBox::warning(&dialog, "Ошибка", "Все поля должны быть заполнены.");
+        if (settings_first_name_->text().isEmpty() || settings_last_name_->text().isEmpty() ||
+            settings_email_->text().isEmpty() || settings_phone_->text().isEmpty() ||
+            settings_password_->text().isEmpty()) {
+            QMessageBox::warning(settings_dialog_, "Ошибка", "Все поля должны быть заполнены.");
             return;
         }
+
+        // Сохраняем значения полей во временные переменные
+        QString firstName = settings_first_name_->text();
+        QString lastName = settings_last_name_->text();
+        QString email = settings_email_->text();
+        QString phone = settings_phone_->text();
+        QString password = settings_password_->text();
 
         // Обновляем данные в базе
         QString updateQuery = QString(
@@ -1671,23 +1694,50 @@ void MainWindow::on_pushButton_settings_clicked()
             "phone = '%4', "
             "password = '%5' "
             "WHERE id = %6")
-            .arg(firstNameEdit->text())
-            .arg(lastNameEdit->text())
-            .arg(emailEdit->text())
-            .arg(phoneEdit->text())
-            .arg(passwordEdit->text())
+            .arg(firstName)
+            .arg(lastName)
+            .arg(email)
+            .arg(phone)
+            .arg(password)
             .arg(user_->GetId());
 
         if (db_manager_->ExecuteQuery(updateQuery)) {
-            QMessageBox::information(&dialog, "Успех", "Данные профиля обновлены.");
-            dialog.accept();
+            // Обновляем данные пользователя в памяти
+            if (user_) {
+                user_->SetName(firstName + " " + lastName);
+                user_->SetEmail(email);
+                // Обновляем отображаемое имя в интерфейсе, если необходимо
+                if (ui->label_clientname) {
+                    ui->label_clientname->setText(user_->GetName() + " — профиль");
+                }
+            }
+
+            // Показываем сообщение об успехе
+            QMessageBox::information(nullptr, "Успех", "Данные профиля обновлены.");
+            
+            // Закрываем диалог
+            if (settings_dialog_) {
+                settings_dialog_->accept();
+            }
         } else {
-            QMessageBox::critical(&dialog, "Ошибка", "Не удалось обновить данные профиля: " + db_manager_->GetLastError());
+            QMessageBox::critical(settings_dialog_, "Ошибка", 
+                "Не удалось обновить данные профиля: " + db_manager_->GetLastError());
         }
     });
 
-    connect(cancelButton, &QPushButton::clicked, &dialog, &QDialog::reject);
+    connect(cancelButton, &QPushButton::clicked, settings_dialog_, &QDialog::reject);
 
-    dialog.exec();
+    // Очистка указателей при закрытии диалога
+    connect(settings_dialog_, &QDialog::finished, this, [this]() {
+        // Просто обнуляем указатели, Qt сам удалит виджеты
+        settings_first_name_ = nullptr;
+        settings_last_name_ = nullptr;
+        settings_email_ = nullptr;
+        settings_phone_ = nullptr;
+        settings_password_ = nullptr;
+        settings_dialog_ = nullptr;
+    });
+
+    settings_dialog_->show();
 }
 

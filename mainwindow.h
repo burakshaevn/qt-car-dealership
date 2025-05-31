@@ -10,6 +10,7 @@
 #include <QListWidget>
 #include <QDockWidget>
 #include <QWidget>
+#include <QLineEdit>
 
 #include <QGraphicsDropShadowEffect>
 
@@ -92,6 +93,14 @@ private:
 
     std::unique_ptr<User> user_;
     std::unique_ptr<Table> table_;
+
+    // Диалог настроек и его поля
+    QDialog* settings_dialog_ = nullptr;
+    QLineEdit* settings_first_name_ = nullptr;
+    QLineEdit* settings_last_name_ = nullptr;
+    QLineEdit* settings_email_ = nullptr;
+    QLineEdit* settings_phone_ = nullptr;
+    QLineEdit* settings_password_ = nullptr;
 
     // Управляет плавающими виджетами: левым боковым меню каталога и правым плавающим меню
     std::unique_ptr<FloatingWidgets> floating_widgets_;
