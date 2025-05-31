@@ -320,7 +320,7 @@ void MainWindow::ProfileClicked() {
 
 void MainWindow::SetupServicesScrollArea() {
     // Настройка QScrollArea
-    ui->scrollArea_services->setHorizontalScrollBarPolicy(Qt::ScrollBarAlwaysOff);
+    ui->scrollArea_services->setHorizontalScrollBarPolicy(Qt::ScrollBarAsNeeded); // Включить горизонтальную прокрутку
     ui->scrollArea_services->setVerticalScrollBarPolicy(Qt::ScrollBarAlwaysOff);
     ui->scrollArea_services->setWidgetResizable(false);
     ui->scrollArea_services->setFocusPolicy(Qt::WheelFocus);
@@ -350,7 +350,7 @@ void MainWindow::SetupServicesScrollArea() {
     layout->setContentsMargins(0, 0, 0, 0);
 
     // Список названий карточек
-    QStringList services = { "Обслуживание", "Аренда", "Продажа", "Кредитование", "Страхование" };
+    QStringList services = { "Обслуживание", "Аренда", "Кредитование", "Страхование" };
 
     // Создаём карточки
     for (const QString& service : services) {
@@ -462,66 +462,6 @@ void MainWindow::SetupServicesScrollArea() {
             else if (service == "Аренда")
             {
                 QMessageBox::information(this, "Информация", "Для оформления заявки на аренду необходимо выбрать автомобиль.");
-            }
-            else if (service == "Продажа")
-            {
-                QDialog dialog(this);
-                dialog.setWindowTitle("Заявка на продажу автомобиля");
-                dialog.setFixedSize(400, 300);
-                QVBoxLayout* dialogLayout = new QVBoxLayout(&dialog);
-
-                QLineEdit* makeEdit = new QLineEdit(&dialog);
-                makeEdit->setPlaceholderText("Марка автомобиля");
-                QLineEdit* modelEdit = new QLineEdit(&dialog);
-                modelEdit->setPlaceholderText("Модель автомобиля");
-                QSpinBox* yearEdit = new QSpinBox(&dialog);
-                yearEdit->setRange(1900, QDate::currentDate().year());
-                QDoubleSpinBox* priceEdit = new QDoubleSpinBox(&dialog);
-                priceEdit->setRange(0, 100000000);
-                priceEdit->setSuffix(" руб.");
-
-                dialogLayout->addWidget(makeEdit);
-                dialogLayout->addWidget(modelEdit);
-                dialogLayout->addWidget(yearEdit);
-                dialogLayout->addWidget(priceEdit);
-
-                QHBoxLayout* buttonLayout = new QHBoxLayout();
-                QPushButton* okButton = new QPushButton("OK", &dialog);
-                QPushButton* cancelButton = new QPushButton("Отмена", &dialog);
-                buttonLayout->addWidget(okButton);
-                buttonLayout->addWidget(cancelButton);
-                dialogLayout->addLayout(buttonLayout);
-
-                bool accepted = false;
-                connect(okButton, &QPushButton::clicked, [&]() {
-                    if (makeEdit->text().isEmpty() || modelEdit->text().isEmpty())
-                    {
-                        QMessageBox::warning(&dialog, "Ошибка", "Укажите марку и модель.");
-                        return;
-                    }
-                    accepted = true;
-                    dialog.accept();
-                });
-                connect(cancelButton, &QPushButton::clicked, [&]() { dialog.reject(); });
-
-                if (dialog.exec() == QDialog::Accepted && accepted)
-                {
-                    QSqlQuery query;
-                    QString queryStr = QString(
-                                           "INSERT INTO sell_requests (client_id, car_make, car_model, car_year, proposed_price, status) "
-                                           "VALUES (%1, '%2', '%3', %4, %5, 'не обработано');")
-                                           .arg(user_->GetId())
-                                           .arg(makeEdit->text())
-                                           .arg(modelEdit->text())
-                                           .arg(yearEdit->value())
-                                           .arg(priceEdit->value() * 1000);
-
-                    if (query.exec(queryStr)) {
-                        QMessageBox::information(this, "Успех", "Заявка на продажу подана.");
-                    } else {
-                        QMessageBox::critical(this, "Ошибка", "Не удалось подать заявку: " + query.lastError().text());
-                    }
-                }
             }
             else if (service == "Кредитование")
             {

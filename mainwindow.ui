@@ -167,25 +167,19 @@ QScrollArea &gt; QWidget {
     border-radius: 39px;
 } </string>
       </property>
-      <property name="verticalScrollBarPolicy">
-       <enum>Qt::ScrollBarPolicy::ScrollBarAlwaysOff</enum>
-      </property>
       <property name="horizontalScrollBarPolicy">
-       <enum>Qt::ScrollBarPolicy::ScrollBarAlwaysOff</enum>
+       <enum>Qt::ScrollBarPolicy::ScrollBarAlwaysOn</enum>
       </property>
       <property name="widgetResizable">
-       <bool>false</bool>
-      </property>
-      <property name="alignment">
-       <set>Qt::AlignmentFlag::AlignLeading|Qt::AlignmentFlag::AlignLeft|Qt::AlignmentFlag::AlignTop</set>
+       <bool>true</bool>
       </property>
       <widget class="QWidget" name="scrollAreaWidgetContents_4">
        <property name="geometry">
         <rect>
          <x>0</x>
          <y>0</y>
-         <width>981</width>
-         <height>685</height>
+         <width>875</width>
+         <height>158</height>
         </rect>
        </property>
       </widget>
