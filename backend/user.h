@@ -35,46 +35,26 @@ class User : public QMainWindow
     Q_OBJECT
 public:
     explicit User(const UserInfo& user, QWidget *parent = nullptr)
-        : user_(user)
-        , QMainWindow(parent)
+        : QMainWindow(parent)
+        , user_(user)
     {}
 
     virtual ~User() = default;
 
-    void SetId(const int id){
-        user_.id_ = id;
-    }
-    inline int GetId() const {
-        return user_.id_;
-    }
+    void SetId(const int id);
+    int GetId() const;
 
-    void SetName(const QString& first_name){
-        user_.full_name_ = first_name;
-    }
-    inline const QString& GetName() const {
-        return user_.full_name_;
-    }
+    void SetName(const QString& first_name);
+    const QString& GetName() const;
 
-    void SetEmail(const QString& email){
-        user_.email_ = email;
-    }
-    inline const QString& GetEmail() const {
-        return user_.email_;
-    }
+    void SetEmail(const QString& email);
+    const QString& GetEmail() const;
 
-    virtual void SetRole(const Role& role){
-        user_.role_ = role;
-    }
-    inline virtual const Role& GetRole() const{
-        return user_.role_;
-    }
+    void SetRole(const Role& role);
+    const Role& GetRole() const;
 
-    void SetProducts(const QList<Products::ProductKey> products){
-        user_.products_ = products;
-    }
-    inline QList<Products::ProductKey> GetProducts() const {
-        return user_.products_;
-    }
+    void SetProducts(const QList<Products::ProductKey> products);
+    QList<Products::ProductKey> GetProducts() const;
 
 private:
     UserInfo user_;

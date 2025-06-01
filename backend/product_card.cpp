@@ -22,9 +22,20 @@ void ProductCard::SetProductsPtr(std::shared_ptr<Products> products) {
 }
 
 void ProductCard::DrawItem(const ProductInfo& product) {
+    if (!card_container_ || !layout_) {
+        qDebug() << "DrawItem: card_container_ or layout_ is null";
+        return;
+    }
+
     Products::ProductKey key = std::make_tuple(product.name_, product.color_);
     if (products_cards_.contains(key)) {
         QWidget* card = products_cards_[key];
+        if (!card) {
+            qDebug() << "DrawItem: card is null for" << product.name_ << product.color_;
+            products_cards_.remove(key);
+            return;
+        }
+
         if (!layout_->indexOf(card)) {
             card->setParent(card_container_);
             layout_->addWidget(card);
@@ -121,10 +132,6 @@ void ProductCard::EnsureContainerInScrollArea(QScrollArea* target_scroll_area) {
         return;
     }
 
-    // Лог текущего родителя
-    QObject* current_parent = card_container_->parent();
-    QString current_parent_name = current_parent ? current_parent->objectName() : QString();
-
     // Удаляем текущий виджет из ScrollArea, если он есть
     if (auto current_widget = target_scroll_area->widget()) {
         target_scroll_area->takeWidget();
@@ -142,7 +149,7 @@ void ProductCard::EnsureContainerInScrollArea(QScrollArea* target_scroll_area) {
         "QScrollArea > QWidget > QWidget {"
         "    background-color: transparent;"
         "}"
-        );
+    );
 
     target_scroll_area->setWidgetResizable(true);
     // container->setSizePolicy(QSizePolicy::Expanding, QSizePolicy::Fixed); // Контейнер растягивается по горизонтали

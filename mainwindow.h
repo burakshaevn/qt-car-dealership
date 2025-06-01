@@ -3,14 +3,21 @@
 
 #include <QMainWindow>
 #include <QMessageBox>
-#include <QScrollArea>
-#include <QGroupBox>
-#include <QCalendarWidget>
-#include <QDir>
-#include <QListWidget>
-#include <QDockWidget>
-#include <QWidget>
+#include <QInputDialog>
+#include <QVBoxLayout>
+#include <QHBoxLayout>
+#include <QPushButton>
+#include <QLabel>
 #include <QLineEdit>
+#include <QSpinBox>
+#include <QDoubleSpinBox>
+#include <QTimeEdit>
+#include <QCalendarWidget>
+#include <QScrollArea>
+#include <QDir>
+#include <QSqlQuery>
+#include <QSqlError>
+#include <QComboBox>
 
 #include <QGraphicsDropShadowEffect>
 
@@ -95,12 +102,12 @@ private:
     std::unique_ptr<Table> table_;
 
     // Диалог настроек и его поля
-    QDialog* settings_dialog_ = nullptr;
-    QLineEdit* settings_first_name_ = nullptr;
-    QLineEdit* settings_last_name_ = nullptr;
-    QLineEdit* settings_email_ = nullptr;
-    QLineEdit* settings_phone_ = nullptr;
-    QLineEdit* settings_password_ = nullptr;
+    std::unique_ptr<QDialog> settings_dialog_;
+    std::unique_ptr<QLineEdit> settings_first_name_;
+    std::unique_ptr<QLineEdit> settings_last_name_;
+    std::unique_ptr<QLineEdit> settings_email_;
+    std::unique_ptr<QLineEdit> settings_phone_;
+    std::unique_ptr<QLineEdit> settings_password_;
 
     // Управляет плавающими виджетами: левым боковым меню каталога и правым плавающим меню
     std::unique_ptr<FloatingWidgets> floating_widgets_;

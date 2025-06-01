@@ -1,5 +1,18 @@
 #include "mainwindow.h"
 #include "./ui_mainwindow.h"
+#include <QMessageBox>
+#include <QInputDialog>
+#include <QVBoxLayout>
+#include <QHBoxLayout>
+#include <QPushButton>
+#include <QLabel>
+#include <QLineEdit>
+#include <QSpinBox>
+#include <QDoubleSpinBox>
+#include <QTimeEdit>
+#include <QCalendarWidget>
+#include <QScrollArea>
+#include <QDir>
 
 MainWindow::MainWindow(QWidget* parent)
     : QMainWindow(parent)
@@ -282,23 +295,12 @@ void MainWindow::MoreClicked()
     }
     QMessageBox::warning(this, "Ошибка", "Чтобы переключаться по остальным разделам, необходимо авторизоваться как пользователь.");
 }
-
 void MainWindow::ProfileClicked() {
-    if (ui->stackedWidget->currentWidget() != ui->user_page && user_->GetRole() == Role::User)
+    if (user_->GetRole() == Role::User)
     {
-        // Hide the side menu first
         floating_widgets_->GetSideMenu()->setVisible(false);
 
-        // Clear existing content before adding new
         product_card_->HideOldCards();
-        
-        // Important: Clear the container before adding new content
-        QWidget* container = ui->scrollArea_purchased_cars->widget();
-        if (container) {
-            // Delete all child widgets
-            qDeleteAll(container->children());
-        }
-        
         product_card_->EnsureContainerInScrollArea(ui->scrollArea_purchased_cars);
 
         const QList<Products::ProductKey>& purchases_products_ = GetPurchasedProducts(user_->GetId());
@@ -327,72 +329,118 @@ void MainWindow::ProfileClicked() {
         ui->stackedWidget->setCurrentWidget(ui->user_page);
     }
 }
+// void MainWindow::ProfileClicked()
+// {
+//     if (!user_ || user_->GetRole() != Role::User)
+//     {
+//         QMessageBox::warning(this, "Ошибка", "Авторизуйтесь для доступа к профилю.");
+//         return;
+//     }
 
-#include <QDoubleSpinBox>
-#include <QTimeEdit>
+//     if (ui->stackedWidget->currentWidget() != ui->user_page)
+//     {
+//         QList<Products::ProductKey> products = user_->GetProducts();
+//         for (auto& product : products) {
+//             product_card_->DrawRelevantProducts(ui->scrollArea_purchased_cars, std::get<0>(product));
+//         }
+
+//         // if (!product_card_->hidden_to_cart_buttons_IsEmpty())
+//         // {
+//         //     product_card_->RestoreHiddenToCartButtons();
+//         // }
+
+//         // // Hide the side menu first
+//         // if (floating_widgets_ && floating_widgets_->GetSideMenu()) {
+//         //     floating_widgets_->GetSideMenu()->setVisible(false);
+//         // }
+
+//         // // Clear existing content before adding new
+//         // if (product_card_) {
+//         //     product_card_->HideOldCards();
+//         // }
+        
+//         // // Important: Clear the container before adding new content
+//         // if (ui->scrollArea_purchased_cars && ui->scrollArea_purchased_cars->widget()) {
+//         //     QWidget* oldWidget = ui->scrollArea_purchased_cars->takeWidget();
+//         //     if (oldWidget) {
+//         //         oldWidget->deleteLater();
+//         //     }
+//         // }
+        
+//         // if (product_card_) {
+//         //     product_card_->EnsureContainerInScrollArea(ui->scrollArea_purchased_cars);
+
+//         //     const QList<Products::ProductKey>& purchases_products_ = GetPurchasedProducts(user_->GetId());
+//         //     for (auto& key : purchases_products_)
+//         //     {
+//         //         const ProductInfo* found_product_struct = products_->FindProduct(key);
+//         //         if (!found_product_struct)
+//         //         {
+//         //             qDebug() << "found_product_struct is empty";
+//         //             continue;
+//         //         }
+
+//         //         product_card_->DrawItem(*found_product_struct);
+//         //         QWidget* card = product_card_->FindProductCard(key);
+//         //         if (card) {
+//         //             auto to_cart_button = card->findChild<QPushButton*>("to_cart_", Qt::FindChildrenRecursively);
+//         //             if (to_cart_button)
+//         //             {
+//         //                 to_cart_button->hide();
+//         //                 product_card_->hidden_to_cart_buttons_Push(key);
+//         //             }
+//         //         }
+//         //     }
+//         //     product_card_->card_container_PerformAdjustSize();
+//         // }
+
+//         // // Clear existing services scroll area content
+//         // if (ui->scrollArea_services && ui->scrollArea_services->widget()) {
+//         //     QWidget* oldWidget = ui->scrollArea_services->takeWidget();
+//         //     if (oldWidget) {
+//         //         oldWidget->deleteLater();
+//         //     }
+//         // }
+
+//         // // Setup services scroll area with proper cleanup
+//         // SetupServicesScrollArea();
+
+//         // if (ui->label_clientname) {
+//         //     ui->label_clientname->setText(user_->GetName() + " — профиль");
+//         // }
+        
+//         // Switch to user page
+//         ui->stackedWidget->setCurrentWidget(ui->user_page);
+//     }
+// }
 
 void MainWindow::SetupServicesScrollArea() {
-    // Настройка QScrollArea
+    // Prevent recursive calls
+    static bool isSettingUp = false;
+    if (isSettingUp) {
+        return;
+    }
+    isSettingUp = true;
+
+    // Create a new container widget
+    QWidget* container = new QWidget(ui->scrollArea_services);
+    
+    // Configure scroll area
     ui->scrollArea_services->setHorizontalScrollBarPolicy(Qt::ScrollBarAsNeeded);
     ui->scrollArea_services->setVerticalScrollBarPolicy(Qt::ScrollBarAlwaysOff);
     ui->scrollArea_services->setWidgetResizable(false);
     ui->scrollArea_services->setFocusPolicy(Qt::WheelFocus);
 
-    // Стили для QScrollArea с появлением скроллбара при наведении
-    ui->scrollArea_services->setStyleSheet(
-        "QScrollArea {"
-        "    background: transparent;"
-        "    border: none;"
-        "}"
-        "QScrollArea > QWidget {"
-        "    background: transparent;"
-        "}"
-        "QScrollArea::viewport {"
-        "    background: transparent;"
-        "}"
-        "QScrollBar:horizontal {"
-        "    height: 15px;"
-        "    background: transparent;"
-        "    margin: 3px 0px 3px 0px;"
-        "    border-radius: 7px;"
-        "}"
-        "QScrollBar::handle:horizontal {"
-        "    background: #9b9c9c;"
-        "    min-width: 20px;"
-        "    border-radius: 7px;"
-        "}"
-        "QScrollBar::add-line:horizontal {"
-        "    border: none;"
-        "    background: none;"
-        "    width: 0px;"
-        "}"
-        "QScrollBar::sub-line:horizontal {"
-        "    border: none;"
-        "    background: none;"
-        "    width: 0px;"
-        "}"
-        "QScrollBar::add-page:horizontal, QScrollBar::sub-page:horizontal {"
-        "    background: none;"
-        "}"
-        "QScrollBar:horizontal {"
-        "    opacity: 0;"
-        "}"
-        "QScrollArea:hover QScrollBar:horizontal {"
-        "    opacity: 1;"
-        "}"
-        );
-
-    // Создаём контейнер для карточек
-    QWidget* container = new QWidget();
+    // Set up layout
     QHBoxLayout* layout = new QHBoxLayout(container);
     layout->setAlignment(Qt::AlignLeft);
     layout->setSpacing(21);
     layout->setContentsMargins(0, 0, 0, 0);
 
-    // Список названий карточек
+    // List of service names
     QStringList services = { "Обслуживание", "Аренда", "Кредитование", "Страхование" };
 
-    // Создаём карточки
+    // Create service cards
     for (const QString& service : services) {
         QPushButton* card = new QPushButton(container);
         card->setFixedSize(360, 175);
@@ -406,14 +454,14 @@ void MainWindow::SetupServicesScrollArea() {
             "QPushButton:hover {"
             "    background-color: #e0e0e0;"
             "}"
-            );
+        );
 
         QLabel* label = new QLabel(service, card);
         label->setStyleSheet(
             "color: #1d1b20;"
             "font: 700 20pt 'JetBrains Mono';"
             "background: transparent;"
-            );
+        );
         label->move(14, 105);
         label->setAlignment(Qt::AlignLeft);
 
@@ -469,19 +517,6 @@ void MainWindow::SetupServicesScrollArea() {
                     "}"
                     "QPushButton[type='secondary']:hover {"
                     "    background-color: #e0e0e0;"
-                    "}"
-                    "QCalendarWidget {"
-                    "    background-color: white;"
-                    "    font: 10pt 'JetBrains Mono';"
-                    "}"
-                    "QCalendarWidget QToolButton {"
-                    "    color: #1d1b20;"
-                    "    font: 10pt 'JetBrains Mono';"
-                    "    padding: 5px;"
-                    "}"
-                    "QCalendarWidget QMenu {"
-                    "    background-color: white;"
-                    "    font: 10pt 'JetBrains Mono';"
                     "}"
                 );
 
@@ -564,12 +599,12 @@ void MainWindow::SetupServicesScrollArea() {
                     QString dateTime = calendar->selectedDate().toString("yyyy-MM-dd") + " " + timeEdit->time().toString("HH:mm");
                     QSqlQuery query;
                     QString queryStr = QString(
-                                           "INSERT INTO service_requests (client_id, car_id, service_type, scheduled_date, status) "
-                                           "VALUES (%1, %2, '%3', '%4', 'не обработано');")
-                                           .arg(user_->GetId())
-                                           .arg(carCombo->currentData().toInt())
-                                           .arg(serviceTypeEdit->text())
-                                           .arg(dateTime);
+                        "INSERT INTO service_requests (client_id, car_id, service_type, scheduled_date, status) "
+                        "VALUES (%1, %2, '%3', '%4', 'не обработано');")
+                        .arg(user_->GetId())
+                        .arg(carCombo->currentData().toInt())
+                        .arg(serviceTypeEdit->text())
+                        .arg(dateTime);
 
                     if (query.exec(queryStr)) {
                         QMessageBox::information(this, "Успех", "Заявка на обслуживание подана.");
@@ -699,12 +734,12 @@ void MainWindow::SetupServicesScrollArea() {
                 if (dialog.exec() == QDialog::Accepted && accepted) {
                     QSqlQuery query;
                     QString queryStr = QString(
-                                           "INSERT INTO loan_requests (client_id, car_id, loan_amount, loan_term_months, status) "
-                                           "VALUES (%1, %2, %3, %4, 'не обработано');")
-                                           .arg(user_->GetId())
-                                           .arg(carCombo->currentData().toInt())
-                                           .arg(amountEdit->value())
-                                           .arg(termEdit->value());
+                        "INSERT INTO loan_requests (client_id, car_id, loan_amount, loan_term_months, status) "
+                        "VALUES (%1, %2, %3, %4, 'не обработано');")
+                        .arg(user_->GetId())
+                        .arg(carCombo->currentData().toInt())
+                        .arg(amountEdit->value())
+                        .arg(termEdit->value());
 
                     if (query.exec(queryStr)) {
                         QMessageBox::information(this, "Успех", "Заявка на кредитование подана.");
@@ -820,11 +855,11 @@ void MainWindow::SetupServicesScrollArea() {
                 if (dialog.exec() == QDialog::Accepted && accepted) {
                     QSqlQuery query;
                     QString queryStr = QString(
-                                           "INSERT INTO insurance_requests (client_id, car_id, insurance_type, status) "
-                                           "VALUES (%1, %2, '%3', 'не обработано');")
-                                           .arg(user_->GetId())
-                                           .arg(carCombo->currentData().toInt())
-                                           .arg(insuranceTypeCombo->currentText());
+                        "INSERT INTO insurance_requests (client_id, car_id, insurance_type, status) "
+                        "VALUES (%1, %2, '%3', 'не обработано');")
+                        .arg(user_->GetId())
+                        .arg(carCombo->currentData().toInt())
+                        .arg(insuranceTypeCombo->currentText());
 
                     if (query.exec(queryStr)) {
                         QMessageBox::information(this, "Успех", "Заявка на страхование подана.");
@@ -838,13 +873,59 @@ void MainWindow::SetupServicesScrollArea() {
         layout->addWidget(card);
     }
 
-    // Устанавливаем размер контейнера
+    // Set container size
     int containerWidth = (360 + layout->spacing()) * services.size();
     container->setMinimumWidth(containerWidth);
     container->setFixedHeight(175);
 
-    // Устанавливаем контейнер в QScrollArea
+    // Set scroll area stylesheet
+    ui->scrollArea_services->setStyleSheet(
+        "QScrollArea {"
+        "    background: transparent;"
+        "    border: none;"
+        "}"
+        "QScrollArea > QWidget {"
+        "    background: transparent;"
+        "}"
+        "QScrollArea::viewport {"
+        "    background: transparent;"
+        "}"
+        "QScrollBar:horizontal {"
+        "    height: 15px;"
+        "    background: transparent;"
+        "    margin: 3px 0px 3px 0px;"
+        "    border-radius: 7px;"
+        "}"
+        "QScrollBar::handle:horizontal {"
+        "    background: #9b9c9c;"
+        "    min-width: 20px;"
+        "    border-radius: 7px;"
+        "}"
+        "QScrollBar::add-line:horizontal {"
+        "    border: none;"
+        "    background: none;"
+        "    width: 0px;"
+        "}"
+        "QScrollBar::sub-line:horizontal {"
+        "    border: none;"
+        "    background: none;"
+        "    width: 0px;"
+        "}"
+        "QScrollBar::add-page:horizontal, QScrollBar::sub-page:horizontal {"
+        "    background: none;"
+        "}"
+        "QScrollBar:horizontal {"
+        "    opacity: 0;"
+        "}"
+        "QScrollArea:hover QScrollBar:horizontal {"
+        "    opacity: 1;"
+        "}"
+    );
+
+    // Set the container as the scroll area widget
     ui->scrollArea_services->setWidget(container);
+    
+    isSettingUp = false;
 }
 
 void MainWindow::SortByColorClicked()
@@ -1036,11 +1117,37 @@ void MainWindow::on_pushButton_next_right_clicked()
 
 void MainWindow::on_pushButton_back_clicked()
 {
-    if (user_->GetRole() == Role::User) {
-        ui->stackedWidget->setCurrentWidget(ui->main);
-        current_product_ = ProductInfo();
-        current_color_index_ = 0;
+    if (!user_ || user_->GetRole() != Role::User) {
+        return;
     }
+
+    // Clean up any existing content in the scroll areas
+    if (ui->scrollArea_catalog && ui->scrollArea_catalog->widget()) {
+        QWidget* container = ui->scrollArea_catalog->widget();
+        qDeleteAll(container->children());
+    }
+
+    if (ui->scrollArea_purchased_cars && ui->scrollArea_purchased_cars->widget()) {
+        QWidget* container = ui->scrollArea_purchased_cars->widget();
+        qDeleteAll(container->children());
+    }
+
+    // Reset current product state
+    current_product_ = ProductInfo();
+    current_color_index_ = 0;
+
+    // Show the side menu if it exists
+    if (floating_widgets_ && floating_widgets_->GetSideMenu()) {
+        floating_widgets_->GetSideMenu()->setVisible(true);
+    }
+
+    // Rebuild the main catalog view
+    if (product_card_) {
+        product_card_->UpdateProductsWidget(ui->scrollArea_catalog, QString("Смотреть всё"), QString("Белый"));
+    }
+
+    // Switch to main page
+    ui->stackedWidget->setCurrentWidget(ui->main);
 }
 
 void MainWindow::on_pushButton_info_clicked()
@@ -1539,8 +1646,7 @@ void MainWindow::on_pushButton_settings_clicked()
     }
 
     // Создаем диалог
-    settings_dialog_ = new QDialog(this);
-    settings_dialog_->setAttribute(Qt::WA_DeleteOnClose);
+    settings_dialog_ = std::make_unique<QDialog>(this);
     settings_dialog_->setWindowTitle("Настройки профиля");
     settings_dialog_->setFixedSize(450, 600);
     settings_dialog_->setStyleSheet(
@@ -1550,32 +1656,32 @@ void MainWindow::on_pushButton_settings_clicked()
         "QLabel {"
         "    color: #1d1b20;"
         "    font: 500 12pt 'JetBrains Mono';"
-        "    min-height: 20px;"  // Уменьшаем минимальную высоту
-        "    margin: 3px 0px;"   // Уменьшаем отступы
+        "    min-height: 20px;"
+        "    margin: 3px 0px;"
         "}"
         "QLabel[type='header'] {"
         "    font: 700 16pt 'JetBrains Mono';"
-        "    min-height: 30px;"  // Уменьшаем минимальную высоту
-        "    margin: 0px 0px 15px 0px;"  // Уменьшаем нижний отступ
+        "    min-height: 30px;"
+        "    margin: 0px 0px 15px 0px;"
         "}"
         "QLineEdit {"
-        "    padding: 5px 8px;"  // Уменьшаем вертикальный padding
+        "    padding: 5px 8px;"
         "    border: 2px solid #e0e0e0;"
         "    border-radius: 8px;"
         "    background: #fafafa;"
         "    font: 11pt 'JetBrains Mono';"
-        "    min-height: 16px;"  // Уменьшаем минимальную высоту
-        "    margin-bottom: 10px;"  // Уменьшаем отступ снизу
+        "    min-height: 16px;"
+        "    margin-bottom: 10px;"
         "}"
         "QLineEdit:focus {"
         "    border: 2px solid #2196F3;"
         "}"
         "QPushButton {"
-        "    padding: 8px 16px;"  // Уменьшаем padding
+        "    padding: 8px 16px;"
         "    border-radius: 8px;"
         "    font: 600 11pt 'JetBrains Mono';"
-        "    min-width: 90px;"   // Уменьшаем минимальную ширину
-        "    min-height: 32px;"  // Уменьшаем минимальную высоту
+        "    min-width: 90px;"
+        "    min-height: 32px;"
         "}"
         "QPushButton[type='primary'] {"
         "    background-color: #2196F3;"
@@ -1595,22 +1701,22 @@ void MainWindow::on_pushButton_settings_clicked()
         "}"
     );
 
-    QVBoxLayout* dialogLayout = new QVBoxLayout(settings_dialog_);
+    QVBoxLayout* dialogLayout = new QVBoxLayout(settings_dialog_.get());
     dialogLayout->setSpacing(10);
     dialogLayout->setContentsMargins(20, 20, 20, 20);
 
     // Заголовок
-    QLabel* titleLabel = new QLabel("Редактирование профиля", settings_dialog_);
+    QLabel* titleLabel = new QLabel("Редактирование профиля", settings_dialog_.get());
     titleLabel->setProperty("type", "header");
     titleLabel->setAlignment(Qt::AlignLeft | Qt::AlignVCenter);
     dialogLayout->addWidget(titleLabel);
 
     // Создаем поля ввода
-    settings_first_name_ = new QLineEdit(settings_dialog_);
-    settings_last_name_ = new QLineEdit(settings_dialog_);
-    settings_email_ = new QLineEdit(settings_dialog_);
-    settings_phone_ = new QLineEdit(settings_dialog_);
-    settings_password_ = new QLineEdit(settings_dialog_);
+    settings_first_name_ = std::make_unique<QLineEdit>(settings_dialog_.get());
+    settings_last_name_ = std::make_unique<QLineEdit>(settings_dialog_.get());
+    settings_email_ = std::make_unique<QLineEdit>(settings_dialog_.get());
+    settings_phone_ = std::make_unique<QLineEdit>(settings_dialog_.get());
+    settings_password_ = std::make_unique<QLineEdit>(settings_dialog_.get());
     settings_password_->setEchoMode(QLineEdit::Password);
 
     // Получаем информацию о пользователе из базы данных
@@ -1622,34 +1728,34 @@ void MainWindow::on_pushButton_settings_clicked()
 
     if (query.exec(queryStr) && query.next()) {
         // Имя
-        QLabel* firstNameLabel = new QLabel("Имя:", settings_dialog_);
+        QLabel* firstNameLabel = new QLabel("Имя:", settings_dialog_.get());
         dialogLayout->addWidget(firstNameLabel);
         settings_first_name_->setText(query.value("first_name").toString());
-        dialogLayout->addWidget(settings_first_name_);
+        dialogLayout->addWidget(settings_first_name_.get());
 
         // Фамилия
-        QLabel* lastNameLabel = new QLabel("Фамилия:", settings_dialog_);
+        QLabel* lastNameLabel = new QLabel("Фамилия:", settings_dialog_.get());
         dialogLayout->addWidget(lastNameLabel);
         settings_last_name_->setText(query.value("last_name").toString());
-        dialogLayout->addWidget(settings_last_name_);
+        dialogLayout->addWidget(settings_last_name_.get());
 
         // Email
-        QLabel* emailLabel = new QLabel("Email:", settings_dialog_);
+        QLabel* emailLabel = new QLabel("Email:", settings_dialog_.get());
         dialogLayout->addWidget(emailLabel);
         settings_email_->setText(query.value("email").toString());
-        dialogLayout->addWidget(settings_email_);
+        dialogLayout->addWidget(settings_email_.get());
 
         // Телефон
-        QLabel* phoneLabel = new QLabel("Телефон:", settings_dialog_);
+        QLabel* phoneLabel = new QLabel("Телефон:", settings_dialog_.get());
         dialogLayout->addWidget(phoneLabel);
         settings_phone_->setText(query.value("phone").toString());
-        dialogLayout->addWidget(settings_phone_);
+        dialogLayout->addWidget(settings_phone_.get());
 
         // Пароль
-        QLabel* passwordLabel = new QLabel("Пароль:", settings_dialog_);
+        QLabel* passwordLabel = new QLabel("Пароль:", settings_dialog_.get());
         dialogLayout->addWidget(passwordLabel);
         settings_password_->setText(query.value("password").toString());
-        dialogLayout->addWidget(settings_password_);
+        dialogLayout->addWidget(settings_password_.get());
     }
 
     // Растягивающийся элемент
@@ -1659,22 +1765,25 @@ void MainWindow::on_pushButton_settings_clicked()
     QHBoxLayout* buttonLayout = new QHBoxLayout();
     buttonLayout->setSpacing(15);
 
-    QPushButton* saveButton = new QPushButton("Сохранить", settings_dialog_);
+    QPushButton* saveButton = new QPushButton("Сохранить", settings_dialog_.get());
     saveButton->setProperty("type", "primary");
-    QPushButton* cancelButton = new QPushButton("Отмена", settings_dialog_);
+    QPushButton* cancelButton = new QPushButton("Отмена", settings_dialog_.get());
     cancelButton->setProperty("type", "secondary");
 
     buttonLayout->addWidget(cancelButton);
     buttonLayout->addWidget(saveButton);
     dialogLayout->addLayout(buttonLayout);
 
+    // Сохраняем указатель на диалог для использования в лямбда-функциях
+    QDialog* dialogPtr = settings_dialog_.get();
+    
     // Обработка нажатия кнопки "Сохранить"
-    connect(saveButton, &QPushButton::clicked, this, [this]() {
+    connect(saveButton, &QPushButton::clicked, dialogPtr, [this, dialogPtr]() {
         // Проверяем, что все поля заполнены
         if (settings_first_name_->text().isEmpty() || settings_last_name_->text().isEmpty() ||
             settings_email_->text().isEmpty() || settings_phone_->text().isEmpty() ||
             settings_password_->text().isEmpty()) {
-            QMessageBox::warning(settings_dialog_, "Ошибка", "Все поля должны быть заполнены.");
+            QMessageBox::warning(dialogPtr, "Ошибка", "Все поля должны быть заполнены.");
             return;
         }
 
@@ -1706,36 +1815,30 @@ void MainWindow::on_pushButton_settings_clicked()
             if (user_) {
                 user_->SetName(firstName + " " + lastName);
                 user_->SetEmail(email);
-                // Обновляем отображаемое имя в интерфейсе, если необходимо
+                // Обновляем отображаемое имя в интерфейсе
                 if (ui->label_clientname) {
                     ui->label_clientname->setText(user_->GetName() + " — профиль");
                 }
             }
 
-            // Показываем сообщение об успехе
-            QMessageBox::information(nullptr, "Успех", "Данные профиля обновлены.");
-            
-            // Закрываем диалог
-            if (settings_dialog_) {
-                settings_dialog_->accept();
-            }
+            QMessageBox::information(dialogPtr, "Успех", "Данные профиля обновлены.");
+            dialogPtr->accept();
         } else {
-            QMessageBox::critical(settings_dialog_, "Ошибка", 
+            QMessageBox::critical(dialogPtr, "Ошибка",
                 "Не удалось обновить данные профиля: " + db_manager_->GetLastError());
         }
     });
 
-    connect(cancelButton, &QPushButton::clicked, settings_dialog_, &QDialog::reject);
+    connect(cancelButton, &QPushButton::clicked, dialogPtr, &QDialog::reject);
 
     // Очистка указателей при закрытии диалога
-    connect(settings_dialog_, &QDialog::finished, this, [this]() {
-        // Просто обнуляем указатели, Qt сам удалит виджеты
-        settings_first_name_ = nullptr;
-        settings_last_name_ = nullptr;
-        settings_email_ = nullptr;
-        settings_phone_ = nullptr;
-        settings_password_ = nullptr;
-        settings_dialog_ = nullptr;
+    connect(dialogPtr, &QDialog::finished, this, [this]() {
+        settings_first_name_.reset();
+        settings_last_name_.reset();
+        settings_email_.reset();
+        settings_phone_.reset();
+        settings_password_.reset();
+        settings_dialog_.reset();
     });
 
     settings_dialog_->show();
