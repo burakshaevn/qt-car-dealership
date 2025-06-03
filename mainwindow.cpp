@@ -13,6 +13,8 @@
 #include <QCalendarWidget>
 #include <QScrollArea>
 #include <QDir>
+#include <QDebug>
+#include <QGraphicsDropShadowEffect>
 
 MainWindow::MainWindow(QWidget* parent)
     : QMainWindow(parent)
@@ -128,23 +130,26 @@ void MainWindow::on_pushButton_login_clicked()
 
 void MainWindow::on_pushButton_logout_clicked()
 {
+    qDebug() << "Logout: Starting...";
+
     if (!this->ui->stackedWidget)
     {
+        qDebug() << "Logout: No stacked widget";
         return;
     }
 
     if (user_  && user_->GetRole() == Role::User)
     {
-        // side_widget_.reset();
-        // floating_menu_.reset();
-        floating_widgets_.reset();
+        qDebug() << "Logout: Cleaning up user interface";
 
+        floating_widgets_.reset();
         products_.reset();
         cart_.reset();
         product_card_.reset();
         db_manager_.reset();
 
-        if (ui->scrollArea_catalog)
+        // Очищаем scroll areas
+        if (ui->scrollArea_catalog && ui->scrollArea_catalog->widget())
         {
             QWidget* oldWidget = ui->scrollArea_catalog->takeWidget();
             if (oldWidget)
@@ -152,7 +157,8 @@ void MainWindow::on_pushButton_logout_clicked()
                 oldWidget->deleteLater();
             }
         }
-        if (ui->scrollArea_purchased_cars)
+
+        if (ui->scrollArea_purchased_cars && ui->scrollArea_purchased_cars->widget())
         {
             QWidget* oldWidget = ui->scrollArea_purchased_cars->takeWidget();
             if (oldWidget)
@@ -160,68 +166,61 @@ void MainWindow::on_pushButton_logout_clicked()
                 oldWidget->deleteLater();
             }
         }
+
+        // Очищаем кнопки сервисов
+        qDebug() << "Logout: Cleaning up service buttons";
+        for (QPushButton* button : service_buttons_)
+        {
+            if (button)
+            {
+                button->deleteLater();
+            }
+        }
+        service_buttons_.clear();
     }
+
+    qDebug() << "Logout: Resetting user";
     user_.reset();
     table_.reset();
 
     // Переключение на экран логина
     if (this->ui->stackedWidget && this->ui->login)
     {
+        qDebug() << "Logout: Switching to login screen";
         this->ui->stackedWidget->setCurrentWidget(this->ui->login);
     }
-}
 
-void MainWindow::SetupFloatingMenu() {
-    floating_widgets_->BuildFloatingMenu(
-        [this]() { this->MoreClicked(); }, // Обработка кнопки "More"
-        [this]() // Обработка кнопки "Search"
-        {
-            bool ok;
-            QString term = QInputDialog::getText(
-                this,
-                "Поиск",
-                "Укажите поисковый запрос:",
-                QLineEdit::Normal,
-                "",
-                &ok
-                );
-
-            if (ok && !term.isEmpty())
-            {
-                ProductInfo product;
-                product.name_ = term;
-
-                int relevant_results = product_card_->DrawRelevantProducts(ui->scrollArea_catalog, product.name_);
-                if (relevant_results > 0)
-                {
-                    QMessageBox::information(this, "Поиск", "Найдено " + QString::number(relevant_results) + " результатов по запросу «" + term + "».");
-                }
-                else
-                {
-                    QMessageBox::warning(this, "Поиск", "Отсутствуют релевантные результаты.");
-                }
-            }
-        },
-        [this]() { this->SortByColorClicked(); }, // Обработка кнопки "Сортировка по цветам"
-        [this]() { this->ProfileClicked(); } // Обработка кнопки "User Profile"
-    );
+    qDebug() << "Logout: Complete";
 }
 
 QList<Products::ProductKey> MainWindow::GetPurchasedProducts(int user_id) const {
     QList<Products::ProductKey> products_; // Список названий купленных инструментов
+    qDebug() << "GetPurchasedProducts: Fetching products for user" << user_id;
 
     QSqlQuery query;
-    QString query_str = QString("SELECT * FROM CARS WHERE id IN (SELECT car_id FROM purchases WHERE client_id = %1);").arg(user_id);
+    QString query_str = QString(
+        "SELECT c.name, c.color "
+        "FROM cars c "
+        "INNER JOIN purchases p ON c.id = p.car_id "
+        "WHERE p.client_id = %1"
+    ).arg(user_id);
+
+    qDebug() << "GetPurchasedProducts: Executing query:" << query_str;
+
     if (!query.exec(query_str)) {
-        qWarning() << "Failed to execute query:" << query.lastError().text();
+        qWarning() << "GetPurchasedProducts: Failed to execute query:" << query.lastError().text();
         return products_;
     }
 
     while (query.next()) {
-        Products::ProductKey key = std::make_tuple(query.value(1).toString(), query.value(2).toString());
+        QString name = query.value("name").toString();
+        QString color = query.value("color").toString();
+        Products::ProductKey key = std::make_tuple(name, color);
         products_.append(key);
+        qDebug() << "GetPurchasedProducts: Found product:" << name << "color:" << color;
     }
 
+    qDebug() << "GetPurchasedProducts: Total products found:" << products_.size();
     return products_;
 }
 
@@ -259,7 +258,16 @@ void MainWindow::BuildDependencies() {
     ui->notifications_panel->installEventFilter(this);
 }
 
-void MainWindow::MoreClicked()
+void MainWindow::SetupFloatingMenu() {
+    floating_widgets_->BuildFloatingMenu(
+        [this]() { this->SortByProductType(); }, // Соритровка по типам
+        [this]() { this->SearchByTerm(); }, // Поиск по запросу
+        [this]() { this->SortByColor(); }, // Сортировка по цветам
+        [this]() { this->ProfileClicked(); } // Переход на страницу профиля
+        );
+}
+
+void MainWindow::SortByProductType()
 {
     if (user_.get())
     {
@@ -296,152 +304,101 @@ void MainWindow::MoreClicked()
     QMessageBox::warning(this, "Ошибка", "Чтобы переключаться по остальным разделам, необходимо авторизоваться как пользователь.");
 }
 void MainWindow::ProfileClicked() {
-    if (user_->GetRole() == Role::User)
-    {
-        floating_widgets_->GetSideMenu()->setVisible(false);
-
-        product_card_->HideOldCards();
-        product_card_->EnsureContainerInScrollArea(ui->scrollArea_purchased_cars);
-
-        const QList<Products::ProductKey>& purchases_products_ = GetPurchasedProducts(user_->GetId());
-        for (auto& key : purchases_products_)
-        {
-            const ProductInfo* found_product_struct = products_->FindProduct(key);
-            if (!found_product_struct)
-            {
-                qDebug() << "found_product_struct is empty";
-                break;
-            }
-
-            product_card_->DrawItem(*found_product_struct);
-            auto to_cart_button = product_card_->FindProductCard(key)->findChild<QPushButton*>("to_cart_", Qt::FindChildrenRecursively);
-            if (to_cart_button)
-            {
-                to_cart_button->hide();
-                product_card_->hidden_to_cart_buttons_Push(key);
-            }
-        }
-        product_card_->card_container_PerformAdjustSize();
-
-        SetupServicesScrollArea();
-
-        ui->label_clientname->setText(user_->GetName() + " — профиль");
-        ui->stackedWidget->setCurrentWidget(ui->user_page);
-    }
-}
-// void MainWindow::ProfileClicked()
-// {
-//     if (!user_ || user_->GetRole() != Role::User)
-//     {
-//         QMessageBox::warning(this, "Ошибка", "Авторизуйтесь для доступа к профилю.");
-//         return;
-//     }
-
-//     if (ui->stackedWidget->currentWidget() != ui->user_page)
-//     {
-//         QList<Products::ProductKey> products = user_->GetProducts();
-//         for (auto& product : products) {
-//             product_card_->DrawRelevantProducts(ui->scrollArea_purchased_cars, std::get<0>(product));
-//         }
-
-//         // if (!product_card_->hidden_to_cart_buttons_IsEmpty())
-//         // {
-//         //     product_card_->RestoreHiddenToCartButtons();
-//         // }
-
-//         // // Hide the side menu first
-//         // if (floating_widgets_ && floating_widgets_->GetSideMenu()) {
-//         //     floating_widgets_->GetSideMenu()->setVisible(false);
-//         // }
-
-//         // // Clear existing content before adding new
-//         // if (product_card_) {
-//         //     product_card_->HideOldCards();
-//         // }
-        
-//         // // Important: Clear the container before adding new content
-//         // if (ui->scrollArea_purchased_cars && ui->scrollArea_purchased_cars->widget()) {
-//         //     QWidget* oldWidget = ui->scrollArea_purchased_cars->takeWidget();
-//         //     if (oldWidget) {
-//         //         oldWidget->deleteLater();
-//         //     }
-//         // }
-        
-//         // if (product_card_) {
-//         //     product_card_->EnsureContainerInScrollArea(ui->scrollArea_purchased_cars);
-
-//         //     const QList<Products::ProductKey>& purchases_products_ = GetPurchasedProducts(user_->GetId());
-//         //     for (auto& key : purchases_products_)
-//         //     {
-//         //         const ProductInfo* found_product_struct = products_->FindProduct(key);
-//         //         if (!found_product_struct)
-//         //         {
-//         //             qDebug() << "found_product_struct is empty";
-//         //             continue;
-//         //         }
-
-//         //         product_card_->DrawItem(*found_product_struct);
-//         //         QWidget* card = product_card_->FindProductCard(key);
-//         //         if (card) {
-//         //             auto to_cart_button = card->findChild<QPushButton*>("to_cart_", Qt::FindChildrenRecursively);
-//         //             if (to_cart_button)
-//         //             {
-//         //                 to_cart_button->hide();
-//         //                 product_card_->hidden_to_cart_buttons_Push(key);
-//         //             }
-//         //         }
-//         //     }
-//         //     product_card_->card_container_PerformAdjustSize();
-//         // }
-
-//         // // Clear existing services scroll area content
-//         // if (ui->scrollArea_services && ui->scrollArea_services->widget()) {
-//         //     QWidget* oldWidget = ui->scrollArea_services->takeWidget();
-//         //     if (oldWidget) {
-//         //         oldWidget->deleteLater();
-//         //     }
-//         // }
-
-//         // // Setup services scroll area with proper cleanup
-//         // SetupServicesScrollArea();
-
-//         // if (ui->label_clientname) {
-//         //     ui->label_clientname->setText(user_->GetName() + " — профиль");
-//         // }
-        
-//         // Switch to user page
-//         ui->stackedWidget->setCurrentWidget(ui->user_page);
-//     }
-// }
-
-void MainWindow::SetupServicesScrollArea() {
-    // Prevent recursive calls
-    static bool isSettingUp = false;
-    if (isSettingUp) {
+    if (!user_ || user_->GetRole() != Role::User) {
+        QMessageBox::warning(this, "Ошибка", "Авторизуйтесь для доступа к профилю.");
         return;
     }
-    isSettingUp = true;
 
-    // Create a new container widget
-    QWidget* container = new QWidget(ui->scrollArea_services);
-    
-    // Configure scroll area
+    qDebug() << "ProfileClicked: User ID:" << user_->GetId();
+
+    if (ui->stackedWidget->currentWidget() == ui->user_page) {
+        return;
+    }
+
+    // Скрываем боковое меню
+    if (floating_widgets_ && floating_widgets_->GetSideMenu()) {
+        floating_widgets_->GetSideMenu()->setVisible(false);
+    }
+
+    if (product_card_ && products_) {
+        // Обновляем список купленных автомобилей
+        product_card_->UpdatePurchasedProductsWidget(ui->scrollArea_purchased_cars, user_->GetId());
+    }
+
+    SetupServicesScrollArea();
+
+    if (ui->label_clientname) {
+        ui->label_clientname->setText(user_->GetName() + " — профиль");
+    }
+
+    ui->stackedWidget->setCurrentWidget(ui->user_page);
+}
+
+void MainWindow::SetupServicesScrollArea()
+{
+    // Настройка QScrollArea
     ui->scrollArea_services->setHorizontalScrollBarPolicy(Qt::ScrollBarAsNeeded);
     ui->scrollArea_services->setVerticalScrollBarPolicy(Qt::ScrollBarAlwaysOff);
     ui->scrollArea_services->setWidgetResizable(false);
     ui->scrollArea_services->setFocusPolicy(Qt::WheelFocus);
 
-    // Set up layout
+    // Стили для QScrollArea с появлением скроллбара при наведении
+    ui->scrollArea_services->setStyleSheet(
+        "QScrollArea {"
+        "    background: transparent;"
+        "    border: none;"
+        "}"
+        "QScrollArea > QWidget {"
+        "    background: transparent;"
+        "}"
+        "QScrollArea::viewport {"
+        "    background: transparent;"
+        "}"
+        "QScrollBar:horizontal {"
+        "    height: 15px;"
+        "    background: transparent;"
+        "    margin: 3px 0px 3px 0px;"
+        "    border-radius: 7px;"
+        "}"
+        "QScrollBar::handle:horizontal {"
+        "    background: #9b9c9c;"
+        "    min-width: 20px;"
+        "    border-radius: 7px;"
+        "}"
+        "QScrollBar::add-line:horizontal {"
+        "    border: none;"
+        "    background: none;"
+        "    width: 0px;"
+        "}"
+        "QScrollBar::sub-line:horizontal {"
+        "    border: none;"
+        "    background: none;"
+        "    width: 0px;"
+        "}"
+        "QScrollBar::add-page:horizontal, QScrollBar::sub-page:horizontal {"
+        "    background: none;"
+        "}"
+        "QScrollBar:horizontal {"
+        "    opacity: 0;"
+        "}"
+        "QScrollArea:hover QScrollBar:horizontal {"
+        "    opacity: 1;"
+        "}"
+        );
+
+    // Создаём контейнер для карточек
+    QWidget* container = new QWidget();
     QHBoxLayout* layout = new QHBoxLayout(container);
     layout->setAlignment(Qt::AlignLeft);
     layout->setSpacing(21);
     layout->setContentsMargins(0, 0, 0, 0);
 
-    // List of service names
+    // Список названий карточек
     QStringList services = { "Обслуживание", "Аренда", "Кредитование", "Страхование" };
 
-    // Create service cards
-    for (const QString& service : services) {
+    // Создаём карточки
+    for (const QString& service : services)
+    {
         QPushButton* card = new QPushButton(container);
         card->setFixedSize(360, 175);
         card->setStyleSheet(
@@ -454,25 +411,27 @@ void MainWindow::SetupServicesScrollArea() {
             "QPushButton:hover {"
             "    background-color: #e0e0e0;"
             "}"
-        );
+            );
 
         QLabel* label = new QLabel(service, card);
         label->setStyleSheet(
             "color: #1d1b20;"
             "font: 700 20pt 'JetBrains Mono';"
             "background: transparent;"
-        );
+            );
         label->move(14, 105);
         label->setAlignment(Qt::AlignLeft);
 
         // Connect click event
         connect(card, &QPushButton::clicked, this, [this, service]() {
-            if (!user_) {
+            if (!user_)
+            {
                 QMessageBox::warning(this, "Ошибка", "Авторизуйтесь для доступа к этому разделу.");
                 return;
             }
 
-            if (service == "Обслуживание") {
+            if (service == "Обслуживание")
+            {
                 QDialog dialog(this);
                 dialog.setWindowTitle("Заявка на сервисное обслуживание");
                 dialog.setFixedSize(500, 600);
@@ -517,6 +476,19 @@ void MainWindow::SetupServicesScrollArea() {
                     "}"
                     "QPushButton[type='secondary']:hover {"
                     "    background-color: #e0e0e0;"
+                    "}"
+                    "QCalendarWidget {"
+                    "    background-color: white;"
+                    "    font: 10pt 'JetBrains Mono';"
+                    "}"
+                    "QCalendarWidget QToolButton {"
+                    "    color: #1d1b20;"
+                    "    font: 10pt 'JetBrains Mono';"
+                    "    padding: 5px;"
+                    "}"
+                    "QCalendarWidget QMenu {"
+                    "    background-color: white;"
+                    "    font: 10pt 'JetBrains Mono';"
                     "}"
                 );
 
@@ -576,7 +548,7 @@ void MainWindow::SetupServicesScrollArea() {
 
                 QPushButton* okButton = new QPushButton("Подтвердить", &dialog);
                 okButton->setProperty("type", "primary");
-                
+
                 QPushButton* cancelButton = new QPushButton("Отмена", &dialog);
                 cancelButton->setProperty("type", "secondary");
 
@@ -599,12 +571,12 @@ void MainWindow::SetupServicesScrollArea() {
                     QString dateTime = calendar->selectedDate().toString("yyyy-MM-dd") + " " + timeEdit->time().toString("HH:mm");
                     QSqlQuery query;
                     QString queryStr = QString(
-                        "INSERT INTO service_requests (client_id, car_id, service_type, scheduled_date, status) "
-                        "VALUES (%1, %2, '%3', '%4', 'не обработано');")
-                        .arg(user_->GetId())
-                        .arg(carCombo->currentData().toInt())
-                        .arg(serviceTypeEdit->text())
-                        .arg(dateTime);
+                                           "INSERT INTO service_requests (client_id, car_id, service_type, scheduled_date, status) "
+                                           "VALUES (%1, %2, '%3', '%4', 'не обработано');")
+                                           .arg(user_->GetId())
+                                           .arg(carCombo->currentData().toInt())
+                                           .arg(serviceTypeEdit->text())
+                                           .arg(dateTime);
 
                     if (query.exec(queryStr)) {
                         QMessageBox::information(this, "Успех", "Заявка на обслуживание подана.");
@@ -613,10 +585,143 @@ void MainWindow::SetupServicesScrollArea() {
                     }
                 }
             }
-            else if (service == "Аренда") {
-                QMessageBox::information(this, "Информация", "Для оформления заявки на аренду необходимо выбрать автомобиль.");
+            else if (service == "Аренда")
+            {
+                QDialog dialog(this);
+                dialog.setWindowTitle("Заявка на аренду");
+                dialog.setFixedSize(500, 400);
+                dialog.setStyleSheet(
+                    "QDialog {"
+                    "    background-color: #ffffff;"
+                    "}"
+                    "QLabel {"
+                    "    color: #1d1b20;"
+                    "    font: 500 12pt 'JetBrains Mono';"
+                    "}"
+                    "QLabel[type='header'] {"
+                    "    font: 700 16pt 'JetBrains Mono';"
+                    "    padding-bottom: 20px;"
+                    "}"
+                    "QComboBox, QSpinBox {"
+                    "    padding: 8px;"
+                    "    border: 2px solid #e0e0e0;"
+                    "    border-radius: 8px;"
+                    "    background: #fafafa;"
+                    "    font: 11pt 'JetBrains Mono';"
+                    "    min-height: 30px;"
+                    "    margin-bottom: 15px;"
+                    "}"
+                    "QComboBox:focus, QSpinBox:focus {"
+                    "    border: 2px solid #2196F3;"
+                    "}"
+                    "QPushButton {"
+                    "    padding: 10px 20px;"
+                    "    border-radius: 8px;"
+                    "    font: 600 11pt 'JetBrains Mono';"
+                    "    min-width: 100px;"
+                    "}"
+                    "QPushButton[type='primary'] {"
+                    "    background-color: #2196F3;"
+                    "    color: white;"
+                    "    border: none;"
+                    "}"
+                    "QPushButton[type='primary']:hover {"
+                    "    background-color: #1976D2;"
+                    "}"
+                    "QPushButton[type='secondary'] {"
+                    "    background-color: #fafafa;"
+                    "    color: #1d1b20;"
+                    "    border: 2px solid #e0e0e0;"
+                    "}"
+                    "QPushButton[type='secondary']:hover {"
+                    "    background-color: #e0e0e0;"
+                    "}"
+                );
+
+                QVBoxLayout* dialogLayout = new QVBoxLayout(&dialog);
+                dialogLayout->setSpacing(10);
+                dialogLayout->setContentsMargins(30, 30, 30, 30);
+
+                // Заголовок
+                QLabel* titleLabel = new QLabel("Аренда автомобиля", &dialog);
+                titleLabel->setProperty("type", "header");
+                dialogLayout->addWidget(titleLabel);
+
+                // Выбор автомобиля
+                QLabel* carLabel = new QLabel("Выберите автомобиль:", &dialog);
+                dialogLayout->addWidget(carLabel);
+
+                QComboBox* carCombo = new QComboBox(&dialog);
+                QSqlQuery carQuery("SELECT MIN(id) AS id, name FROM cars WHERE available_for_rent = true GROUP BY name ORDER BY name");
+                while (carQuery.next()) {
+                    carCombo->addItem(carQuery.value("name").toString(), carQuery.value("id").toInt());
+                }
+                dialogLayout->addWidget(carCombo);
+
+                // Срок аренды
+                QLabel* termLabel = new QLabel("Срок аренды:", &dialog);
+                dialogLayout->addWidget(termLabel);
+
+                QSpinBox* termEdit = new QSpinBox(&dialog);
+                termEdit->setRange(1, 30);
+                termEdit->setSuffix(" дней");
+                dialogLayout->addWidget(termEdit);
+
+                // Дата начала
+                QLabel* dateLabel = new QLabel("Дата начала аренды:", &dialog);
+                dialogLayout->addWidget(dateLabel);
+
+                QCalendarWidget* calendar = new QCalendarWidget(&dialog);
+                calendar->setMinimumDate(QDate::currentDate());
+                dialogLayout->addWidget(calendar);
+
+                // Растягивающийся элемент
+                dialogLayout->addStretch();
+
+                // Кнопки
+                QHBoxLayout* buttonLayout = new QHBoxLayout();
+                buttonLayout->setSpacing(15);
+
+                QPushButton* okButton = new QPushButton("Подтвердить", &dialog);
+                okButton->setProperty("type", "primary");
+
+                QPushButton* cancelButton = new QPushButton("Отмена", &dialog);
+                cancelButton->setProperty("type", "secondary");
+
+                buttonLayout->addWidget(cancelButton);
+                buttonLayout->addWidget(okButton);
+                dialogLayout->addLayout(buttonLayout);
+
+                bool accepted = false;
+                connect(okButton, &QPushButton::clicked, [&]() {
+                    if (carCombo->currentText().isEmpty()) {
+                        QMessageBox::warning(&dialog, "Ошибка", "Выберите автомобиль для аренды.");
+                        return;
+                    }
+                    accepted = true;
+                    dialog.accept();
+                });
+                connect(cancelButton, &QPushButton::clicked, [&]() { dialog.reject(); });
+
+                if (dialog.exec() == QDialog::Accepted && accepted) {
+                    QSqlQuery query;
+                    QString queryStr = QString(
+                        "INSERT INTO rental_requests (client_id, car_id, rental_days, start_date, status) "
+                        "VALUES (%1, %2, %3, '%4', 'не обработано');")
+                        .arg(user_->GetId())
+                        .arg(carCombo->currentData().toInt())
+                        .arg(termEdit->value())
+                        .arg(calendar->selectedDate().toString("yyyy-MM-dd"));
+
+                    if (query.exec(queryStr)) {
+                        QMessageBox::information(this, "Успех", "Заявка на аренду подана.");
+                    } else {
+                        QMessageBox::critical(this, "Ошибка", "Не удалось подать заявку: " + query.lastError().text());
+                    }
+                }
             }
-            else if (service == "Кредитование") {
+            else if (service == "Кредитование")
+            {
                 QDialog dialog(this);
                 dialog.setWindowTitle("Заявка на кредитование");
                 dialog.setFixedSize(500, 400);
@@ -716,7 +821,7 @@ void MainWindow::SetupServicesScrollArea() {
 
                 QPushButton* okButton = new QPushButton("Подтвердить", &dialog);
                 okButton->setProperty("type", "primary");
-                
+
                 QPushButton* cancelButton = new QPushButton("Отмена", &dialog);
                 cancelButton->setProperty("type", "secondary");
 
@@ -734,12 +839,12 @@ void MainWindow::SetupServicesScrollArea() {
                 if (dialog.exec() == QDialog::Accepted && accepted) {
                     QSqlQuery query;
                     QString queryStr = QString(
-                        "INSERT INTO loan_requests (client_id, car_id, loan_amount, loan_term_months, status) "
-                        "VALUES (%1, %2, %3, %4, 'не обработано');")
-                        .arg(user_->GetId())
-                        .arg(carCombo->currentData().toInt())
-                        .arg(amountEdit->value())
-                        .arg(termEdit->value());
+                                           "INSERT INTO loan_requests (client_id, car_id, loan_amount, loan_term_months, status) "
+                                           "VALUES (%1, %2, %3, %4, 'не обработано');")
+                                           .arg(user_->GetId())
+                                           .arg(carCombo->currentData().toInt())
+                                           .arg(amountEdit->value())
+                                           .arg(termEdit->value());
 
                     if (query.exec(queryStr)) {
                         QMessageBox::information(this, "Успех", "Заявка на кредитование подана.");
@@ -837,7 +942,7 @@ void MainWindow::SetupServicesScrollArea() {
 
                 QPushButton* okButton = new QPushButton("Подтвердить", &dialog);
                 okButton->setProperty("type", "primary");
-                
+
                 QPushButton* cancelButton = new QPushButton("Отмена", &dialog);
                 cancelButton->setProperty("type", "secondary");
 
@@ -855,11 +960,11 @@ void MainWindow::SetupServicesScrollArea() {
                 if (dialog.exec() == QDialog::Accepted && accepted) {
                     QSqlQuery query;
                     QString queryStr = QString(
-                        "INSERT INTO insurance_requests (client_id, car_id, insurance_type, status) "
-                        "VALUES (%1, %2, '%3', 'не обработано');")
-                        .arg(user_->GetId())
-                        .arg(carCombo->currentData().toInt())
-                        .arg(insuranceTypeCombo->currentText());
+                                           "INSERT INTO insurance_requests (client_id, car_id, insurance_type, status) "
+                                           "VALUES (%1, %2, '%3', 'не обработано');")
+                                           .arg(user_->GetId())
+                                           .arg(carCombo->currentData().toInt())
+                                           .arg(insuranceTypeCombo->currentText());
 
                     if (query.exec(queryStr)) {
                         QMessageBox::information(this, "Успех", "Заявка на страхование подана.");
@@ -873,62 +978,320 @@ void MainWindow::SetupServicesScrollArea() {
         layout->addWidget(card);
     }
 
-    // Set container size
+    // Устанавливаем размер контейнера
     int containerWidth = (360 + layout->spacing()) * services.size();
     container->setMinimumWidth(containerWidth);
     container->setFixedHeight(175);
 
-    // Set scroll area stylesheet
-    ui->scrollArea_services->setStyleSheet(
-        "QScrollArea {"
-        "    background: transparent;"
-        "    border: none;"
-        "}"
-        "QScrollArea > QWidget {"
-        "    background: transparent;"
-        "}"
-        "QScrollArea::viewport {"
-        "    background: transparent;"
-        "}"
-        "QScrollBar:horizontal {"
-        "    height: 15px;"
-        "    background: transparent;"
-        "    margin: 3px 0px 3px 0px;"
-        "    border-radius: 7px;"
-        "}"
-        "QScrollBar::handle:horizontal {"
-        "    background: #9b9c9c;"
-        "    min-width: 20px;"
-        "    border-radius: 7px;"
-        "}"
-        "QScrollBar::add-line:horizontal {"
-        "    border: none;"
-        "    background: none;"
-        "    width: 0px;"
-        "}"
-        "QScrollBar::sub-line:horizontal {"
-        "    border: none;"
-        "    background: none;"
-        "    width: 0px;"
-        "}"
-        "QScrollBar::add-page:horizontal, QScrollBar::sub-page:horizontal {"
-        "    background: none;"
-        "}"
-        "QScrollBar:horizontal {"
-        "    opacity: 0;"
-        "}"
-        "QScrollArea:hover QScrollBar:horizontal {"
-        "    opacity: 1;"
-        "}"
-    );
-
-    // Set the container as the scroll area widget
+    // Устанавливаем контейнер в QScrollArea
     ui->scrollArea_services->setWidget(container);
-    
-    isSettingUp = false;
 }
 
-void MainWindow::SortByColorClicked()
+// Service button handlers
+void MainWindow::handleServiceRequest() {
+    qDebug() << "Handling service request";
+
+    if (!user_) {
+        QMessageBox::warning(this, "Ошибка", "Авторизуйтесь для доступа к сервису.");
+        return;
+    }
+
+    QDialog dialog(this);
+    dialog.setWindowTitle("Запись на обслуживание");
+    dialog.setFixedSize(400, 300);
+
+    QVBoxLayout* layout = new QVBoxLayout(&dialog);
+
+    // Service type selection
+    QComboBox* serviceTypeCombo = new QComboBox(&dialog);
+    serviceTypeCombo->addItems({"Техническое обслуживание", "Диагностика", "Ремонт"});
+    layout->addWidget(new QLabel("Тип обслуживания:", &dialog));
+    layout->addWidget(serviceTypeCombo);
+
+    // Date selection
+    QCalendarWidget* calendar = new QCalendarWidget(&dialog);
+    calendar->setMinimumDate(QDate::currentDate());
+    layout->addWidget(new QLabel("Дата:", &dialog));
+    layout->addWidget(calendar);
+
+    // Time selection
+    QTimeEdit* timeEdit = new QTimeEdit(&dialog);
+    timeEdit->setDisplayFormat("HH:mm");
+    timeEdit->setTime(QTime(9, 0));
+    layout->addWidget(new QLabel("Время:", &dialog));
+    layout->addWidget(timeEdit);
+
+    // Buttons
+    QHBoxLayout* buttonLayout = new QHBoxLayout();
+    QPushButton* okButton = new QPushButton("OK", &dialog);
+    QPushButton* cancelButton = new QPushButton("Отмена", &dialog);
+    buttonLayout->addWidget(cancelButton);
+    buttonLayout->addWidget(okButton);
+    layout->addLayout(buttonLayout);
+
+    bool accepted = false;
+    connect(okButton, &QPushButton::clicked, [&]() {
+        accepted = true;
+        dialog.accept();
+    });
+    connect(cancelButton, &QPushButton::clicked, &dialog, &QDialog::reject);
+
+    if (dialog.exec() == QDialog::Accepted && accepted) {
+        QDateTime selectedDateTime(calendar->selectedDate(), timeEdit->time());
+        QString serviceType = serviceTypeCombo->currentText();
+
+        QSqlQuery query;
+        QString queryStr = QString(
+            "INSERT INTO service_requests (client_id, service_type, scheduled_date, status) "
+            "VALUES (%1, '%2', '%3', 'не обработано');")
+            .arg(user_->GetId())
+            .arg(serviceType)
+            .arg(selectedDateTime.toString("yyyy-MM-dd HH:mm:ss"));
+
+        if (query.exec(queryStr)) {
+            QMessageBox::information(this, "Успех",
+                QString("Заявка на %1 создана на %2")
+                    .arg(serviceType)
+                    .arg(selectedDateTime.toString("dd.MM.yyyy HH:mm")));
+        } else {
+            QMessageBox::critical(this, "Ошибка",
+                "Не удалось создать заявку: " + query.lastError().text());
+        }
+    }
+}
+
+void MainWindow::handleRentalRequest() {
+    qDebug() << "Handling rental request";
+
+    if (!user_) {
+        QMessageBox::warning(this, "Ошибка", "Авторизуйтесь для доступа к сервису аренды.");
+        return;
+    }
+
+    QDialog dialog(this);
+    dialog.setWindowTitle("Заявка на аренду");
+    dialog.setFixedSize(400, 400);
+
+    QVBoxLayout* layout = new QVBoxLayout(&dialog);
+
+    // Car selection
+    QComboBox* carCombo = new QComboBox(&dialog);
+    QSqlQuery carQuery("SELECT name FROM cars WHERE available_for_rent = true");
+    while (carQuery.next()) {
+        carCombo->addItem(carQuery.value("name").toString());
+    }
+    layout->addWidget(new QLabel("Автомобиль:", &dialog));
+    layout->addWidget(carCombo);
+
+    // Rental period
+    QSpinBox* daysSpinBox = new QSpinBox(&dialog);
+    daysSpinBox->setRange(1, 30);
+    daysSpinBox->setSuffix(" дней");
+    layout->addWidget(new QLabel("Срок аренды:", &dialog));
+    layout->addWidget(daysSpinBox);
+
+    // Start date
+    QCalendarWidget* calendar = new QCalendarWidget(&dialog);
+    calendar->setMinimumDate(QDate::currentDate());
+    layout->addWidget(new QLabel("Дата начала:", &dialog));
+    layout->addWidget(calendar);
+
+    // Buttons
+    QHBoxLayout* buttonLayout = new QHBoxLayout();
+    QPushButton* okButton = new QPushButton("OK", &dialog);
+    QPushButton* cancelButton = new QPushButton("Отмена", &dialog);
+    buttonLayout->addWidget(cancelButton);
+    buttonLayout->addWidget(okButton);
+    layout->addLayout(buttonLayout);
+
+    bool accepted = false;
+    connect(okButton, &QPushButton::clicked, [&]() {
+        accepted = true;
+        dialog.accept();
+    });
+    connect(cancelButton, &QPushButton::clicked, &dialog, &QDialog::reject);
+
+    if (dialog.exec() == QDialog::Accepted && accepted) {
+        QDate startDate = calendar->selectedDate();
+        QString carName = carCombo->currentText();
+        int rentalDays = daysSpinBox->value();
+
+        QSqlQuery query;
+        QString queryStr = QString(
+            "INSERT INTO rental_requests (client_id, car_name, start_date, rental_days, status) "
+            "VALUES (%1, '%2', '%3', %4, 'не обработано');")
+            .arg(user_->GetId())
+            .arg(carName)
+            .arg(startDate.toString("yyyy-MM-dd"))
+            .arg(rentalDays);
+
+        if (query.exec(queryStr)) {
+            QMessageBox::information(this, "Успех",
+                QString("Заявка на аренду %1 на %2 дней создана.\nДата начала: %3")
+                    .arg(carName)
+                    .arg(rentalDays)
+                    .arg(startDate.toString("dd.MM.yyyy")));
+        } else {
+            QMessageBox::critical(this, "Ошибка",
+                "Не удалось создать заявку: " + query.lastError().text());
+        }
+    }
+}
+
+void MainWindow::handleLoanRequest() {
+    qDebug() << "Handling loan request";
+
+    if (!user_) {
+        QMessageBox::warning(this, "Ошибка", "Авторизуйтесь для доступа к кредитованию.");
+        return;
+    }
+
+    QDialog dialog(this);
+    dialog.setWindowTitle("Заявка на кредит");
+    dialog.setFixedSize(400, 300);
+
+    QVBoxLayout* layout = new QVBoxLayout(&dialog);
+
+    // Loan amount
+    QDoubleSpinBox* amountSpinBox = new QDoubleSpinBox(&dialog);
+    amountSpinBox->setRange(100000, 10000000);
+    amountSpinBox->setSingleStep(50000);
+    amountSpinBox->setValue(1000000);
+    amountSpinBox->setSuffix(" руб.");
+    layout->addWidget(new QLabel("Сумма кредита:", &dialog));
+    layout->addWidget(amountSpinBox);
+
+    // Loan term
+    QSpinBox* termSpinBox = new QSpinBox(&dialog);
+    termSpinBox->setRange(12, 84);
+    termSpinBox->setSingleStep(12);
+    termSpinBox->setValue(36);
+    termSpinBox->setSuffix(" месяцев");
+    layout->addWidget(new QLabel("Срок кредита:", &dialog));
+    layout->addWidget(termSpinBox);
+
+    // Buttons
+    QHBoxLayout* buttonLayout = new QHBoxLayout();
+    QPushButton* okButton = new QPushButton("OK", &dialog);
+    QPushButton* cancelButton = new QPushButton("Отмена", &dialog);
+    buttonLayout->addWidget(cancelButton);
+    buttonLayout->addWidget(okButton);
+    layout->addLayout(buttonLayout);
+
+    bool accepted = false;
+    connect(okButton, &QPushButton::clicked, [&]() {
+        accepted = true;
+        dialog.accept();
+    });
+    connect(cancelButton, &QPushButton::clicked, &dialog, &QDialog::reject);
+
+    if (dialog.exec() == QDialog::Accepted && accepted) {
+        double loanAmount = amountSpinBox->value();
+        int loanTerm = termSpinBox->value();
+
+        QSqlQuery query;
+        QString queryStr = QString(
+            "INSERT INTO loan_requests (client_id, loan_amount, loan_term, status) "
+            "VALUES (%1, %2, %3, 'не обработано');")
+            .arg(user_->GetId())
+            .arg(loanAmount)
+            .arg(loanTerm);
+
+        if (query.exec(queryStr)) {
+            QMessageBox::information(this, "Успех",
+                QString("Заявка на кредит на сумму %1 руб. на %2 месяцев создана.")
+                    .arg(FormatPrice(loanAmount))
+                    .arg(loanTerm));
+        } else {
+            QMessageBox::critical(this, "Ошибка",
+                "Не удалось создать заявку: " + query.lastError().text());
+        }
+    }
+}
+
+void MainWindow::handleInsuranceRequest() {
+    qDebug() << "Handling insurance request";
+
+    if (!user_) {
+        QMessageBox::warning(this, "Ошибка", "Авторизуйтесь для доступа к страхованию.");
+        return;
+    }
+
+    QDialog dialog(this);
+    dialog.setWindowTitle("Заявка на страхование");
+    dialog.setFixedSize(400, 300);
+
+    QVBoxLayout* layout = new QVBoxLayout(&dialog);
+
+    // Insurance type
+    QComboBox* insuranceTypeCombo = new QComboBox(&dialog);
+    insuranceTypeCombo->addItems({"ОСАГО", "КАСКО", "ДСАГО"});
+    layout->addWidget(new QLabel("Тип страхования:", &dialog));
+    layout->addWidget(insuranceTypeCombo);
+
+    // Car selection for the user's purchased cars
+    QComboBox* carCombo = new QComboBox(&dialog);
+    QSqlQuery carQuery;
+    QString carQueryStr = QString(
+        "SELECT DISTINCT c.name "
+        "FROM cars c "
+        "INNER JOIN purchases p ON c.id = p.car_id "
+        "WHERE p.client_id = %1")
+        .arg(user_->GetId());
+
+    if (carQuery.exec(carQueryStr)) {
+        while (carQuery.next()) {
+            carCombo->addItem(carQuery.value("name").toString());
+        }
+    }
+    layout->addWidget(new QLabel("Автомобиль:", &dialog));
+    layout->addWidget(carCombo);
+
+    // Buttons
+    QHBoxLayout* buttonLayout = new QHBoxLayout();
+    QPushButton* okButton = new QPushButton("OK", &dialog);
+    QPushButton* cancelButton = new QPushButton("Отмена", &dialog);
+    buttonLayout->addWidget(cancelButton);
+    buttonLayout->addWidget(okButton);
+    layout->addLayout(buttonLayout);
+
+    bool accepted = false;
+    connect(okButton, &QPushButton::clicked, [&]() {
+        if (carCombo->currentText().isEmpty()) {
+            QMessageBox::warning(&dialog, "Ошибка",
+                "У вас нет автомобилей для страхования. Сначала приобретите автомобиль.");
+            return;
+        }
+        accepted = true;
+        dialog.accept();
+    });
+    connect(cancelButton, &QPushButton::clicked, &dialog, &QDialog::reject);
+
+    if (dialog.exec() == QDialog::Accepted && accepted) {
+        QString insuranceType = insuranceTypeCombo->currentText();
+        QString carName = carCombo->currentText();
+
+        QSqlQuery query;
+        QString queryStr = QString(
+            "INSERT INTO insurance_requests (client_id, insurance_type, car_name, status) "
+            "VALUES (%1, '%2', '%3', 'не обработано');")
+            .arg(user_->GetId())
+            .arg(insuranceType)
+            .arg(carName);
+
+        if (query.exec(queryStr)) {
+            QMessageBox::information(this, "Успех",
+                QString("Заявка на страхование %1 для автомобиля %2 создана.")
+                    .arg(insuranceType)
+                    .arg(carName));
+        } else {
+            QMessageBox::critical(this, "Ошибка",
+                "Не удалось создать заявку: " + query.lastError().text());
+        }
+    }
+}
+
+void MainWindow::SortByColor()
 {
     if (user_.get()) {
         if (!product_card_->hidden_to_cart_buttons_IsEmpty())
@@ -954,6 +1317,36 @@ void MainWindow::SortByColorClicked()
         }
     }
     QMessageBox::warning(this, "Ошибка", "Чтобы переключаться по остальным разделам, необходимо авторизоваться как пользователь.");
+}
+
+void MainWindow::SearchByTerm()
+{
+    bool ok;
+    QString term = QInputDialog::getText(
+        this,
+        "Поиск",
+        "Укажите поисковый запрос:",
+        QLineEdit::Normal,
+        "",
+        &ok
+        );
+
+    if (ok && !term.isEmpty())
+    {
+        ProductInfo product;
+        product.name_ = term;
+
+        int relevant_results = product_card_->DrawRelevantProducts(ui->scrollArea_catalog, product.name_);
+        if (relevant_results > 0)
+        {
+            ui->stackedWidget->setCurrentWidget(ui->main);
+            QMessageBox::information(this, "Поиск", "Найдено " + QString::number(relevant_results) + " результатов по запросу «" + term + "».");
+        }
+        else
+        {
+            QMessageBox::warning(this, "Поиск", "Отсутствуют релевантные результаты.");
+        }
+    }
 }
 
 void MainWindow::SelectionProcessing(const bool ok, const QStringView selected_type, const QStringView selected_color)
@@ -1121,15 +1514,25 @@ void MainWindow::on_pushButton_back_clicked()
         return;
     }
 
-    // Clean up any existing content in the scroll areas
+    qDebug() << "Back button: Starting cleanup...";
+
+    // Clean up scroll areas
     if (ui->scrollArea_catalog && ui->scrollArea_catalog->widget()) {
-        QWidget* container = ui->scrollArea_catalog->widget();
-        qDeleteAll(container->children());
+        QWidget* oldCatalogWidget = ui->scrollArea_catalog->takeWidget();
+        if (oldCatalogWidget) {
+            qDebug() << "Back button: Cleaning up catalog widget";
+            oldCatalogWidget->hide();
+            oldCatalogWidget->deleteLater();
+        }
     }
 
     if (ui->scrollArea_purchased_cars && ui->scrollArea_purchased_cars->widget()) {
-        QWidget* container = ui->scrollArea_purchased_cars->widget();
-        qDeleteAll(container->children());
+        QWidget* oldPurchasedWidget = ui->scrollArea_purchased_cars->takeWidget();
+        if (oldPurchasedWidget) {
+            qDebug() << "Back button: Cleaning up purchased cars widget";
+            oldPurchasedWidget->hide();
+            oldPurchasedWidget->deleteLater();
+        }
     }
 
     // Reset current product state
@@ -1143,11 +1546,13 @@ void MainWindow::on_pushButton_back_clicked()
 
     // Rebuild the main catalog view
     if (product_card_) {
+        qDebug() << "Back button: Rebuilding catalog view";
         product_card_->UpdateProductsWidget(ui->scrollArea_catalog, QString("Смотреть всё"), QString("Белый"));
     }
 
-    // Switch to main page
+    qDebug() << "Back button: Switching to main page";
     ui->stackedWidget->setCurrentWidget(ui->main);
+    qDebug() << "Back button: Cleanup complete";
 }
 
 void MainWindow::on_pushButton_info_clicked()
@@ -1349,17 +1754,17 @@ void MainWindow::on_pushButton_notifications_clicked()
 {
     bool isVisible = ui->notifications_panel->isVisible();
     ui->notifications_panel->setVisible(!isVisible);
-    
+
     if (!isVisible) {
         // Проверяем наличие новых уведомлений
         CheckNotifications();
-        
+
         // Обновляем уведомления
         UpdateNotifications();
-        
+
         // Поднимаем панель поверх других виджетов
         ui->notifications_panel->raise();
-        
+
         // Устанавливаем фокус на панель, чтобы она оставалась поверх
         ui->notifications_panel->setFocus();
     }
@@ -1412,9 +1817,9 @@ void MainWindow::CheckNotifications()
                     "   border-radius: 17px;"
                     "}"
                 );
-                
+
                 // Показываем всплывающее уведомление
-                QMessageBox::information(this, "Новые уведомления", 
+                QMessageBox::information(this, "Новые уведомления",
                     QString("У вас есть %1 новых уведомлений о статусе заявок").arg(count));
             }
         }
@@ -1473,9 +1878,9 @@ void MainWindow::UpdateNotifications()
         QString status = query.value("status").toString();
         QDateTime createdAt = query.value("created_at").toDateTime();
         int id = query.value("id").toInt();
-        
+
         qDebug() << "Processing notification:" << type << details << status;
-        
+
         QString title;
         QString message;
         bool updateSuccess = false;
@@ -1488,41 +1893,41 @@ void MainWindow::UpdateNotifications()
                          .arg(details)
                          .arg(scheduledDate.toString("dd.MM.yyyy HH:mm"))
                          .arg(status);
-            
+
             // Обновляем статус уведомления
             updateSuccess = db_manager_->ExecuteQuery(
                 QString("UPDATE service_requests SET notification_shown = true WHERE id = %1 AND client_id = %2")
                     .arg(id)
                     .arg(user_->GetId()));
-        } 
+        }
         else if (type == "insurance") {
             title = "Заявка на страхование";
             message = QString("Статус заявки на %1\nСтатус: %2")
                          .arg(details)
                          .arg(status);
-            
+
             updateSuccess = db_manager_->ExecuteQuery(
                 QString("UPDATE insurance_requests SET notification_shown = true WHERE id = %1 AND client_id = %2")
                     .arg(id)
                     .arg(user_->GetId()));
-        } 
+        }
         else if (type == "loan") {
             title = "Заявка на кредит";
             message = QString("Статус заявки на сумму %1 руб.\nСтатус: %2")
                          .arg(FormatPrice(details.toLongLong()))
                          .arg(status);
-            
+
             updateSuccess = db_manager_->ExecuteQuery(
                 QString("UPDATE loan_requests SET notification_shown = true WHERE id = %1 AND client_id = %2")
                     .arg(id)
                     .arg(user_->GetId()));
-        } 
+        }
         else if (type == "sell") {
             title = "Заявка на продажу";
             message = QString("Статус заявки на продажу %1\nСтатус: %2")
                          .arg(details)
                          .arg(status);
-            
+
             updateSuccess = db_manager_->ExecuteQuery(
                 QString("UPDATE sell_requests SET notification_shown = true WHERE id = %1 AND client_id = %2")
                     .arg(id)
@@ -1565,7 +1970,7 @@ void MainWindow::AddNotification(const QString& title, const QString& message)
         "   padding: 10px;"
         "}"
     );
-    
+
     QVBoxLayout* layout = new QVBoxLayout(notification);
     layout->setContentsMargins(10, 10, 10, 10);
     layout->setSpacing(5);
@@ -1597,7 +2002,7 @@ void MainWindow::AddNotification(const QString& title, const QString& message)
     // Проверяем, что у нас есть контейнер для уведомлений
     QVBoxLayout* notificationsLayout = qobject_cast<QVBoxLayout*>(
         ui->scrollAreaWidgetContents_notifications->layout());
-    
+
     if (!notificationsLayout) {
         qDebug() << "Creating new notifications layout";
         notificationsLayout = new QVBoxLayout(ui->scrollAreaWidgetContents_notifications);
@@ -1608,7 +2013,7 @@ void MainWindow::AddNotification(const QString& title, const QString& message)
 
     qDebug() << "Adding notification widget to layout";
     notificationsLayout->addWidget(notification);
-    
+
     // Устанавливаем минимальную ширину для контейнера уведомлений
     ui->scrollAreaWidgetContents_notifications->setMinimumWidth(
         ui->scrollArea_notifications->width() - 30); // 30 пикселей для скроллбара
@@ -1776,7 +2181,7 @@ void MainWindow::on_pushButton_settings_clicked()
 
     // Сохраняем указатель на диалог для использования в лямбда-функциях
     QDialog* dialogPtr = settings_dialog_.get();
-    
+
     // Обработка нажатия кнопки "Сохранить"
     connect(saveButton, &QPushButton::clicked, dialogPtr, [this, dialogPtr]() {
         // Проверяем, что все поля заполнены

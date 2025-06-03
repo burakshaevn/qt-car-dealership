@@ -1,61 +1,193 @@
 #include "product_card.h"
+#include "domain.h"
 
 ProductCard::ProductCard(std::shared_ptr<DatabaseHandler> db_manager, std::shared_ptr<Products> products, QObject *parent)
     : db_manager_(std::move(db_manager))
     , products_(std::move(products))
     , QObject{parent}
 {
-    // Создаем card_container_
+    // Создаем card_container_ для каталога
     card_container_ = new QWidget();
     card_container_->setSizePolicy(QSizePolicy::Expanding, QSizePolicy::Minimum);
 
-    // Создаём layout для карточек
+    // Создаём layout для карточек каталога
     layout_ = new QVBoxLayout(card_container_);
     layout_->setAlignment(Qt::AlignTop);
     layout_->setSpacing(22);
     layout_->setContentsMargins(22, 22, 22, 22);
-    // layout_->setContentsMargins(0, 0, 0, 0);
+
+    // Создаем purchased_container_ для купленных товаров
+    purchased_container_ = new QWidget();
+    purchased_container_->setSizePolicy(QSizePolicy::Expanding, QSizePolicy::Minimum);
+
+    // Создаём layout для купленных товаров
+    purchased_layout_ = new QVBoxLayout(purchased_container_);
+    purchased_layout_->setAlignment(Qt::AlignTop);
+    purchased_layout_->setSpacing(22);
+    purchased_layout_->setContentsMargins(22, 22, 22, 22);
 }
 
-void ProductCard::SetProductsPtr(std::shared_ptr<Products> products) {
+void ProductCard::SetProductsPtr(std::shared_ptr<Products> products)
+{
     products_ = std::move(products);
 }
 
-void ProductCard::DrawItem(const ProductInfo& product) {
+void ProductCard::DrawItem(const ProductInfo& product)
+{
     if (!card_container_ || !layout_) {
         qDebug() << "DrawItem: card_container_ or layout_ is null";
         return;
     }
 
+    // Сохраняем карточку
     Products::ProductKey key = std::make_tuple(product.name_, product.color_);
-    if (products_cards_.contains(key)) {
-        QWidget* card = products_cards_[key];
-        if (!card) {
-            qDebug() << "DrawItem: card is null for" << product.name_ << product.color_;
-            products_cards_.remove(key);
-            return;
+    if (!products_cards_.contains(key))
+    {
+        // Создаем новую карточку
+        QWidget* card = new QWidget(card_container_);
+        card->setStyleSheet("background-color: #ffffff; border-radius: 39px;");
+        card->setFixedSize(831, 152);
+
+        // Загружаем и масштабируем изображение
+        QPixmap originalPixmap(product.image_path_);
+        if (!originalPixmap.isNull())
+        {
+            QPixmap scaledPixmap = originalPixmap.scaledToHeight(130, Qt::SmoothTransformation);
+            int fieldWidth = 367;
+            int imageWidth = scaledPixmap.width();
+            int x = std::max(0, (fieldWidth - imageWidth) / 2);
+
+            QLabel* instrument_image = new QLabel(card);
+            instrument_image->setPixmap(scaledPixmap);
+            instrument_image->setFixedSize(imageWidth, 130);
+            instrument_image->move(x, 11);
         }
 
-        if (!layout_->indexOf(card)) {
-            card->setParent(card_container_);
+        // Название
+        QLineEdit* product_name = new QLineEdit(product.name_, card);
+        product_name->setStyleSheet("font: 700 20pt 'Open Sans'; color: #1d1b20;");
+        product_name->setAlignment(Qt::AlignLeft);
+        product_name->setCursorPosition(0);
+        product_name->setFixedSize(410, 32);
+        product_name->move(367, 15);
+        product_name->setReadOnly(true);
+
+        // Описание
+        QLabel* product_description = new QLabel(product.color_, card);
+        product_description->setStyleSheet("font: 15pt 'JetBrains Mono'; color: #555555;");
+        product_description->setAlignment(Qt::AlignLeft | Qt::AlignVCenter);
+        product_description->setFixedSize(411, 24);
+        product_description->move(367, 64);
+
+        // Цена
+        QLabel* product_price = new QLabel(FormatPrice(product.price_) + " руб.", card);
+        product_price->setStyleSheet("font: 700 20pt 'Open Sans'; color: #1d1b20;");
+        product_price->setAlignment(Qt::AlignRight | Qt::AlignVCenter);
+        product_price->setFixedSize(405, 32);
+        product_price->move(400, 106);
+
+        products_cards_[key] = card;
+        layout_->addWidget(card);
+        card->show();
+    }
+    else
+    {
+        // Если карточка уже существует, показываем её
+        QWidget* card = products_cards_[key];
+        if (card)
+        {
+            card->show();
             layout_->addWidget(card);
         }
-        card->show();
-        card->setVisible(true);
-    }
-    else {
-        qDebug() << "Карточка не найдена: " << product.name_ << " " << product.color_;
     }
 }
 
-int ProductCard::DrawRelevantProducts(QScrollArea* scrollArea,const QString& term) {
+void ProductCard::DrawPurchasedItem(const ProductInfo& product)
+{
+    if (!purchased_container_ || !purchased_layout_)
+    {
+        qDebug() << "DrawPurchasedItem: purchased_container_ or purchased_layout_ is null";
+        return;
+    }
+
+    // Создаем новую карточку
+    QWidget* card = new QWidget(purchased_container_);
+    card->setStyleSheet("background-color: #ffffff; border-radius: 39px;");
+    card->setFixedSize(831, 152);
+
+    // Загружаем и масштабируем изображение
+    QPixmap originalPixmap(product.image_path_);
+    if (!originalPixmap.isNull())
+    {
+        QPixmap scaledPixmap = originalPixmap.scaledToHeight(130, Qt::SmoothTransformation);
+        int fieldWidth = 367;
+        int imageWidth = scaledPixmap.width();
+        int x = std::max(0, (fieldWidth - imageWidth) / 2);
+
+        QLabel* instrument_image = new QLabel(card);
+        instrument_image->setPixmap(scaledPixmap);
+        instrument_image->setFixedSize(imageWidth, 130);
+        instrument_image->move(x, 11);
+    }
+
+    // Название
+    QLineEdit* product_name = new QLineEdit(product.name_, card);
+    product_name->setStyleSheet("font: 700 20pt 'Open Sans'; color: #1d1b20;");
+    product_name->setAlignment(Qt::AlignLeft);
+    product_name->setCursorPosition(0);
+    product_name->setFixedSize(410, 32);
+    product_name->move(367, 15);
+    product_name->setReadOnly(true);
+
+    // Описание
+    QLabel* product_description = new QLabel(product.color_, card);
+    product_description->setStyleSheet("font: 15pt 'JetBrains Mono'; color: #555555;");
+    product_description->setAlignment(Qt::AlignLeft | Qt::AlignVCenter);
+    product_description->setFixedSize(411, 24);
+    product_description->move(367, 64);
+
+    // Цена
+    QLabel* product_price = new QLabel(FormatPrice(product.price_) + " руб.", card);
+    product_price->setStyleSheet("font: 700 20pt 'Open Sans'; color: #1d1b20;");
+    product_price->setAlignment(Qt::AlignRight | Qt::AlignVCenter);
+    product_price->setFixedSize(405, 32);
+    product_price->move(400, 106);
+
+    // Кнопка информации
+    // QPushButton* info_ = new QPushButton(card);
+    // info_->setObjectName("info_");
+    // info_->setIcon(QIcon("://Information Circle Contained.svg"));
+    // info_->setIconSize(QSize(32, 32));
+    // info_->setStyleSheet("border: none; outline: none;");
+    // info_->move(779, 15);
+
+    // // Подключаем сигналы
+    // connect(info_, &QPushButton::clicked, [this, product]() {
+    //     if (auto products = products_.lock()) {
+    //         emit products->OpenInfoPage(product);
+    //     }
+    // });
+
+    // Сохраняем карточку
+    Products::ProductKey key = std::make_tuple(product.name_, product.color_);
+    purchased_cards_[key] = card;
+
+    // Добавляем в layout
+    purchased_layout_->addWidget(card);
+    card->show();
+}
+
+int ProductCard::DrawRelevantProducts(QScrollArea* scrollArea,const QString& term)
+{
     QList<ProductInfo> relevant_products = products_.lock()->FindRelevantProducts(term);
-    if (!relevant_products.empty()){
+    if (!relevant_products.empty())
+    {
 
         HideOldCards();
         EnsureContainerInScrollArea(scrollArea);
 
-        for(const auto& instrument : relevant_products){
+        for(const auto& instrument : relevant_products)
+        {
             DrawItem(instrument);
         }
         card_container_->adjustSize();
@@ -65,25 +197,32 @@ int ProductCard::DrawRelevantProducts(QScrollArea* scrollArea,const QString& ter
     return 0;
 }
 
-void ProductCard::RestoreHiddenToCartButtons() {
-    for (const auto& name : hidden_to_cart_buttons_) {
+void ProductCard::RestoreHiddenToCartButtons()
+{
+    for (const auto& name : hidden_to_cart_buttons_)
+    {
         auto to_cart_button = products_cards_[name]->findChild<QPushButton*>("to_cart_", Qt::FindChildrenRecursively);
-        if (to_cart_button) {
+        if (to_cart_button)
+        {
             to_cart_button->show();
         }
     }
     hidden_to_cart_buttons_.clear();
 }
 
-void ProductCard::UpdateProductsWidget(QScrollArea* scrollArea, const QStringView typeFilter, const QStringView colorFilter) {
+void ProductCard::UpdateProductsWidget(QScrollArea* scrollArea, const QStringView typeFilter, const QStringView colorFilter)
+{
     int typeId = -1;
 
     // Фильтрация по типу машины
-    if (typeFilter != "Смотреть всё") {
+    if (typeFilter != "Смотреть всё")
+    {
         auto result = db_manager_.lock()->ExecuteSelectQuery(QString("SELECT id FROM car_types WHERE name = '%1'").arg(typeFilter));
-        if (result.canConvert<QSqlQuery>()) {
+        if (result.canConvert<QSqlQuery>())
+        {
             QSqlQuery query = result.value<QSqlQuery>();
-            if (query.next()) {
+            if (query.next())
+            {
                 typeId = query.value("id").toInt();
             }
         }
@@ -92,7 +231,8 @@ void ProductCard::UpdateProductsWidget(QScrollArea* scrollArea, const QStringVie
     HideOldCards();
     EnsureContainerInScrollArea(scrollArea);
 
-    for (auto it = products_cards_.constBegin(); it != products_cards_.constEnd(); ++it) {
+    for (auto it = products_cards_.constBegin(); it != products_cards_.constEnd(); ++it)
+    {
         Products::ProductKey name;
         QWidget* card;
         std::tie(name, card) = std::make_pair(it.key(), it.value());
@@ -106,14 +246,23 @@ void ProductCard::UpdateProductsWidget(QScrollArea* scrollArea, const QStringVie
 
         // Фильтрация по цвету
         bool colorMatch = true; // По умолчанию показываем все цвета
-        if (!colorFilter.isEmpty() && colorFilter != "Смотреть всё") {
+        if (!colorFilter.isEmpty() && colorFilter != "Смотреть всё")
+        {
             colorMatch = (instrument->color_ == colorFilter);
         }
 
         // Комбинированная фильтрация
         shouldDisplay = typeMatch && colorMatch;
 
-        if (shouldDisplay) {
+        if (shouldDisplay && card)
+        {
+            // Просто показываем существующую карточку
+            card->show();
+            layout_->addWidget(card);
+        }
+        else if (shouldDisplay)
+        {
+            // Если карточки нет, создаем новую
             DrawItem(*instrument);
         }
     }
@@ -121,24 +270,39 @@ void ProductCard::UpdateProductsWidget(QScrollArea* scrollArea, const QStringVie
     card_container_->adjustSize();
 }
 
-void ProductCard::EnsureContainerInScrollArea(QScrollArea* target_scroll_area) {
-    if (!target_scroll_area) {
+void ProductCard::EnsureContainerInScrollArea(QScrollArea* target_scroll_area)
+{
+    if (!target_scroll_area)
+    {
         qDebug() << "Target scroll area is null!";
         return;
     }
 
-    if (!card_container_) {
-        qDebug() << "Card container is null!";
+    // Если контейнер уже находится в этом scroll area, ничего не делаем
+    if (card_container_ && card_container_->parent() == target_scroll_area->viewport())
+    {
         return;
     }
 
-    // Удаляем текущий виджет из ScrollArea, если он есть
-    if (auto current_widget = target_scroll_area->widget()) {
-        target_scroll_area->takeWidget();
-        current_widget->setParent(nullptr);
+    // Если в scroll area уже есть виджет, удаляем его
+    if (QWidget* old_widget = target_scroll_area->takeWidget())
+    {
+        old_widget->deleteLater();
     }
 
-    // Устанавливаем card_container_ в QScrollArea
+    // Если у нас нет контейнера или он был удален, создаем новый
+    if (!card_container_ || !card_container_->parent())
+    {
+        card_container_ = new QWidget();
+        card_container_->setSizePolicy(QSizePolicy::Expanding, QSizePolicy::Minimum);
+        
+        layout_ = new QVBoxLayout(card_container_);
+        layout_->setAlignment(Qt::AlignTop);
+        layout_->setSpacing(22);
+        layout_->setContentsMargins(22, 22, 22, 22);
+    }
+
+    // Устанавливаем контейнер в scroll area
     target_scroll_area->setWidget(card_container_);
 
     target_scroll_area->setStyleSheet(
@@ -152,30 +316,154 @@ void ProductCard::EnsureContainerInScrollArea(QScrollArea* target_scroll_area) {
     );
 
     target_scroll_area->setWidgetResizable(true);
-    // container->setSizePolicy(QSizePolicy::Expanding, QSizePolicy::Fixed); // Контейнер растягивается по горизонтали
-
-    // Обновляем размеры и видимость
-    card_container_->adjustSize();
     card_container_->show();
     target_scroll_area->viewport()->update();
 }
 
-void ProductCard::HideOldCards() {
-    for (QWidget*& card : products_cards_) {
-        card->hide();
+void ProductCard::HideOldCards()
+{
+    if (!card_container_)
+    {
+        return;
     }
+
+    // Скрываем все карточки и удаляем их из layout
+    for (auto it = products_cards_.begin(); it != products_cards_.end(); ++it)
+    {
+        if (QWidget* card = it.value())
+        {
+            layout_->removeWidget(card);
+            card->hide();
+        }
+    }
+    
     card_container_->adjustSize();
 }
 
-QWidget* ProductCard::FindProductCard(const Products::ProductKey& product) {
-    if (!products_cards_.empty()) {
-        if (products_cards_.contains(product)) {
+QWidget* ProductCard::FindProductCard(const Products::ProductKey& product)
+{
+    if (!products_cards_.empty())
+    {
+        if (products_cards_.contains(product))
+        {
             return products_cards_[product];
         }
     }
     return nullptr;
 }
 
-void ProductCard::AddProductCard(const Products::ProductKey& key, QWidget* instrument_card){
+void ProductCard::AddProductCard(const Products::ProductKey& key, QWidget* instrument_card)
+{
     products_cards_[key] = instrument_card;
+}
+
+void ProductCard::UpdatePurchasedProductsWidget(QScrollArea* scrollArea, const int found_user_id)
+{
+    if (!db_manager_.lock() || !products_.lock())
+    {
+        return;
+    }
+
+    HideOldPurchasedCards();
+    EnsurePurchasedContainerInScrollArea(scrollArea);
+
+    QSqlQuery query;
+    QString query_str = QString(
+        "SELECT c.name, c.color "
+        "FROM cars c "
+        "INNER JOIN purchases p ON c.id = p.car_id "
+        "WHERE p.client_id = %1"
+    ).arg(found_user_id);
+
+    if (!query.exec(query_str))
+    {
+        qWarning() << "GetPurchasedProducts: Failed to execute query:" << query.lastError().text();
+        return;
+    }
+
+    while (query.next())
+    {
+        QString name = query.value("name").toString();
+        QString color = query.value("color").toString();
+        Products::ProductKey key = std::make_tuple(name, color);
+
+        // Проверяем, есть ли уже карточка с таким ключом
+        if (purchased_cards_.contains(key))
+        {
+            // Если карточка существует, просто показываем её
+            QWidget* card = purchased_cards_[key];
+            if (card)
+            {
+                card->show();
+                purchased_layout_->addWidget(card);
+            }
+        }
+        else
+        {
+            // Если карточки нет, создаем новую
+            const auto& product = products_.lock()->FindProduct(key);
+            if (product)
+            {
+                DrawPurchasedItem(*product);
+            }
+        }
+    }
+
+    purchased_container_->adjustSize();
+}
+
+void ProductCard::EnsurePurchasedContainerInScrollArea(QScrollArea* target_scroll_area)
+{
+    if (!target_scroll_area)
+    {
+        qDebug() << "Target scroll area is null!";
+        return;
+    }
+
+    // Если контейнер уже находится в этом scroll area, ничего не делаем
+    if (purchased_container_ && purchased_container_->parent() == target_scroll_area->viewport())
+    {
+        return;
+    }
+
+    // Если в scroll area уже есть виджет, удаляем его
+    if (QWidget* old_widget = target_scroll_area->takeWidget())
+    {
+        old_widget->deleteLater();
+    }
+
+    // Устанавливаем контейнер в scroll area
+    target_scroll_area->setWidget(purchased_container_);
+
+    target_scroll_area->setStyleSheet(
+        "QScrollArea {"
+        "    background-color: #fafafa;"
+        "    border-radius: 61px;"
+        "}"
+        "QScrollArea > QWidget > QWidget {"
+        "    background-color: transparent;"
+        "}"
+    );
+
+    target_scroll_area->setWidgetResizable(true);
+    purchased_container_->show();
+    target_scroll_area->viewport()->update();
+}
+
+void ProductCard::HideOldPurchasedCards()
+{
+    if (!purchased_container_)
+    {
+        return;
+    }
+
+    // Скрываем все виджеты в контейнере
+    const auto widgets = purchased_container_->findChildren<QWidget*>();
+    for (QWidget* widget : widgets)
+    {
+        if (widget && widget->isVisible())
+        {
+            widget->hide();
+        }
+    }
 }

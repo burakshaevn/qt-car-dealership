@@ -77,6 +77,12 @@ private slots:
 
     void CheckNotifications();
 
+    // New service button handlers
+    void handleServiceRequest();
+    void handleRentalRequest();
+    void handleLoanRequest();
+    void handleInsuranceRequest();
+
 private:
     Ui::MainWindow *ui;
 
@@ -112,13 +118,19 @@ private:
     // Управляет плавающими виджетами: левым боковым меню каталога и правым плавающим меню
     std::unique_ptr<FloatingWidgets> floating_widgets_;
 
+    QList<QPushButton*> service_buttons_; // Хранит кнопки сервисов для предотвращения их удаления
+
     // Инициализировать зависимости
     void BuildDependencies();
 
-    // Обработка нажатий на кнопки "Ещё", "Профиль" и "Корзина" из плавающего меню
-    void MoreClicked();
+    // Создать содержимое и настроить расположение для плавающего меню (главная, профиль, и др.)
+    void SetupFloatingMenu();
+
+    // Обработка нажатий на кнопки из плавающего меню
+    void SortByProductType();
     void ProfileClicked();
-    void SortByColorClicked();
+    void SortByColor();
+    void SearchByTerm();
 
     void SelectionProcessing(const bool ok, const QStringView selected_type, const QStringView selected_color = QStringView());
     void SetupServicesScrollArea();
@@ -126,9 +138,6 @@ private:
     // Функции обработки кнопок оплаты/очистки корзины
     void CleanCart();
     void ToPayCart();
-
-    // Создать содержимое и настроить расположение для плавающего меню (главная, профиль, и др.)
-    void SetupFloatingMenu();
 
     // Получить список названий купленных товаров
     QList<Products::ProductKey> GetPurchasedProducts(int user_id) const;
