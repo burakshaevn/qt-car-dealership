@@ -18,6 +18,8 @@
 #include <QSqlQuery>
 #include <QSqlError>
 #include <QComboBox>
+#include <QCheckBox>
+#include <QCryptographicHash>
 
 #include <QGraphicsDropShadowEffect>
 
@@ -50,7 +52,7 @@ protected:
 
 private slots:
     void on_pushButton_login_clicked();
-
+    void on_pushButton_registration_clicked();
     void on_pushButton_logout_clicked();
 
     void on_pushButton_clean_cart_clicked();
@@ -146,6 +148,9 @@ private:
     void UpdateNotifications();
     void AddNotification(const QString& title, const QString& message);
     void ClearNotifications();
+
+    // Функция для перевода статусов заявок на кредит
+    QString TranslateLoanStatus(const QString& status);
 };
 
 #endif // MAINWINDOW_H

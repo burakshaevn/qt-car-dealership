@@ -18,5 +18,6 @@
         <file>done_all.svg</file>
         <file>notifications.svg</file>
         <file>settings.svg</file>
+        <file>File text.svg</file>
     </qresource>
 </RCC>

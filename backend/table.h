@@ -42,7 +42,6 @@ protected:
     QPushButton* logout_button_;
     QPushButton* approve_button_;
     QPushButton* reject_button_;
-    QPushButton* complete_button_;
 
     std::unique_ptr<QWidget> floating_menu_;
 
@@ -70,7 +69,6 @@ public:
 private slots:
     void ApproveRequest();
     void RejectRequest();
-    void CompleteRequest();
 
 signals:
     void Logout();

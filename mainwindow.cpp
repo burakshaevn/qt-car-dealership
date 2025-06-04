@@ -1,5 +1,6 @@
 #include "mainwindow.h"
 #include "./ui_mainwindow.h"
+#include <QWidget>
 #include <QMessageBox>
 #include <QInputDialog>
 #include <QVBoxLayout>
@@ -15,6 +16,8 @@
 #include <QDir>
 #include <QDebug>
 #include <QGraphicsDropShadowEffect>
+#include <QCheckBox>
+#include <QComboBox>
 
 MainWindow::MainWindow(QWidget* parent)
     : QMainWindow(parent)
@@ -92,7 +95,12 @@ void MainWindow::on_pushButton_login_clicked()
                     user.role_ = Role::User;
                     user.products_ = GetPurchasedProducts(user.id_);
 
-                    if (user.password_ == ui->lineEdit_password->text())
+                    // Хешируем введенный пароль для сравнения
+                    QString hashedInputPassword = QString(QCryptographicHash::hash(
+                        ui->lineEdit_password->text().toUtf8(),
+                        QCryptographicHash::Sha256).toHex());
+
+                    if (user.password_ == hashedInputPassword)
                     {
                         ui->lineEdit_login->clear();
                         ui->lineEdit_password->clear();
@@ -113,18 +121,10 @@ void MainWindow::on_pushButton_login_clicked()
                 }
                 else
                 {
-                    QMessageBox::critical(this, "Ошибка", "Пользователя с таким логином не существует.");
+                    QMessageBox::critical(this, "Авторизация", "Неверный логин или пароль.");
                 }
             }
-            else
-            {
-                QMessageBox::critical(this, "Ошибка в базе данных", queryResult.toString());
-            }
         }
-    }
-    else
-    {
-        QMessageBox::critical(this, "Ошибка в базе данных", queryResult.toString());
     }
 }
 
@@ -356,35 +356,29 @@ void MainWindow::SetupServicesScrollArea()
         "}"
         "QScrollBar:horizontal {"
         "    height: 15px;"
-        "    background: transparent;"
+        "    background-color: transparent;"
         "    margin: 3px 0px 3px 0px;"
-        "    border-radius: 7px;"
         "}"
         "QScrollBar::handle:horizontal {"
-        "    background: #9b9c9c;"
+        "    background-color: transparent;"
         "    min-width: 20px;"
         "    border-radius: 7px;"
         "}"
-        "QScrollBar::add-line:horizontal {"
+        "QScrollBar::add-line:horizontal, QScrollBar::sub-line:horizontal {"
+        "    width: 0px;"
         "    border: none;"
         "    background: none;"
-        "    width: 0px;"
-        "}"
-        "QScrollBar::sub-line:horizontal {"
-        "    border: none;"
-        "    background: none;"
-        "    width: 0px;"
         "}"
         "QScrollBar::add-page:horizontal, QScrollBar::sub-page:horizontal {"
         "    background: none;"
         "}"
-        "QScrollBar:horizontal {"
-        "    opacity: 0;"
-        "}"
         "QScrollArea:hover QScrollBar:horizontal {"
-        "    opacity: 1;"
+        "    background-color: #f0f0f0;"
         "}"
-        );
+        "QScrollArea:hover QScrollBar::handle:horizontal {"
+        "    background-color: #9b9c9c;"
+        "}"
+    );
 
     // Создаём контейнер для карточек
     QWidget* container = new QWidget();
@@ -1582,39 +1576,148 @@ void MainWindow::on_pushButton_info_clicked()
 
     void MainWindow::on_pushButton_test_drive_clicked()
 {
+    if (!user_) {
+        QMessageBox::warning(this, "Ошибка", "Авторизуйтесь для записи на тест-драйв.");
+        return;
+    }
+
     if (current_product_.name_.isEmpty()) {
         QMessageBox::warning(this, "Ошибка", "Не выбран автомобиль для записи на тест-драйв.");
         return;
     }
 
-    // Create a dialog for date and time selection
     QDialog dialog(this);
     dialog.setWindowTitle("Запись на тест-драйв");
-    dialog.setFixedSize(400, 400);
+    dialog.setFixedSize(500, 500);
+    dialog.setStyleSheet(
+        "QDialog {"
+        "    background-color: #ffffff;"
+        "}"
+        "QLabel {"
+        "    color: #1d1b20;"
+        "    font: 500 12pt 'JetBrains Mono';"
+        "    margin-top: 10px;"
+        "}"
+        "QTimeEdit, QCalendarWidget {"
+        "    padding: 8px;"
+        "    border: 2px solid #e0e0e0;"
+        "    border-radius: 8px;"
+        "    background: #fafafa;"
+        "    font: 11pt 'JetBrains Mono';"
+        "    min-height: 30px;"
+        "}"
+        "QCalendarWidget QToolButton {"
+        "    color: #1d1b20;"
+        "    font: 10pt 'JetBrains Mono';"
+        "    padding: 5px;"
+        "}"
+        "QCalendarWidget QMenu {"
+        "    background-color: white;"
+        "    font: 10pt 'JetBrains Mono';"
+        "}"
+        "QPushButton {"
+        "    padding: 10px 20px;"
+        "    border-radius: 8px;"
+        "    font: 600 11pt 'JetBrains Mono';"
+        "    min-width: 100px;"
+        "}"
+        "QPushButton[type='primary'] {"
+        "    background-color: #2196F3;"
+        "    color: white;"
+        "    border: none;"
+        "}"
+        "QPushButton[type='primary']:hover {"
+        "    background-color: #1976D2;"
+        "}"
+        "QPushButton[type='secondary'] {"
+        "    background-color: #fafafa;"
+        "    color: #1d1b20;"
+        "    border: 2px solid #e0e0e0;"
+        "}"
+        "QPushButton[type='secondary']:hover {"
+        "    background-color: #e0e0e0;"
+        "}"
+    );
 
-    // Layout for the dialog
     QVBoxLayout* layout = new QVBoxLayout(&dialog);
+    layout->setSpacing(15);
+    layout->setContentsMargins(30, 30, 30, 30);
 
-    // Time edit for time selection
+    // Заголовок
+    QLabel* titleLabel = new QLabel("Запись на тест-драйв", &dialog);
+    titleLabel->setStyleSheet("font: 700 16pt 'JetBrains Mono'; margin-bottom: 20px;");
+    layout->addWidget(titleLabel);
+
+    // Информация об автомобиле
+    QLabel* carInfoLabel = new QLabel(QString("Автомобиль: %1\nЦвет: %2\nЦена: %3 руб.")
+        .arg(current_product_.name_)
+        .arg(current_product_.color_)
+        .arg(FormatPrice(current_product_.price_)), &dialog);
+    layout->addWidget(carInfoLabel);
+
+    // Выбор времени
+    QLabel* timeLabel = new QLabel("Выберите время:", &dialog);
+    layout->addWidget(timeLabel);
+
     QTimeEdit* timeEdit = new QTimeEdit(&dialog);
     timeEdit->setDisplayFormat("HH:mm");
-    timeEdit->setTime(QTime(9, 0)); // Default to 9:00 AM
+    timeEdit->setTime(QTime(9, 0)); // По умолчанию 9:00
+    timeEdit->setMinimumTime(QTime(9, 0)); // Начало рабочего дня
+    timeEdit->setMaximumTime(QTime(18, 0)); // Конец рабочего дня
     layout->addWidget(timeEdit);
 
-    // Calendar widget for date selection
+    // Выбор даты
+    QLabel* dateLabel = new QLabel("Выберите дату:", &dialog);
+    layout->addWidget(dateLabel);
+
     QCalendarWidget* calendar = new QCalendarWidget(&dialog);
-    calendar->setMinimumDate(QDate::currentDate()); // Prevent past dates
+    calendar->setMinimumDate(QDate::currentDate()); // Запрет выбора прошедших дат
+    calendar->setStyleSheet(
+        "QCalendarWidget QWidget {"
+        "    background-color: white;"
+        "}"
+        "QCalendarWidget QToolButton {"
+        "    color: #1d1b20;"
+        "    background-color: transparent;"
+        "    border: none;"
+        "}"
+        "QCalendarWidget QToolButton:hover {"
+        "    background-color: #e0e0e0;"
+        "    border-radius: 4px;"
+        "}"
+        "QCalendarWidget QMenu {"
+        "    background-color: white;"
+        "    border: 1px solid #e0e0e0;"
+        "}"
+        "QCalendarWidget QSpinBox {"
+        "    background-color: white;"
+        "    border: 1px solid #e0e0e0;"
+        "    border-radius: 4px;"
+        "}"
+        "QCalendarWidget QAbstractItemView:enabled {"
+        "    background-color: white;"
+        "    color: #1d1b20;"
+        "}"
+        "QCalendarWidget QAbstractItemView:disabled {"
+        "    color: #858585;"
+        "}"
+    );
     layout->addWidget(calendar);
 
-    // Buttons for confirmation
+    // Кнопки
     QHBoxLayout* buttonLayout = new QHBoxLayout();
-    QPushButton* okButton = new QPushButton("OK", &dialog);
+    buttonLayout->setSpacing(15);
+
+    QPushButton* okButton = new QPushButton("Подтвердить", &dialog);
+    okButton->setProperty("type", "primary");
+
     QPushButton* cancelButton = new QPushButton("Отмена", &dialog);
-    buttonLayout->addWidget(okButton);
+    cancelButton->setProperty("type", "secondary");
+
     buttonLayout->addWidget(cancelButton);
+    buttonLayout->addWidget(okButton);
     layout->addLayout(buttonLayout);
 
-    // Connect buttons
     bool accepted = false;
     connect(okButton, &QPushButton::clicked, [&]() {
         accepted = true;
@@ -1624,129 +1727,257 @@ void MainWindow::on_pushButton_info_clicked()
         dialog.reject();
     });
 
-    // Show dialog and wait for user input
     if (dialog.exec() == QDialog::Accepted && accepted) {
-        // Get selected date and time
         QDate selectedDate = calendar->selectedDate();
         QTime selectedTime = timeEdit->time();
-
-        // Combine date and time into a QString
         QString dateTime = selectedDate.toString("yyyy-MM-dd") + " " + selectedTime.toString("HH:mm");
 
-        // Insert into test_drives table
         QSqlQuery query;
-        QString queryStr = QString("INSERT INTO test_drives (client_id, car_id, date_time) VALUES (%1, %2, '%3');")
-                               .arg(user_->GetId())
-                               .arg(current_product_.id_)
-                               .arg(dateTime);
+        QString queryStr = QString("INSERT INTO test_drives (client_id, car_id, scheduled_date, status) "
+                                 "VALUES (%1, %2, '%3', 'не обработано');")
+                                 .arg(user_->GetId())
+                                 .arg(current_product_.id_)
+                                 .arg(dateTime);
 
         if (query.exec(queryStr)) {
-            QMessageBox::information(this, "Успех", QString("Вы записаны на тест-драйв автомобиля %1 на %2.").arg(current_product_.name_, dateTime));
+            QMessageBox::information(this, "Успех", QString("Вы записаны на тест-драйв автомобиля %1\nДата: %2\nВремя: %3")
+                .arg(current_product_.name_)
+                .arg(selectedDate.toString("dd.MM.yyyy"))
+                .arg(selectedTime.toString("HH:mm")));
         } else {
             QMessageBox::critical(this, "Ошибка", "Не удалось записаться на тест-драйв: " + query.lastError().text());
         }
     }
 }
 
-// void MainWindow::on_pushButton_test_drive_clicked()
-// {
-//     if (current_product_.name_.isEmpty()) {
-//         QMessageBox::warning(this, "Ошибка", "Не выбран автомобиль для записи на тест-драйв.");
-//         return;
-//     }
-
-//     // Запрашиваем у пользователя дату и время для тест-драйва
-//     bool ok;
-//     QString dateTime = QInputDialog::getText(
-//         this,
-//         "Запись на тест-драйв",
-//         "Введите дату и время (например, 2025-05-15 14:00):",
-//         QLineEdit::Normal,
-//         "",
-//         &ok
-//         );
-
-//     if (ok && !dateTime.isEmpty()) {
-//         // Здесь можно добавить запись в базу данных (например, в таблицу test_drives)
-//         QSqlQuery query;
-//         QString queryStr = QString("INSERT INTO test_drives (client_id, car_id, date_time) VALUES (%1, %2, '%3');")
-//                                .arg(user_->GetId())
-//                                .arg(current_product_.id_)
-//                                .arg(dateTime);
-
-//         if (query.exec(queryStr)) {
-//             QMessageBox::information(this, "Успех", QString("Вы записаны на тест-драйв автомобиля %1 на %2.").arg(current_product_.name_, dateTime));
-//         } else {
-//             QMessageBox::critical(this, "Ошибка", "Не удалось записаться на тест-драйв: " + query.lastError().text());
-//         }
-//     } else if (ok) {
-//         QMessageBox::warning(this, "Ошибка", "Не указана дата и время тест-драйва.");
-//     }
-// }
-
 #include <QSpinBox>
 
 void MainWindow::on_pushButton_to_pay_clicked()
 {
     if (!user_) {
-        QMessageBox::warning(this, "Ошибка", "Авторизуйтесь для подачи заявки.");
+        QMessageBox::warning(this, "Ошибка", "Авторизуйтесь для оформления заявки.");
+        return;
+    }
+
+    if (current_product_.name_.isEmpty()) {
+        QMessageBox::warning(this, "Ошибка", "Не выбран автомобиль для оформления заявки.");
         return;
     }
 
     QDialog dialog(this);
-    dialog.setWindowTitle("Заявка на продажу автомобиля");
-    dialog.setFixedSize(400, 300);
+    dialog.setWindowTitle("Оформление заявки на покупку");
+    dialog.setFixedSize(500, 400);
+    dialog.setStyleSheet(
+        "QDialog {"
+        "    background-color: #ffffff;"
+        "}"
+        "QLabel {"
+        "    color: #1d1b20;"
+        "    font: 500 12pt 'JetBrains Mono';"
+        "    margin-top: 10px;"
+        "}"
+        "QCheckBox {"
+        "    font: 11pt 'JetBrains Mono';"
+        "    spacing: 8px;"
+        "}"
+        "QComboBox {"
+        "    padding: 8px;"
+        "    border: 2px solid #e0e0e0;"
+        "    border-radius: 8px;"
+        "    background: #fafafa;"
+        "    font: 11pt 'JetBrains Mono';"
+        "    min-height: 30px;"
+        "}"
+        "QPushButton {"
+        "    padding: 10px 20px;"
+        "    border-radius: 8px;"
+        "    font: 600 11pt 'JetBrains Mono';"
+        "    min-width: 100px;"
+        "}"
+        "QPushButton[type='primary'] {"
+        "    background-color: #2196F3;"
+        "    color: white;"
+        "    border: none;"
+        "}"
+        "QPushButton[type='primary']:hover {"
+        "    background-color: #1976D2;"
+        "}"
+        "QPushButton[type='secondary'] {"
+        "    background-color: #fafafa;"
+        "    color: #1d1b20;"
+        "    border: 2px solid #e0e0e0;"
+        "}"
+        "QPushButton[type='secondary']:hover {"
+        "    background-color: #e0e0e0;"
+        "}"
+    );
+
     QVBoxLayout* layout = new QVBoxLayout(&dialog);
+    layout->setSpacing(15);
+    layout->setContentsMargins(30, 30, 30, 30);
 
-    QLineEdit* makeEdit = new QLineEdit(&dialog);
-    makeEdit->setPlaceholderText("Марка автомобиля");
-    QLineEdit* modelEdit = new QLineEdit(&dialog);
-    modelEdit->setPlaceholderText("Модель автомобиля");
-    QSpinBox* yearEdit = new QSpinBox(&dialog);
-    yearEdit->setRange(1900, QDate::currentDate().year());
-    QDoubleSpinBox* priceEdit = new QDoubleSpinBox(&dialog);
-    priceEdit->setRange(0, 100000000);
-    priceEdit->setSuffix(" руб.");
+    // Информация об автомобиле
+    QLabel* carInfoLabel = new QLabel(QString("Автомобиль: %1\nЦвет: %2\nЦена: %3 руб.")
+        .arg(current_product_.name_)
+        .arg(current_product_.color_)
+        .arg(FormatPrice(current_product_.price_)), &dialog);
+    layout->addWidget(carInfoLabel);
 
-    layout->addWidget(makeEdit);
-    layout->addWidget(modelEdit);
-    layout->addWidget(yearEdit);
-    layout->addWidget(priceEdit);
+    // Опции оформления
+    QLabel* optionsLabel = new QLabel("Выберите вариант оформления:", &dialog);
+    layout->addWidget(optionsLabel);
 
+    // Чекбокс для прямой покупки
+    QCheckBox* buyCheckBox = new QCheckBox("Купить", &dialog);
+    layout->addWidget(buyCheckBox);
+
+    // Чекбокс для кредита
+    QCheckBox* loanCheckBox = new QCheckBox("Оформить в кредит", &dialog);
+    layout->addWidget(loanCheckBox);
+
+    // Выпадающий список для срока кредита
+    QComboBox* loanTermCombo = new QComboBox(&dialog);
+    loanTermCombo->addItems({"12 месяцев", "24 месяца", "36 месяцев", "48 месяцев", "60 месяцев"});
+    loanTermCombo->hide();
+    layout->addWidget(loanTermCombo);
+
+    // Чекбокс для страховки
+    QCheckBox* insuranceCheckBox = new QCheckBox("Добавить страховку", &dialog);
+    layout->addWidget(insuranceCheckBox);
+
+    // Выпадающий список для типа страховки
+    QComboBox* insuranceTypeCombo = new QComboBox(&dialog);
+    insuranceTypeCombo->addItems({"ОСАГО", "КАСКО", "Комплекс"});
+    insuranceTypeCombo->hide();
+    layout->addWidget(insuranceTypeCombo);
+
+    // Чекбокс для аренды
+    QCheckBox* rentalCheckBox = new QCheckBox("Взять в аренду", &dialog);
+    layout->addWidget(rentalCheckBox);
+
+    // Выпадающий список для срока аренды
+    QComboBox* rentalTermCombo = new QComboBox(&dialog);
+    rentalTermCombo->addItems({"1 месяц", "3 месяца", "6 месяцев", "12 месяцев"});
+    rentalTermCombo->hide();
+    layout->addWidget(rentalTermCombo);
+
+    // Соединяем чекбоксы с их комбобоксами
+    connect(loanCheckBox, &QCheckBox::toggled, loanTermCombo, &QComboBox::setVisible);
+    connect(insuranceCheckBox, &QCheckBox::toggled, insuranceTypeCombo, &QComboBox::setVisible);
+    connect(rentalCheckBox, &QCheckBox::toggled, rentalTermCombo, &QComboBox::setVisible);
+
+    // Взаимоисключающая логика для покупки, кредита и аренды
+    connect(buyCheckBox, &QCheckBox::toggled, [loanCheckBox, rentalCheckBox](bool checked) {
+        if (checked) {
+            loanCheckBox->setChecked(false);
+            rentalCheckBox->setChecked(false);
+        }
+    });
+    connect(loanCheckBox, &QCheckBox::toggled, [buyCheckBox, rentalCheckBox](bool checked) {
+        if (checked) {
+            buyCheckBox->setChecked(false);
+            rentalCheckBox->setChecked(false);
+        }
+    });
+    connect(rentalCheckBox, &QCheckBox::toggled, [buyCheckBox, loanCheckBox](bool checked) {
+        if (checked) {
+            buyCheckBox->setChecked(false);
+            loanCheckBox->setChecked(false);
+        }
+    });
+
+    // Кнопки
     QHBoxLayout* buttonLayout = new QHBoxLayout();
-    QPushButton* okButton = new QPushButton("OK", &dialog);
+    buttonLayout->setSpacing(15);
+
+    QPushButton* okButton = new QPushButton("Подтвердить", &dialog);
+    okButton->setProperty("type", "primary");
+
     QPushButton* cancelButton = new QPushButton("Отмена", &dialog);
-    buttonLayout->addWidget(okButton);
+    cancelButton->setProperty("type", "secondary");
+
     buttonLayout->addWidget(cancelButton);
+    buttonLayout->addWidget(okButton);
     layout->addLayout(buttonLayout);
 
     bool accepted = false;
     connect(okButton, &QPushButton::clicked, [&]() {
-        if (makeEdit->text().isEmpty() || modelEdit->text().isEmpty()) {
-            QMessageBox::warning(&dialog, "Ошибка", "Укажите марку и модель.");
+        if (!buyCheckBox->isChecked() && !loanCheckBox->isChecked() && !insuranceCheckBox->isChecked() && !rentalCheckBox->isChecked()) {
+            QMessageBox::warning(&dialog, "Ошибка", "Выберите вариант оформления.");
             return;
         }
         accepted = true;
         dialog.accept();
     });
-    connect(cancelButton, &QPushButton::clicked, [&]() { dialog.reject(); });
+    connect(cancelButton, &QPushButton::clicked, &dialog, &QDialog::reject);
 
     if (dialog.exec() == QDialog::Accepted && accepted) {
         QSqlQuery query;
-        QString queryStr = QString(
-                               "INSERT INTO sell_requests (client_id, car_make, car_model, car_year, proposed_price, status) "
-                               "VALUES (%1, '%2', '%3', %4, %5, 'не обработано');")
-                               .arg(user_->GetId())
-                               .arg(makeEdit->text())
-                               .arg(modelEdit->text())
-                               .arg(yearEdit->value())
-                               .arg(priceEdit->value() * 1000); // Convert to numeric(15,0)
+        
+        // Прямая покупка
+        if (buyCheckBox->isChecked()) {
+            QString queryStr = QString("INSERT INTO purchases (client_id, car_id) VALUES (%1, %2);")
+                .arg(user_->GetId())
+                .arg(current_product_.id_);
 
-        if (query.exec(queryStr)) {
-            QMessageBox::information(this, "Успех", "Заявка на продажу подана.");
-        } else {
-            QMessageBox::critical(this, "Ошибка", "Не удалось подать заявку: " + query.lastError().text());
+            if (query.exec(queryStr)) {
+                QMessageBox::information(this, "Успех", QString("Поздравляем с покупкой автомобиля %1!")
+                    .arg(current_product_.name_));
+            } else {
+                QMessageBox::critical(this, "Ошибка", "Не удалось оформить покупку: " + query.lastError().text());
+                return;
+            }
         }
+
+        // Оформление кредита
+        if (loanCheckBox->isChecked()) {
+            int months = loanTermCombo->currentText().split(" ")[0].toInt();
+            QString queryStr = QString(
+                "INSERT INTO loan_requests (client_id, car_id, loan_amount, loan_term_months, status) "
+                "VALUES (%1, %2, %3, %4, 'не обработано');")
+                .arg(user_->GetId())
+                .arg(current_product_.id_)
+                .arg(current_product_.price_)
+                .arg(months);
+
+            if (!query.exec(queryStr)) {
+                QMessageBox::critical(this, "Ошибка", "Не удалось оформить заявку на кредит: " + query.lastError().text());
+                return;
+            }
+        }
+
+        // Оформление страховки
+        if (insuranceCheckBox->isChecked()) {
+            QString queryStr = QString(
+                "INSERT INTO insurance_requests (client_id, car_id, insurance_type, status) "
+                "VALUES (%1, %2, '%3', 'не обработано');")
+                .arg(user_->GetId())
+                .arg(current_product_.id_)
+                .arg(insuranceTypeCombo->currentText());
+
+            if (!query.exec(queryStr)) {
+                QMessageBox::critical(this, "Ошибка", "Не удалось оформить заявку на страхование: " + query.lastError().text());
+                return;
+            }
+        }
+
+        // Оформление аренды
+        if (rentalCheckBox->isChecked()) {
+            int months = rentalTermCombo->currentText().split(" ")[0].toInt();
+            QString queryStr = QString(
+                "INSERT INTO rental_requests (client_id, car_id, rental_term_months, status) "
+                "VALUES (%1, %2, %3, 'не обработано');")
+                .arg(user_->GetId())
+                .arg(current_product_.id_)
+                .arg(months);
+
+            if (!query.exec(queryStr)) {
+                QMessageBox::critical(this, "Ошибка", "Не удалось оформить заявку на аренду: " + query.lastError().text());
+                return;
+            }
+        }
+
+        QMessageBox::information(this, "Успех", "Заявка успешно оформлена!");
     }
 }
 
@@ -1800,7 +2031,6 @@ void MainWindow::CheckNotifications()
                 "    UNION ALL "
                 "    SELECT id FROM loan_requests "
                 "    WHERE client_id = %1 AND status != 'не обработано' AND (notification_shown = false OR notification_shown IS NULL) "
-                "    UNION ALL "
                 ") as notifications")
             .arg(user_->GetId()));
 
@@ -1839,15 +2069,15 @@ void MainWindow::UpdateNotifications()
     QString debugQuery = QString("WITH updated_notifications AS ("
             "    (SELECT id, 'service' as request_type, service_type as details, status, created_at, scheduled_date "
             "    FROM public.service_requests "
-            "    WHERE client_id = %1 AND status != 'не обработано')"
+            "    WHERE client_id = %1 AND status != 'не обработано' AND (notification_shown = false OR notification_shown IS NULL))"
             "    UNION ALL "
             "    (SELECT id, 'insurance' as request_type, insurance_type as details, status, created_at, NULL as scheduled_date "
             "    FROM public.insurance_requests "
-            "    WHERE client_id = %1 AND status != 'не обработано')"
+            "    WHERE client_id = %1 AND status != 'не обработано' AND (notification_shown = false OR notification_shown IS NULL))"
             "    UNION ALL "
             "    (SELECT id, 'loan' as request_type, CAST(loan_amount AS TEXT) as details, status, created_at, NULL as scheduled_date "
             "    FROM public.loan_requests "
-            "    WHERE client_id = %1 AND status != 'не обработано')"
+            "    WHERE client_id = %1 AND status != 'не обработано' AND (notification_shown = false OR notification_shown IS NULL))"
             ") "
             "SELECT * FROM updated_notifications "
             "ORDER BY created_at DESC LIMIT 10")
@@ -2247,5 +2477,203 @@ void MainWindow::on_pushButton_settings_clicked()
     });
 
     settings_dialog_->show();
+}
+
+void MainWindow::on_pushButton_registration_clicked()
+{
+    QDialog dialog(this);
+    dialog.setWindowTitle("Регистрация");
+    dialog.setFixedSize(500, 800);
+    dialog.setStyleSheet(
+        "QDialog {"
+        "    background-color: #ffffff;"
+        "}"
+        "QLabel {"
+        "    color: #1d1b20;"
+        "    font: 500 12pt 'JetBrains Mono';"
+        "    margin-top: 10px;"
+        "}"
+        "QLineEdit {"
+        "    padding: 8px;"
+        "    border: 2px solid #e0e0e0;"
+        "    border-radius: 8px;"
+        "    background: #fafafa;"
+        "    font: 11pt 'JetBrains Mono';"
+        "    min-height: 30px;"
+        "    margin-bottom: 10px;"
+        "}"
+        "QPushButton {"
+        "    padding: 10px 20px;"
+        "    border-radius: 8px;"
+        "    font: 600 11pt 'JetBrains Mono';"
+        "    min-width: 100px;"
+        "}"
+        "QPushButton[type='primary'] {"
+        "    background-color: #2196F3;"
+        "    color: white;"
+        "    border: none;"
+        "}"
+        "QPushButton[type='primary']:hover {"
+        "    background-color: #1976D2;"
+        "}"
+        "QPushButton[type='secondary'] {"
+        "    background-color: #fafafa;"
+        "    color: #1d1b20;"
+        "    border: 2px solid #e0e0e0;"
+        "}"
+        "QPushButton[type='secondary']:hover {"
+        "    background-color: #e0e0e0;"
+        "}"
+    );
+
+    QVBoxLayout* layout = new QVBoxLayout(&dialog);
+    layout->setSpacing(10);
+    layout->setContentsMargins(30, 30, 30, 30);
+
+    // Заголовок
+    QLabel* titleLabel = new QLabel("Создание учетной записи", &dialog);
+    titleLabel->setStyleSheet("font: 700 16pt 'JetBrains Mono'; margin-bottom: 20px;");
+    layout->addWidget(titleLabel);
+
+    // Создаем поля ввода с метками
+    QLabel* firstNameLabel = new QLabel("Имя:", &dialog);
+    layout->addWidget(firstNameLabel);
+    QLineEdit* firstNameEdit = new QLineEdit(&dialog);
+    firstNameEdit->setPlaceholderText("Введите имя");
+    layout->addWidget(firstNameEdit);
+
+    QLabel* lastNameLabel = new QLabel("Фамилия:", &dialog);
+    layout->addWidget(lastNameLabel);
+    QLineEdit* lastNameEdit = new QLineEdit(&dialog);
+    lastNameEdit->setPlaceholderText("Введите фамилию");
+    layout->addWidget(lastNameEdit);
+
+    QLabel* phoneLabel = new QLabel("Телефон:", &dialog);
+    layout->addWidget(phoneLabel);
+    QLineEdit* phoneEdit = new QLineEdit(&dialog);
+    phoneEdit->setPlaceholderText("+7XXXXXXXXXX");
+    layout->addWidget(phoneEdit);
+
+    QLabel* emailLabel = new QLabel("Email:", &dialog);
+    layout->addWidget(emailLabel);
+    QLineEdit* emailEdit = new QLineEdit(&dialog);
+    emailEdit->setPlaceholderText("example@domain.com");
+    layout->addWidget(emailEdit);
+
+    QLabel* passwordLabel = new QLabel("Пароль:", &dialog);
+    layout->addWidget(passwordLabel);
+    QLineEdit* passwordEdit = new QLineEdit(&dialog);
+    passwordEdit->setPlaceholderText("Минимум 8 символов");
+    passwordEdit->setEchoMode(QLineEdit::Password);
+    layout->addWidget(passwordEdit);
+
+    QLabel* confirmPasswordLabel = new QLabel("Подтвердите пароль:", &dialog);
+    layout->addWidget(confirmPasswordLabel);
+    QLineEdit* confirmPasswordEdit = new QLineEdit(&dialog);
+    confirmPasswordEdit->setPlaceholderText("Повторите пароль");
+    confirmPasswordEdit->setEchoMode(QLineEdit::Password);
+    layout->addWidget(confirmPasswordEdit);
+
+    // Добавляем растягивающийся элемент
+    layout->addStretch();
+
+    // Кнопки
+    QHBoxLayout* buttonLayout = new QHBoxLayout();
+    buttonLayout->setSpacing(15);
+
+    QPushButton* registerButton = new QPushButton("Зарегистрироваться", &dialog);
+    registerButton->setProperty("type", "primary");
+    QPushButton* cancelButton = new QPushButton("Отмена", &dialog);
+    cancelButton->setProperty("type", "secondary");
+
+    buttonLayout->addWidget(cancelButton);
+    buttonLayout->addWidget(registerButton);
+    layout->addLayout(buttonLayout);
+
+    bool accepted = false;
+
+    // Обработчик кнопки регистрации
+    connect(registerButton, &QPushButton::clicked, [&]() {
+        // Проверяем заполнение всех полей
+        if (firstNameEdit->text().isEmpty() || lastNameEdit->text().isEmpty() ||
+            phoneEdit->text().isEmpty() || emailEdit->text().isEmpty() ||
+            passwordEdit->text().isEmpty() || confirmPasswordEdit->text().isEmpty()) {
+            QMessageBox::warning(&dialog, "Ошибка", "Все поля должны быть заполнены.");
+            return;
+        }
+
+        // Проверяем длину пароля
+        if (passwordEdit->text().length() < 8) {
+            QMessageBox::warning(&dialog, "Ошибка", "Пароль должен содержать минимум 8 символов.");
+            return;
+        }
+
+        // Проверяем совпадение паролей
+        if (passwordEdit->text() != confirmPasswordEdit->text()) {
+            QMessageBox::warning(&dialog, "Ошибка", "Пароли не совпадают.");
+            return;
+        }
+
+        // Проверяем формат email
+        QRegularExpression emailRegex(R"((\w+)(\.\w+)*@(\w+)(\.\w{2,})+)");
+        if (!emailRegex.match(emailEdit->text()).hasMatch()) {
+            QMessageBox::warning(&dialog, "Ошибка", "Введите корректный email адрес.");
+            return;
+        }
+
+        // Проверяем формат телефона (11 цифр, может начинаться с +)
+        QString phone = phoneEdit->text();
+        if (phone.startsWith("+")) {
+            phone = phone.mid(1);
+        }
+        QRegularExpression phoneRegex("^[0-9]{11}$");
+        if (!phoneRegex.match(phone).hasMatch()) {
+            QMessageBox::warning(&dialog, "Ошибка", "Введите корректный номер телефона (11 цифр).");
+            return;
+        }
+
+        // Проверяем, не существует ли уже пользователь с таким email или телефоном
+        QSqlQuery checkQuery;
+        checkQuery.prepare("SELECT id FROM clients WHERE email = :email OR phone = :phone");
+        checkQuery.bindValue(":email", emailEdit->text());
+        checkQuery.bindValue(":phone", phone);
+
+        if (checkQuery.exec() && checkQuery.next()) {
+            QMessageBox::warning(&dialog, "Ошибка", "Пользователь с таким email или телефоном уже существует.");
+            return;
+        }
+
+        // Хешируем пароль напрямую
+        QString hashedPassword = QString(QCryptographicHash::hash(
+            passwordEdit->text().toUtf8(),
+            QCryptographicHash::Sha256).toHex());
+
+        // Создаем нового пользователя
+        QSqlQuery query;
+        query.prepare("INSERT INTO clients (first_name, last_name, phone, email, password) "
+                     "VALUES (:first_name, :last_name, :phone, :email, :password)");
+        query.bindValue(":first_name", firstNameEdit->text());
+        query.bindValue(":last_name", lastNameEdit->text());
+        query.bindValue(":phone", phone);
+        query.bindValue(":email", emailEdit->text());
+        query.bindValue(":password", hashedPassword);
+
+        if (query.exec()) {
+            QMessageBox::information(&dialog, "Успех", 
+                "Регистрация успешно завершена.\nТеперь вы можете войти в систему, используя email и пароль.");
+            accepted = true;
+            dialog.accept();
+        } else {
+            QMessageBox::critical(&dialog, "Ошибка", "Не удалось создать учетную запись: " + query.lastError().text());
+        }
+    });
+
+    connect(cancelButton, &QPushButton::clicked, &dialog, &QDialog::reject);
+
+    if (dialog.exec() == QDialog::Accepted && accepted) {
+        // Очищаем поля логина после успешной регистрации
+        ui->lineEdit_login->clear();
+        ui->lineEdit_password->clear();
+    }
 }
 

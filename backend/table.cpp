@@ -8,7 +8,6 @@ Table::Table(std::shared_ptr<DatabaseHandler> db_manager, const User* user, QWid
 {
     approve_button_ = nullptr;
     reject_button_ = nullptr;
-    complete_button_ = nullptr;
 }
 
 void Table::BuildAdminTables(){
@@ -86,14 +85,8 @@ void Table::BuildAdminTables(){
     reject_button_->setStyleSheet("QPushButton { border: none; outline: none; }");
     reject_button_->setToolTip("Отклонить заявку");
 
-    complete_button_ = new QPushButton(QIcon(":/done_all.svg"), "", floating_menu_.get());
-    complete_button_->setIconSize(QSize(35, 35));
-    complete_button_->setStyleSheet("QPushButton { border: none; outline: none; }");
-    complete_button_->setToolTip("Отметить как выполненную");
-
     menuLayout->addWidget(approve_button_);
     menuLayout->addWidget(reject_button_);
-    menuLayout->addWidget(complete_button_);
     menuLayout->addWidget(add_button_);
     menuLayout->addWidget(edit_button_);
     menuLayout->addWidget(delete_button_);
@@ -113,7 +106,6 @@ void Table::BuildAdminTables(){
     connect(logout_button_, &QPushButton::clicked, this, &Table::Logout);
     connect(approve_button_, &QPushButton::clicked, this, &Table::ApproveRequest);
     connect(reject_button_, &QPushButton::clicked, this, &Table::RejectRequest);
-    connect(complete_button_, &QPushButton::clicked, this, &Table::CompleteRequest);
 
     floating_menu_->installEventFilter(this);
 }
@@ -644,7 +636,6 @@ bool Table::IsRequestTable(const QString& table_name) const {
 void Table::ShowRequestButtons(bool show) {
     if (approve_button_) approve_button_->setVisible(show);
     if (reject_button_) reject_button_->setVisible(show);
-    if (complete_button_) complete_button_->setVisible(show);
 }
 
 void Table::UpdateRequestStatus(const QString& table_name, int request_id, const QString& new_status) {
@@ -657,9 +648,9 @@ void Table::UpdateRequestStatus(const QString& table_name, int request_id, const
     
     QVariant result = db_manager_->ExecuteQuery(query);
     if (!result.toBool()) {
-        QString error = db_manager_->GetLastError();
-        QMessageBox::critical(this, "Ошибка", "Не удалось обновить статус заявки: " + error);
-        qDebug() << "Update failed:" << error;
+        // QString error = db_manager_->GetLastError();
+        // QMessageBox::critical(this, "Ошибка", "Не удалось обновить статус заявки: " + error);
+        // qDebug() << "Update failed:" << error;
         return;
     }
 
@@ -679,8 +670,15 @@ void Table::ApproveRequest()
     int id = data_table_->model()->data(data_table_->model()->index(row, 0)).toInt();
     QString table_name = table_selector_->currentText();
 
-    // Используем русские значения статусов для всех таблиц
-    UpdateRequestStatus(table_name, id, "одобрено");
+    // Используем правильные статусы в зависимости от типа таблицы
+    QString new_status;
+    if (table_name == "service_requests") {
+        new_status = "подтверждено";
+    } else {
+        new_status = "одобрено"; // Для loan_requests, insurance_requests и других
+    }
+    
+    UpdateRequestStatus(table_name, id, new_status);
 }
 
 void Table::RejectRequest()
@@ -696,23 +694,13 @@ void Table::RejectRequest()
     int id = data_table_->model()->data(data_table_->model()->index(row, 0)).toInt();
     QString table_name = table_selector_->currentText();
 
-    // Используем русские значения статусов для всех таблиц
-    UpdateRequestStatus(table_name, id, "отклонено");
-}
-
-void Table::CompleteRequest()
-{
-    QModelIndex currentIndex = data_table_->currentIndex();
-    if (!currentIndex.isValid())
-    {
-        QMessageBox::warning(this, "Предупреждение", "Выберите заявку для завершения.");
-        return;
+    // Используем правильные статусы в зависимости от типа таблицы
+    QString new_status;
+    if (table_name == "service_requests") {
+        new_status = "отменено";
+    } else {
+        new_status = "отклонено"; // Для loan_requests, insurance_requests и других
     }
-
-    int row = currentIndex.row();
-    int id = data_table_->model()->data(data_table_->model()->index(row, 0)).toInt();
-    QString table_name = table_selector_->currentText();
-
-    // Используем русские значения статусов для всех таблиц
-    UpdateRequestStatus(table_name, id, "завершено");
+    
+    UpdateRequestStatus(table_name, id, new_status);
 }

@@ -59,8 +59,8 @@ public:
     using ProductKey = std::tuple<QString, QString>; // (name, color)
 
     explicit Products(std::shared_ptr<ProductCard> product_card,
-                         std::shared_ptr<Cart> cart,
-                         std::shared_ptr<DatabaseHandler> db_manager);
+                      std::shared_ptr<Cart> cart,
+                      std::shared_ptr<DatabaseHandler> db_manager);
 
     void PushProduct(const ProductInfo& instrument);
 
@@ -90,7 +90,7 @@ signals:
 
 private:
     QHash<ProductKey, ProductInfo> products_; // <Product Name, ProductInfo>
-    
+
     std::shared_ptr<DatabaseHandler> db_manager_;
     std::weak_ptr<ProductCard> product_card_;
     std::shared_ptr<Cart> cart_;

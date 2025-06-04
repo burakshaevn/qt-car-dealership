@@ -7,6 +7,17 @@
 #include <QScrollArea>
 #include <QVBoxLayout>
 #include <QPushButton>
+#include <QDesktopServices>
+#include <QUrl>
+#include <QTemporaryFile>
+#include <QDateTime>
+#include <QStringConverter>
+#include <QTextStream>
+#include <QFileDialog>
+#include <QMessageBox>
+#include <QPdfWriter>
+#include <QTextDocument>
+#include <QPainter>
 
 #include "products.h"
 #include "database_handler.h"
@@ -32,7 +43,7 @@ public:
     void RestoreHiddenToCartButtons();
 
     void UpdateProductsWidget(QScrollArea* scrollArea, const QStringView typeFilter, const QStringView colorFilter = QStringView());
-    
+
     // Новый метод для обновления виджета купленных товаров
     void UpdatePurchasedProductsWidget(QScrollArea* scrollArea, const int found_user_id);
 
@@ -86,9 +97,14 @@ public:
         return card_container_;
     }
 
-signals:
+private slots:
+    void generateAndShowContract(const ProductInfo& product);
 
 private:
+    QString generateContractHtml(const ProductInfo& product);
+    void saveContract(const QString& content, const ProductInfo& product);
+    void saveAsPdf(const QString& htmlContent, const QString& fileName);
+    
     // Управление базой данных
     std::weak_ptr<DatabaseHandler> db_manager_;
 
