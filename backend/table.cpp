@@ -195,6 +195,19 @@ void Table::LoadTable() {
                    "LEFT JOIN clients c ON sr.client_id = c.id "
                    "LEFT JOIN cars ON sr.car_id = cars.id";
     }
+    else if (table_name == "rental_requests") {
+        query_str = "SELECT rr.id as \"№\", "
+                   "CONCAT(c.first_name, ' ', c.last_name) as \"Клиент\", "
+                   "c.phone as \"Телефон\", "
+                   "CONCAT(cars.name, ' (', cars.color, ')') as \"Автомобиль\", "
+                   "rr.rental_days as \"Дней аренды\", "
+                   "rr.start_date as \"Дата начала\", "
+                   "rr.status as \"Статус\", "
+                   "rr.created_at as \"Дата создания\" "
+                   "FROM rental_requests rr "
+                   "LEFT JOIN clients c ON rr.client_id = c.id "
+                   "LEFT JOIN cars ON rr.car_id = cars.id";
+    }
     else {
         query_str = QString("SELECT * FROM %1").arg(table_name);
     }
@@ -630,7 +643,8 @@ bool Table::IsRequestTable(const QString& table_name) const {
     return table_name == "service_requests" ||
            table_name == "insurance_requests" ||
            table_name == "loan_requests" ||
-           table_name == "sell_requests";
+           table_name == "sell_requests" ||
+           table_name == "rental_requests";
 }
 
 void Table::ShowRequestButtons(bool show) {
@@ -674,6 +688,8 @@ void Table::ApproveRequest()
     QString new_status;
     if (table_name == "service_requests") {
         new_status = "подтверждено";
+    } else if (table_name == "rental_requests") {
+        new_status = "одобрено";
     } else {
         new_status = "одобрено"; // Для loan_requests, insurance_requests и других
     }
@@ -698,6 +714,8 @@ void Table::RejectRequest()
     QString new_status;
     if (table_name == "service_requests") {
         new_status = "отменено";
+    } else if (table_name == "rental_requests") {
+        new_status = "отклонено";
     } else {
         new_status = "отклонено"; // Для loan_requests, insurance_requests и других
     }

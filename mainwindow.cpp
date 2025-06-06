@@ -646,9 +646,9 @@ void MainWindow::SetupServicesScrollArea()
                 dialogLayout->addWidget(carLabel);
 
                 QComboBox* carCombo = new QComboBox(&dialog);
-                QSqlQuery carQuery("SELECT MIN(id) AS id, name FROM cars WHERE available_for_rent = true GROUP BY name ORDER BY name");
+                QSqlQuery carQuery("SELECT id, CONCAT(name, ' (', color, ')') as display_name FROM cars WHERE available_for_rent = true ORDER BY name, color");
                 while (carQuery.next()) {
-                    carCombo->addItem(carQuery.value("name").toString(), carQuery.value("id").toInt());
+                    carCombo->addItem(carQuery.value("display_name").toString(), carQuery.value("id").toInt());
                 }
                 dialogLayout->addWidget(carCombo);
 
@@ -2031,6 +2031,9 @@ void MainWindow::CheckNotifications()
                 "    UNION ALL "
                 "    SELECT id FROM loan_requests "
                 "    WHERE client_id = %1 AND (notification_shown = false OR notification_shown IS NULL) "
+                "    UNION ALL "
+                "    SELECT id FROM rental_requests "
+                "    WHERE client_id = %1 AND (notification_shown = false OR notification_shown IS NULL) "
                 ") as notifications")
             .arg(user_->GetId()));
 
@@ -2049,8 +2052,8 @@ void MainWindow::CheckNotifications()
                 );
 
                 // Показываем всплывающее уведомление
-                QMessageBox::information(this, "Новые уведомления",
-                    QString("У вас есть %1 новых уведомлений о статусе заявок").arg(count));
+                // QMessageBox::information(this, "Новые уведомления",
+                //     QString("У вас есть %1 новых уведомлений о статусе заявок").arg(count));
             }
         }
     }
@@ -2058,131 +2061,100 @@ void MainWindow::CheckNotifications()
 
 void MainWindow::UpdateNotifications()
 {
-    if (!user_) {
+    if (!user_ || user_->GetRole() != Role::User) {
         return;
     }
 
     // Очищаем текущие уведомления
     ClearNotifications();
 
-    // Получаем все заявки пользователя с измененным статусом
-    QString debugQuery = QString("WITH updated_notifications AS ("
-            "    (SELECT id, 'service' as request_type, service_type as details, status, created_at, scheduled_date "
-            "    FROM public.service_requests "
-            "    WHERE client_id = %1 AND (notification_shown = false OR notification_shown IS NULL))"
-            "    UNION ALL "
-            "    (SELECT id, 'insurance' as request_type, insurance_type as details, status, created_at, NULL as scheduled_date "
-            "    FROM public.insurance_requests "
-            "    WHERE client_id = %1 AND (notification_shown = false OR notification_shown IS NULL))"
-            "    UNION ALL "
-            "    (SELECT id, 'loan' as request_type, CAST(loan_amount AS TEXT) as details, status, created_at, NULL as scheduled_date "
-            "    FROM public.loan_requests "
-            "    WHERE client_id = %1 AND (notification_shown = false OR notification_shown IS NULL))"
-            ") "
-            "SELECT * FROM updated_notifications "
-            "ORDER BY created_at DESC LIMIT 10")
-        .arg(user_->GetId());
+    // Получаем все необработанные уведомления
+    QVariant result = db_manager_->ExecuteSelectQuery(
+        QString("SELECT 'service' as type, id, status, service_type as additional_info, scheduled_date as date_info "
+                "FROM service_requests "
+                "WHERE client_id = %1 AND (notification_shown = false OR notification_shown IS NULL) "
+                "UNION ALL "
+                "SELECT 'insurance' as type, id, status, insurance_type as additional_info, created_at as date_info "
+                "FROM insurance_requests "
+                "WHERE client_id = %1 AND (notification_shown = false OR notification_shown IS NULL) "
+                "UNION ALL "
+                "SELECT 'loan' as type, id, status, CAST(loan_amount AS TEXT) as additional_info, created_at as date_info "
+                "FROM loan_requests "
+                "WHERE client_id = %1 AND (notification_shown = false OR notification_shown IS NULL) "
+                "UNION ALL "
+                "SELECT 'rental' as type, id, status, CAST(rental_days AS TEXT) as additional_info, start_date as date_info "
+                "FROM rental_requests "
+                "WHERE client_id = %1 AND (notification_shown = false OR notification_shown IS NULL) "
+                "ORDER BY date_info DESC")
+            .arg(user_->GetId()));
 
-    qDebug() << "Executing query:" << debugQuery;
+    if (result.canConvert<QSqlQuery>())
+    {
+        QSqlQuery query = result.value<QSqlQuery>();
+        bool hasNotifications = false;
 
-    QVariant result = db_manager_->ExecuteSelectQuery(debugQuery);
+        while (query.next())
+        {
+            hasNotifications = true;
+            QString type = query.value("type").toString();
+            int id = query.value("id").toInt();
+            QString status = query.value("status").toString();
+            QString additionalInfo = query.value("additional_info").toString();
+            QDateTime dateInfo = query.value("date_info").toDateTime();
 
-    if (!result.canConvert<QSqlQuery>()) {
-        qDebug() << "Query failed to convert to QSqlQuery";
-        qDebug() << "Result:" << result.toString();
-        return;
+            QString title;
+            QString message;
+
+            if (type == "service") {
+                title = "Заявка на обслуживание";
+                message = QString("Статус заявки на %1\nЗапланировано на: %2\nСтатус: %3")
+                    .arg(additionalInfo)
+                    .arg(dateInfo.toString("dd.MM.yyyy HH:mm"))
+                    .arg(status);
+            }
+            else if (type == "insurance") {
+                title = "Заявка на страхование";
+                message = QString("Статус заявки на %1\nСтатус: %2")
+                    .arg(additionalInfo)
+                    .arg(status);
+            }
+            else if (type == "loan") {
+                title = "Заявка на кредит";
+                message = QString("Статус заявки на сумму %1 руб.\nСтатус: %2")
+                    .arg(FormatPrice(additionalInfo.toLongLong()))
+                    .arg(status);
+            }
+            else if (type == "rental") {
+                title = "Заявка на аренду";
+                message = QString("Статус заявки на аренду автомобиля на %1 дней\nДата начала: %2\nСтатус: %3")
+                    .arg(additionalInfo)
+                    .arg(dateInfo.toString("dd.MM.yyyy"))
+                    .arg(status);
+            }
+
+            message += QString("\nДата создания: %1").arg(dateInfo.toString("dd.MM.yyyy HH:mm"));
+            
+            // Добавляем уведомление в список
+            AddNotification(title, message);
+
+            // Обновляем статус уведомления в базе данных
+            QString updateQuery = QString("UPDATE %1_requests SET notification_shown = true WHERE id = %2")
+                .arg(type)
+                .arg(id);
+            db_manager_->ExecuteQuery(updateQuery);
+        }
+
+        // Обновляем стиль кнопки уведомлений в зависимости от наличия новых уведомлений
+        if (!hasNotifications) {
+            ui->pushButton_notifications->setStyleSheet(
+                "QPushButton {"
+                "   background-color: #fafafa;"
+                "   border: 0px;"
+                "   border-radius: 17px;"
+                "}"
+            );
+        }
     }
-
-    QSqlQuery query = result.value<QSqlQuery>();
-    if (!query.isActive()) {
-        qDebug() << "Query is not active";
-        qDebug() << "Last error:" << query.lastError().text();
-        return;
-    }
-
-    int notificationCount = 0;
-    while (query.next()) {
-        notificationCount++;
-        QString type = query.value("request_type").toString();
-        QString details = query.value("details").toString();
-        QString status = query.value("status").toString();
-        QDateTime createdAt = query.value("created_at").toDateTime();
-        int id = query.value("id").toInt();
-
-        qDebug() << "Processing notification:" << type << details << status;
-
-        QString title;
-        QString message;
-        bool updateSuccess = false;
-
-        // Формируем сообщение в зависимости от типа заявки
-        if (type == "service") {
-            title = "Заявка на обслуживание";
-            QDateTime scheduledDate = query.value("scheduled_date").toDateTime();
-            message = QString("Статус заявки на %1\nЗапланировано на: %2\nСтатус: %3")
-                         .arg(details)
-                         .arg(scheduledDate.toString("dd.MM.yyyy HH:mm"))
-                         .arg(status);
-
-            // Обновляем статус уведомления
-            updateSuccess = db_manager_->ExecuteQuery(
-                QString("UPDATE service_requests SET notification_shown = true WHERE id = %1 AND client_id = %2")
-                    .arg(id)
-                    .arg(user_->GetId()));
-        }
-        else if (type == "insurance") {
-            title = "Заявка на страхование";
-            message = QString("Статус заявки на %1\nСтатус: %2")
-                         .arg(details)
-                         .arg(status);
-
-            updateSuccess = db_manager_->ExecuteQuery(
-                QString("UPDATE insurance_requests SET notification_shown = true WHERE id = %1 AND client_id = %2")
-                    .arg(id)
-                    .arg(user_->GetId()));
-        }
-        else if (type == "loan") {
-            title = "Заявка на кредит";
-            message = QString("Статус заявки на сумму %1 руб.\nСтатус: %2")
-                         .arg(FormatPrice(details.toLongLong()))
-                         .arg(status);
-
-            updateSuccess = db_manager_->ExecuteQuery(
-                QString("UPDATE loan_requests SET notification_shown = true WHERE id = %1 AND client_id = %2")
-                    .arg(id)
-                    .arg(user_->GetId()));
-        }
-        else if (type == "sell") {
-            title = "Заявка на продажу";
-            message = QString("Статус заявки на продажу %1\nСтатус: %2")
-                         .arg(details)
-                         .arg(status);
-
-            updateSuccess = db_manager_->ExecuteQuery(
-                QString("UPDATE sell_requests SET notification_shown = true WHERE id = %1 AND client_id = %2")
-                    .arg(id)
-                    .arg(user_->GetId()));
-        }
-
-        if (!updateSuccess) {
-            qDebug() << "Failed to update notification_shown status for" << type << "request with id" << id;
-            qDebug() << "Error:" << db_manager_->GetLastError();
-        }
-
-        message += QString("\nДата создания: %1").arg(createdAt.toString("dd.MM.yyyy HH:mm"));
-        AddNotification(title, message);
-    }
-
-    qDebug() << "Total notifications found:" << notificationCount;
-
-    // Возвращаем обычный стиль кнопки уведомлений
-    ui->pushButton_notifications->setStyleSheet(
-        "QPushButton {"
-        "   background-color: #fafafa;"
-        "   border: 0px;"
-        "   border-radius: 17px;"
-        "}"
-    );
 }
 
 void MainWindow::AddNotification(const QString& title, const QString& message)
