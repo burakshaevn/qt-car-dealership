@@ -2024,13 +2024,13 @@ void MainWindow::CheckNotifications()
     QVariant result = db_manager_->ExecuteSelectQuery(
         QString("SELECT COUNT(*) as count FROM ("
                 "    SELECT id FROM service_requests "
-                "    WHERE client_id = %1 AND status != 'не обработано' AND (notification_shown = false OR notification_shown IS NULL) "
+                "    WHERE client_id = %1 AND (notification_shown = false OR notification_shown IS NULL) "
                 "    UNION ALL "
                 "    SELECT id FROM insurance_requests "
-                "    WHERE client_id = %1 AND status != 'не обработано' AND (notification_shown = false OR notification_shown IS NULL) "
+                "    WHERE client_id = %1 AND (notification_shown = false OR notification_shown IS NULL) "
                 "    UNION ALL "
                 "    SELECT id FROM loan_requests "
-                "    WHERE client_id = %1 AND status != 'не обработано' AND (notification_shown = false OR notification_shown IS NULL) "
+                "    WHERE client_id = %1 AND (notification_shown = false OR notification_shown IS NULL) "
                 ") as notifications")
             .arg(user_->GetId()));
 
@@ -2069,15 +2069,15 @@ void MainWindow::UpdateNotifications()
     QString debugQuery = QString("WITH updated_notifications AS ("
             "    (SELECT id, 'service' as request_type, service_type as details, status, created_at, scheduled_date "
             "    FROM public.service_requests "
-            "    WHERE client_id = %1 AND status != 'не обработано' AND (notification_shown = false OR notification_shown IS NULL))"
+            "    WHERE client_id = %1 AND (notification_shown = false OR notification_shown IS NULL))"
             "    UNION ALL "
             "    (SELECT id, 'insurance' as request_type, insurance_type as details, status, created_at, NULL as scheduled_date "
             "    FROM public.insurance_requests "
-            "    WHERE client_id = %1 AND status != 'не обработано' AND (notification_shown = false OR notification_shown IS NULL))"
+            "    WHERE client_id = %1 AND (notification_shown = false OR notification_shown IS NULL))"
             "    UNION ALL "
             "    (SELECT id, 'loan' as request_type, CAST(loan_amount AS TEXT) as details, status, created_at, NULL as scheduled_date "
             "    FROM public.loan_requests "
-            "    WHERE client_id = %1 AND status != 'не обработано' AND (notification_shown = false OR notification_shown IS NULL))"
+            "    WHERE client_id = %1 AND (notification_shown = false OR notification_shown IS NULL))"
             ") "
             "SELECT * FROM updated_notifications "
             "ORDER BY created_at DESC LIMIT 10")
