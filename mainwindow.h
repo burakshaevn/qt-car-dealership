@@ -77,13 +77,16 @@ private slots:
 
     void on_pushButton_settings_clicked();
 
-    void CheckNotifications();
+    bool CheckNotifications();
 
     // New service button handlers
     void handleServiceRequest();
     void handleRentalRequest();
     void handleLoanRequest();
     void handleInsuranceRequest();
+
+    void AddNotification(const QString& title, const QString& message);
+    void AddNotification(const QString& title, QWidget* content);
 
 private:
     Ui::MainWindow *ui;
@@ -146,7 +149,6 @@ private:
 
     // Функции для работы с уведомлениями
     void UpdateNotifications();
-    void AddNotification(const QString& title, const QString& message);
     void ClearNotifications();
 
     // Функция для перевода статусов заявок на кредит

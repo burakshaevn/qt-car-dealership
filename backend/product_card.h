@@ -21,6 +21,7 @@
 
 #include "products.h"
 #include "database_handler.h"
+#include "contract_templates.h"
 
 class Products;
 class DatabaseHandler;
@@ -97,8 +98,13 @@ public:
         return card_container_;
     }
 
-private slots:
+    // Contract generation methods moved from private to public
     void generateAndShowContract(const ProductInfo& product);
+    void generateAndShowLoanContract(const ProductInfo& product, const QString& loanAmount, const QString& loanTerm);
+    void generateAndShowRentalContract(const ProductInfo& product, const QString& rentalDays, const QString& startDate);
+    void generateAndShowInsuranceContract(const ProductInfo& product, const QString& insuranceType);
+
+private slots:
 
 private:
     QString generateContractHtml(const ProductInfo& product);
@@ -126,7 +132,6 @@ private:
     // В этот контейнер добавляются названия предметов, у которых была скрыта кнопка добавления в корзину.
     // Эта кнопка скрывается только при открытии страницы "Профиль", потому что из профиля невозможно добавить товар в корзину
     QSet<Products::ProductKey> hidden_to_cart_buttons_;
-
 };
 
 #endif // PRODUCT_CARD_H

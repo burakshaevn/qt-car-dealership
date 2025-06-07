@@ -700,3 +700,42 @@ void ProductCard::HideOldPurchasedCards()
         }
     }
 }
+
+void ProductCard::generateAndShowLoanContract(const ProductInfo& product, const QString& loanAmount, const QString& loanTerm)
+{
+    QString currentDate = QDateTime::currentDateTime().toString("dd.MM.yyyy");
+    QString content = ContractTemplates::getLoanContractHtml(
+        currentDate,
+        product.name_,
+        product.color_,
+        QString::number(product.price_),
+        loanAmount,
+        loanTerm
+    );
+    saveContract(content, product);
+}
+
+void ProductCard::generateAndShowRentalContract(const ProductInfo& product, const QString& rentalDays, const QString& startDate)
+{
+    QString currentDate = QDateTime::currentDateTime().toString("dd.MM.yyyy");
+    QString content = ContractTemplates::getRentalContractHtml(
+        currentDate,
+        product.name_,
+        product.color_,
+        rentalDays,
+        startDate
+    );
+    saveContract(content, product);
+}
+
+void ProductCard::generateAndShowInsuranceContract(const ProductInfo& product, const QString& insuranceType)
+{
+    QString currentDate = QDateTime::currentDateTime().toString("dd.MM.yyyy");
+    QString content = ContractTemplates::getInsuranceContractHtml(
+        currentDate,
+        product.name_,
+        product.color_,
+        insuranceType
+    );
+    saveContract(content, product);
+}
