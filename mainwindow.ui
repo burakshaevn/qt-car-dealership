@@ -107,7 +107,7 @@
       </property>
       <property name="icon">
        <iconset resource="resources/resources.qrc">
-        <normaloff>:/notifications.svg</normaloff>:/notifications.svg</iconset>
+        <normaloff>:/Inbox.svg</normaloff>:/Inbox.svg</iconset>
       </property>
       <property name="iconSize">
        <size>
