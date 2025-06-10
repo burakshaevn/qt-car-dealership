@@ -8,6 +8,16 @@ Table::Table(std::shared_ptr<DatabaseHandler> db_manager, const User* user, QWid
 {
     approve_button_ = nullptr;
     reject_button_ = nullptr;
+
+    // Настройка отображения таблицы
+    data_table_->verticalHeader()->hide(); // Скрываем номера строк
+    data_table_->setAlternatingRowColors(true); // Чередующиеся цвета строк
+    data_table_->setSortingEnabled(true); // Включаем сортировку
+    
+    // Настройка заголовков таблицы
+    QHeaderView* header = data_table_->horizontalHeader();
+    header->setSortIndicatorShown(true); // Показываем индикатор сортировки
+    header->setSectionsClickable(true); // Разрешаем клик по заголовкам
 }
 
 void Table::BuildAdminTables(){
@@ -166,6 +176,18 @@ void Table::LoadTable() {
                     "LEFT JOIN clients c ON sr.client_id = c.id "
                     "LEFT JOIN cars ON sr.car_id = cars.id";
     }
+    else if (table_name == "test_drives") {
+        query_str = "SELECT td.id as \"№\", "
+                   "CONCAT(c.first_name, ' ', c.last_name) as \"Клиент\", "
+                   "c.phone as \"Телефон\", "
+                   "CONCAT(cars.name, ' (', cars.color, ')') as \"Автомобиль\", "
+                   "td.scheduled_date as \"Дата тест-драйва\", "
+                   "td.status as \"Статус\", "
+                   "td.created_at as \"Дата создания\" "
+                   "FROM test_drives td "
+                   "LEFT JOIN clients c ON td.client_id = c.id "
+                   "LEFT JOIN cars ON td.car_id = cars.id";
+    }
     else if (table_name == "insurance_requests") {
         query_str = "SELECT ir.id as \"№\", CONCAT(c.first_name, ' ', c.last_name) as \"Клиент\", "
                     "c.phone as \"Телефон\", "
@@ -225,7 +247,7 @@ void Table::LoadTable() {
 
         if (!query.next()) {
             QMessageBox::warning(this, "Предупреждение", "Выбранная таблица пуста или не существует.");
-            return;
+            // return;
         }
 
         // Возврат к началу результата
@@ -254,14 +276,23 @@ void Table::LoadTable() {
         model->setHorizontalHeaderLabels(headers);
 
         // Заполнение модели данными из запроса
+        int row = 0;
         do {
             QList<QStandardItem*> items;
             for (int col = 0; col < column_count; ++col) {
-                auto* item = new QStandardItem(query.value(col).toString());
+                QStandardItem* item;
+                // Для столбца ID (первый столбец) создаем элемент с числовым значением
+                if (col == 0 && (headers[0] == "№" || headers[0] == "id")) {
+                    item = new QStandardItem;
+                    item->setData(query.value(col).toInt(), Qt::DisplayRole);
+                } else {
+                    item = new QStandardItem(query.value(col).toString());
+                }
                 item->setEditable(false);
                 items.append(item);
             }
             model->appendRow(items);
+            row++;
         } while (query.next());
 
         // Установка модели
@@ -484,99 +515,6 @@ void Table::DeleteRecord()
         LoadTable();
     }
 }
-
-// void Table::EditRecord() {
-//     if (!data_table_->model()) {
-//         QMessageBox::critical(this, "Ошибка", "Выберите таблицу для редактирования записи.");
-//         return;
-//     }
-
-//     QString table_name = table_selector_->currentText();
-//     QString col_name = "id";
-//     int id = -1;
-//     if (!col_name.isEmpty())
-//     {
-//         // Если есть primary_key, запрашиваем ID для удаления
-//         int min_id = db_manager_->GetMaxOrMinValueFromTable("MIN", col_name, table_name);
-//         int max_id = db_manager_->GetMaxOrMinValueFromTable("MAX", col_name, table_name);
-
-//         bool ok;
-//         id = QInputDialog::getInt(
-//             this, tr("Редактирование записи"), tr("Укажите порядковый номер записи (столбец ID):"), 1, min_id, max_id, 1, &ok
-//             );
-
-//         if (!ok)
-//         {
-//             return;
-//         }
-
-//         if (id < min_id || id > max_id)
-//         {
-//             QMessageBox::warning(this, "Invalid Data", "The entered data number is invalid.");
-//             return;
-//         }
-//     }
-
-//     // Получаем данные текущей строки через модель
-//     QAbstractItemModel* model = data_table_->model();
-//     QSqlRecord record;
-//     for (int col = 0; col < model->columnCount(); ++col) {
-//         QVariant value = model->index(id, col).data();
-//         record.append(QSqlField(model->headerData(col, Qt::Horizontal).toString(), value.type()));
-//         record.setValue(col, value);
-//     }
-
-//     try{
-//         // Открываем диалог для редактирования
-//         EditDialog dialog(record, this);
-//         if (dialog.exec() == QDialog::Accepted) {
-//             // Получаем обновлённую запись
-//             QSqlRecord updatedRecord = dialog.GetUpdatedRecord();
-
-//             // Формируем SQL-запрос для обновления строки
-//             QString tableName = table_selector_->currentText();
-//             QStringList setClauses;
-//             QString whereClause;
-
-//             // Формирование SET (новые значения)
-//             for (int col = 0; col < updatedRecord.count(); ++col) {
-//                 QString fieldName = updatedRecord.fieldName(col);
-//                 QString newValue = updatedRecord.value(col).toString();
-//                 setClauses.append(QString("%1 = '%2'").arg(fieldName, newValue));
-//             }
-
-//             // Формирование WHERE (по всем данным строки)
-//             for (int col = 0; col < record.count(); ++col) {
-//                 QString fieldName = record.fieldName(col);
-//                 QString oldValue = record.value(col).toString();
-
-//                 if (!whereClause.isEmpty()) {
-//                     whereClause += " AND ";
-//                 }
-//                 whereClause += QString("%1 = '%2'").arg(fieldName, oldValue);
-//             }
-
-//             if (whereClause.isEmpty()) {
-//                 throw std::runtime_error("Cannot determine the row for update.");
-//             }
-
-//             QString updateQuery = QString("UPDATE %1 SET %2 WHERE %3")
-//                                       .arg(tableName, setClauses.join(", "), whereClause);
-
-//             // Выполняем запрос
-//             QSqlQuery query;
-//             if (!query.exec(updateQuery)) {
-//                 throw std::runtime_error(query.lastError().text().toStdString());
-//             }
-
-//             LoadTable();
-//             QMessageBox::information(this, "Success", "Record updated successfully.");
-//         }
-//     }
-//     catch(const std::exception& e) {
-//         QMessageBox::critical(this, "Error", e.what());
-//     }
-// }
 
 void Table::EditRecord() {
     if (!data_table_->model()) {
