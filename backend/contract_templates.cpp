@@ -397,4 +397,131 @@ QString getInsuranceContractHtml(const QString& currentDate, const QString& carN
     .arg(insuranceType);
 }
 
+QString getServiceContractHtml(const QString& currentDate, const QString& carName, const QString& carColor, const QString& serviceType, const QString& scheduledDate)
+{
+    return QString(R"(
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8">
+    <title>Договор на обслуживание автомобиля</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            line-height: 2;
+            font-size: 16pt;
+            margin: 10px;
+        }
+        .header {
+            text-align: center;
+            margin-bottom: 50px;
+        }
+        .header h1 {
+            font-size: 28pt;
+            margin-bottom: 30px;
+            font-weight: bold;
+        }
+        .content {
+            margin-bottom: 40px;
+        }
+        .content h2 {
+            font-size: 22pt;
+            margin-top: 40px;
+            margin-bottom: 25px;
+            font-weight: bold;
+        }
+        .content p {
+            margin-bottom: 20px;
+            text-align: justify;
+        }
+        .content ul {
+            margin: 25px 0;
+            padding-left: 40px;
+            font-size: 16pt;
+        }
+        .content li {
+            margin-bottom: 15px;
+            line-height: 1.8;
+        }
+        .signatures {
+            display: flex;
+            justify-content: space-between;
+            margin-top: 80px;
+            page-break-inside: avoid;
+        }
+        .signature-block {
+            width: 45%;
+        }
+        .signature-block p {
+            margin: 12px 0;
+            font-size: 14pt;
+            line-height: 1.6;
+        }
+        .signature-block strong {
+            font-size: 16pt;
+        }
+        .dotted-line {
+            border-bottom: 2px dotted black;
+            height: 50px;
+            margin-top: 25px;
+        }
+        @page {
+            size: A4;
+            margin: 0;
+        }
+    </style>
+</head>
+<body>
+    <div class="header">
+        <h1>ДОГОВОР НА ОБСЛУЖИВАНИЕ АВТОМОБИЛЯ</h1>
+        <p style="font-size: 16pt;">г. Москва                                                                                           %1</p>
+    </div>
+    
+    <div class="content">
+        <p>Мы, нижеподписавшиеся, Исполнитель ООО "Автосалон Mercedes-Benz", в лице генерального директора Буракшаева Н. Д., действующего на основании Устава, с одной стороны, и Заказчик _______________________________, с другой стороны, заключили настоящий договор о нижеследующем:</p>
+        
+        <h2>1. ПРЕДМЕТ ДОГОВОРА</h2>
+        <p>1.1. Исполнитель обязуется оказать, а Заказчик оплатить следующие услуги по обслуживанию автомобиля:</p>
+        <ul>
+            <li>Марка, модель: <strong>%2</strong></li>
+            <li>Цвет: <strong>%3</strong></li>
+            <li>Вид услуги: <strong>%4</strong></li>
+            <li>Дата и время обслуживания: <strong>%5</strong></li>
+        </ul>
+        
+        <h2>2. ПРАВА И ОБЯЗАННОСТИ СТОРОН</h2>
+        <p>2.1. Исполнитель обязуется оказать услуги качественно и в срок.</p>
+        <p>2.2. Заказчик обязуется своевременно оплатить услуги и предоставить автомобиль в назначенное время.</p>
+        
+        <h2>3. ПРОЧИЕ УСЛОВИЯ</h2>
+        <p>3.1. Настоящий договор составлен в двух экземплярах, по одному для каждой из сторон.</p>
+    </div>
+    
+    <div class="signatures">
+        <div class="signature-block">
+            <p><strong>Исполнитель:</strong></p>
+            <p>ООО "Автосалон Mercedes-Benz"</p>
+            <p>ИНН: 1234567890</p>
+            <p>ОГРН: 1234567890123</p>
+            <div class="dotted-line"></div>
+        </div>
+        
+        <div class="signature-block">
+            <p><strong>Заказчик:</strong></p>
+            <p>ФИО: _____________________</p>
+            <p>Паспорт: _________________</p>
+            <p>Адрес: ___________________</p>
+            <div class="dotted-line"></div>
+        </div>
+    </div>
+</body>
+</html>
+    )")
+    .arg(currentDate)
+    .arg(carName)
+    .arg(carColor)
+    .arg(serviceType)
+    .arg(scheduledDate);
+}
+
 } // namespace ContractTemplates 

@@ -2087,33 +2087,69 @@ void MainWindow::UpdateNotifications()
 
     if (result.canConvert<QSqlQuery>())
     {
-    QSqlQuery query = result.value<QSqlQuery>();
+        QSqlQuery query = result.value<QSqlQuery>();
         bool hasNotifications = false;
 
         while (query.next())
         {
             hasNotifications = true;
             QString type = query.value("type").toString();
-        int id = query.value("id").toInt();
+            int id = query.value("id").toInt();
             QString status = query.value("status").toString();
             QString additionalInfo = query.value("additional_info").toString();
             QDateTime dateInfo = query.value("date_info").toDateTime();
 
-        QString title;
-        QString message;
+            QString title;
+            QString message;
 
-        if (type == "service") {
-            title = "Заявка на обслуживание";
-            message = QString("Статус заявки на %1\nЗапланировано на: %2\nСтатус: %3")
-                    .arg(additionalInfo)
-                    .arg(dateInfo.toString("dd.MM.yyyy HH:mm"))
-                         .arg(status);
-        }
-        else if (type == "insurance") {
-            title = "Заявка на страхование";
-            message = QString("Статус заявки на %1\nСтатус: %2")
-                    .arg(additionalInfo)
-                         .arg(status);
+            if (type == "service") {
+                title = "Заявка на обслуживание";
+                message = QString("Статус заявки на %1\nЗапланировано на: %2\nСтатус: %3")
+                        .arg(additionalInfo)
+                        .arg(dateInfo.toString("dd.MM.yyyy HH:mm"))
+                        .arg(status);
+
+                // Добавляем кнопку скачивания договора для подтвержденных заявок
+                if (status == "подтверждено") {
+                    // Получаем информацию об автомобиле
+                    QSqlQuery carQuery;
+                    QString carQueryStr = QString(
+                        "SELECT c.* FROM cars c "
+                        "INNER JOIN service_requests sr ON c.id = sr.car_id "
+                        "WHERE sr.id = %1")
+                        .arg(id);
+
+                    if (carQuery.exec(carQueryStr) && carQuery.next()) {
+                        ProductInfo product;
+                        product.id_ = carQuery.value("id").toInt();
+                        product.name_ = carQuery.value("name").toString();
+                        product.color_ = carQuery.value("color").toString();
+                        product.price_ = carQuery.value("price").toDouble();
+
+                        QPushButton* downloadButton = new QPushButton("Скачать договор", this);
+                        connect(downloadButton, &QPushButton::clicked, [this, product, additionalInfo, dateInfo]() {
+                            product_card_->generateAndShowServiceContract(
+                                product,
+                                additionalInfo,
+                                dateInfo.toString("dd.MM.yyyy HH:mm")
+                            );
+                        });
+
+                        message += "\n\n";
+                        QWidget* container = new QWidget(this);
+                        QVBoxLayout* layout = new QVBoxLayout(container);
+                        layout->addWidget(new QLabel(message, container));
+                        layout->addWidget(downloadButton);
+                        AddNotification(title, container);
+                        continue;
+                    }
+                }
+            }
+            else if (type == "insurance") {
+                title = "Заявка на страхование";
+                message = QString("Статус заявки на %1\nСтатус: %2")
+                        .arg(additionalInfo)
+                        .arg(status);
 
                 // Добавляем кнопку скачивания договора для одобренных заявок
                 if (status == "одобрено") {
@@ -2134,7 +2170,10 @@ void MainWindow::UpdateNotifications()
 
                         QPushButton* downloadButton = new QPushButton("Скачать договор", this);
                         connect(downloadButton, &QPushButton::clicked, [this, product, additionalInfo]() {
-                            product_card_->generateAndShowInsuranceContract(product, additionalInfo);
+                            product_card_->generateAndShowInsuranceContract(
+                                product,
+                                additionalInfo
+                            );
                         });
 
                         message += "\n\n";
@@ -2146,12 +2185,12 @@ void MainWindow::UpdateNotifications()
                         continue;
                     }
                 }
-        }
-        else if (type == "loan") {
-            title = "Заявка на кредит";
-            message = QString("Статус заявки на сумму %1 руб.\nСтатус: %2")
-                    .arg(FormatPrice(additionalInfo.toLongLong()))
-                         .arg(status);
+            }
+            else if (type == "loan") {
+                title = "Заявка на кредит";
+                message = QString("Статус заявки на сумму %1 руб.\nСтатус: %2")
+                        .arg(FormatPrice(additionalInfo.toLongLong()))
+                        .arg(status);
 
                 // Добавляем кнопку скачивания договора для одобренных заявок
                 if (status == "одобрено") {
@@ -2191,9 +2230,9 @@ void MainWindow::UpdateNotifications()
             else if (type == "rental") {
                 title = "Заявка на аренду";
                 message = QString("Статус заявки на аренду автомобиля на %1 дней\nДата начала: %2\nСтатус: %3")
-                    .arg(additionalInfo)
-                    .arg(dateInfo.toString("dd.MM.yyyy"))
-                         .arg(status);
+                        .arg(additionalInfo)
+                        .arg(dateInfo.toString("dd.MM.yyyy"))
+                        .arg(status);
 
                 // Добавляем кнопку скачивания договора для одобренных заявок
                 if (status == "одобрено") {
@@ -2232,15 +2271,12 @@ void MainWindow::UpdateNotifications()
                 }
             }
 
-        AddNotification(title, message);
+            AddNotification(title, message);
+        }
     }
 
-        // if (hasNotifications) {
-        //     ui->pushButton_notifications->setIcon(QIcon("://notifications_active.svg"));
-        // } else {
-        //     ui->pushButton_notifications->setIcon(QIcon("://notifications.svg"));
-        // }
-    }
+    // После показа уведомлений помечаем их как прочитанные
+    MarkNotificationsAsRead();
 }
 
 void MainWindow::AddNotification(const QString& title, const QString& message) {
@@ -2747,6 +2783,20 @@ void MainWindow::on_pushButton_registration_clicked()
         // Очищаем поля логина после успешной регистрации
         ui->lineEdit_login->clear();
         ui->lineEdit_password->clear();
+    }
+}
+
+void MainWindow::MarkNotificationsAsRead()
+{
+    if (!user_ || user_->GetRole() != Role::User) return;
+
+    int userId = user_->GetId();
+    QStringList tables = {"service_requests", "insurance_requests", "loan_requests", "rental_requests"};
+    for (const QString& table : tables) {
+        QString query = QString("UPDATE %1 SET notification_shown = true WHERE client_id = %2 AND notification_shown = false")
+                        .arg(table)
+                        .arg(userId);
+        db_manager_->ExecuteQuery(query);
     }
 }
 

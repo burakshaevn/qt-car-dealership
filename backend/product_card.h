@@ -103,6 +103,7 @@ public:
     void generateAndShowLoanContract(const ProductInfo& product, const QString& loanAmount, const QString& loanTerm);
     void generateAndShowRentalContract(const ProductInfo& product, const QString& rentalDays, const QString& startDate);
     void generateAndShowInsuranceContract(const ProductInfo& product, const QString& insuranceType);
+    void generateAndShowServiceContract(const ProductInfo& product, const QString& serviceType, const QString& scheduledDate);
 
 private slots:
 

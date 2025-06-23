@@ -5,7 +5,7 @@
 -- Dumped from database version 17.4
 -- Dumped by pg_dump version 17.4
 
--- Started on 2025-06-06 11:28:14
+-- Started on 2025-06-23 12:33:07
 
 SET statement_timeout = 0;
 SET lock_timeout = 0;
@@ -96,6 +96,15 @@ CREATE TABLE public.admins (
 ALTER TABLE public.admins OWNER TO postgres;
 
 --
+-- TOC entry 5044 (class 0 OID 0)
+-- Dependencies: 217
+-- Name: TABLE admins; Type: COMMENT; Schema: public; Owner: postgres
+--
+
+COMMENT ON TABLE public.admins IS 'Администраторы системы';
+
+
+--
 -- TOC entry 218 (class 1259 OID 16474)
 -- Name: admins_id_seq; Type: SEQUENCE; Schema: public; Owner: postgres
 --
@@ -112,7 +121,7 @@ CREATE SEQUENCE public.admins_id_seq
 ALTER SEQUENCE public.admins_id_seq OWNER TO postgres;
 
 --
--- TOC entry 5044 (class 0 OID 0)
+-- TOC entry 5045 (class 0 OID 0)
 -- Dependencies: 218
 -- Name: admins_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: postgres
 --
@@ -134,6 +143,15 @@ CREATE TABLE public.car_types (
 ALTER TABLE public.car_types OWNER TO postgres;
 
 --
+-- TOC entry 5046 (class 0 OID 0)
+-- Dependencies: 219
+-- Name: TABLE car_types; Type: COMMENT; Schema: public; Owner: postgres
+--
+
+COMMENT ON TABLE public.car_types IS 'Типы автомобилей';
+
+
+--
 -- TOC entry 220 (class 1259 OID 16480)
 -- Name: car_types_id_seq; Type: SEQUENCE; Schema: public; Owner: postgres
 --
@@ -150,7 +168,7 @@ CREATE SEQUENCE public.car_types_id_seq
 ALTER SEQUENCE public.car_types_id_seq OWNER TO postgres;
 
 --
--- TOC entry 5045 (class 0 OID 0)
+-- TOC entry 5047 (class 0 OID 0)
 -- Dependencies: 220
 -- Name: car_types_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: postgres
 --
@@ -178,6 +196,15 @@ CREATE TABLE public.cars (
 ALTER TABLE public.cars OWNER TO postgres;
 
 --
+-- TOC entry 5048 (class 0 OID 0)
+-- Dependencies: 221
+-- Name: TABLE cars; Type: COMMENT; Schema: public; Owner: postgres
+--
+
+COMMENT ON TABLE public.cars IS 'Автомобили в наличии';
+
+
+--
 -- TOC entry 222 (class 1259 OID 16486)
 -- Name: cars_id_seq; Type: SEQUENCE; Schema: public; Owner: postgres
 --
@@ -194,7 +221,7 @@ CREATE SEQUENCE public.cars_id_seq
 ALTER SEQUENCE public.cars_id_seq OWNER TO postgres;
 
 --
--- TOC entry 5046 (class 0 OID 0)
+-- TOC entry 5049 (class 0 OID 0)
 -- Dependencies: 222
 -- Name: cars_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: postgres
 --
@@ -220,6 +247,15 @@ CREATE TABLE public.clients (
 ALTER TABLE public.clients OWNER TO postgres;
 
 --
+-- TOC entry 5050 (class 0 OID 0)
+-- Dependencies: 223
+-- Name: TABLE clients; Type: COMMENT; Schema: public; Owner: postgres
+--
+
+COMMENT ON TABLE public.clients IS 'Клиенты автосалона';
+
+
+--
 -- TOC entry 224 (class 1259 OID 16492)
 -- Name: clients_id_seq; Type: SEQUENCE; Schema: public; Owner: postgres
 --
@@ -236,7 +272,7 @@ CREATE SEQUENCE public.clients_id_seq
 ALTER SEQUENCE public.clients_id_seq OWNER TO postgres;
 
 --
--- TOC entry 5047 (class 0 OID 0)
+-- TOC entry 5051 (class 0 OID 0)
 -- Dependencies: 224
 -- Name: clients_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: postgres
 --
@@ -265,12 +301,12 @@ CREATE TABLE public.insurance_requests (
 ALTER TABLE public.insurance_requests OWNER TO postgres;
 
 --
--- TOC entry 5048 (class 0 OID 0)
+-- TOC entry 5052 (class 0 OID 0)
 -- Dependencies: 231
 -- Name: TABLE insurance_requests; Type: COMMENT; Schema: public; Owner: postgres
 --
 
-COMMENT ON TABLE public.insurance_requests IS 'Страховые запросы.';
+COMMENT ON TABLE public.insurance_requests IS 'Заявки на страхование';
 
 
 --
@@ -290,7 +326,7 @@ CREATE SEQUENCE public.insurance_requests_id_seq
 ALTER SEQUENCE public.insurance_requests_id_seq OWNER TO postgres;
 
 --
--- TOC entry 5049 (class 0 OID 0)
+-- TOC entry 5053 (class 0 OID 0)
 -- Dependencies: 232
 -- Name: insurance_requests_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: postgres
 --
@@ -321,12 +357,12 @@ CREATE TABLE public.loan_requests (
 ALTER TABLE public.loan_requests OWNER TO postgres;
 
 --
--- TOC entry 5050 (class 0 OID 0)
+-- TOC entry 5054 (class 0 OID 0)
 -- Dependencies: 229
 -- Name: TABLE loan_requests; Type: COMMENT; Schema: public; Owner: postgres
 --
 
-COMMENT ON TABLE public.loan_requests IS 'Запросы на кредитование.';
+COMMENT ON TABLE public.loan_requests IS 'Заявки на кредитование';
 
 
 --
@@ -346,7 +382,7 @@ CREATE SEQUENCE public.loan_requests_id_seq
 ALTER SEQUENCE public.loan_requests_id_seq OWNER TO postgres;
 
 --
--- TOC entry 5051 (class 0 OID 0)
+-- TOC entry 5055 (class 0 OID 0)
 -- Dependencies: 230
 -- Name: loan_requests_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: postgres
 --
@@ -378,6 +414,15 @@ CREATE TABLE public.purchases (
 ALTER TABLE public.purchases OWNER TO postgres;
 
 --
+-- TOC entry 5056 (class 0 OID 0)
+-- Dependencies: 225
+-- Name: TABLE purchases; Type: COMMENT; Schema: public; Owner: postgres
+--
+
+COMMENT ON TABLE public.purchases IS 'История покупок автомобилей';
+
+
+--
 -- TOC entry 226 (class 1259 OID 16497)
 -- Name: purchases_id_seq; Type: SEQUENCE; Schema: public; Owner: postgres
 --
@@ -394,7 +439,7 @@ CREATE SEQUENCE public.purchases_id_seq
 ALTER SEQUENCE public.purchases_id_seq OWNER TO postgres;
 
 --
--- TOC entry 5052 (class 0 OID 0)
+-- TOC entry 5057 (class 0 OID 0)
 -- Dependencies: 226
 -- Name: purchases_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: postgres
 --
@@ -424,7 +469,7 @@ CREATE TABLE public.rental_requests (
 ALTER TABLE public.rental_requests OWNER TO postgres;
 
 --
--- TOC entry 5053 (class 0 OID 0)
+-- TOC entry 5058 (class 0 OID 0)
 -- Dependencies: 236
 -- Name: TABLE rental_requests; Type: COMMENT; Schema: public; Owner: postgres
 --
@@ -468,12 +513,12 @@ CREATE TABLE public.service_requests (
 ALTER TABLE public.service_requests OWNER TO postgres;
 
 --
--- TOC entry 5054 (class 0 OID 0)
+-- TOC entry 5059 (class 0 OID 0)
 -- Dependencies: 233
 -- Name: TABLE service_requests; Type: COMMENT; Schema: public; Owner: postgres
 --
 
-COMMENT ON TABLE public.service_requests IS 'Запросы на дилерское обслуживание.';
+COMMENT ON TABLE public.service_requests IS 'Заявки на сервисное обслуживание';
 
 
 --
@@ -493,7 +538,7 @@ CREATE SEQUENCE public.service_requests_id_seq
 ALTER SEQUENCE public.service_requests_id_seq OWNER TO postgres;
 
 --
--- TOC entry 5055 (class 0 OID 0)
+-- TOC entry 5060 (class 0 OID 0)
 -- Dependencies: 234
 -- Name: service_requests_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: postgres
 --
@@ -520,12 +565,12 @@ CREATE TABLE public.test_drives (
 ALTER TABLE public.test_drives OWNER TO postgres;
 
 --
--- TOC entry 5056 (class 0 OID 0)
+-- TOC entry 5061 (class 0 OID 0)
 -- Dependencies: 227
 -- Name: TABLE test_drives; Type: COMMENT; Schema: public; Owner: postgres
 --
 
-COMMENT ON TABLE public.test_drives IS 'Запросы на тест-драйвы.';
+COMMENT ON TABLE public.test_drives IS 'Заявки на тест-драйв';
 
 
 --
@@ -545,7 +590,7 @@ CREATE SEQUENCE public.test_drives_id_seq
 ALTER SEQUENCE public.test_drives_id_seq OWNER TO postgres;
 
 --
--- TOC entry 5057 (class 0 OID 0)
+-- TOC entry 5062 (class 0 OID 0)
 -- Dependencies: 228
 -- Name: test_drives_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: postgres
 --
@@ -642,10 +687,10 @@ INSERT INTO public.admins VALUES (3, 'admin3', 'adminpass3');
 -- Data for Name: car_types; Type: TABLE DATA; Schema: public; Owner: postgres
 --
 
-INSERT INTO public.car_types VALUES (1, 'Лимузин');
 INSERT INTO public.car_types VALUES (2, 'Внедорожник');
 INSERT INTO public.car_types VALUES (3, 'Купе');
 INSERT INTO public.car_types VALUES (4, 'Кабриолет');
+INSERT INTO public.car_types VALUES (1, 'Лимузин');
 
 
 --
@@ -757,10 +802,12 @@ INSERT INTO public.purchases VALUES (22, 60, 7, '2025-06-04 15:43:24.990196', '�
 -- Data for Name: rental_requests; Type: TABLE DATA; Schema: public; Owner: postgres
 --
 
-INSERT INTO public.rental_requests OVERRIDING SYSTEM VALUE VALUES (1, 7, 2, 7, '2025-06-06', 'одобрено', '2025-06-06 06:42:12.853094', true);
-INSERT INTO public.rental_requests OVERRIDING SYSTEM VALUE VALUES (3, 7, 2, 1, '2025-06-06', 'отклонено', '2025-06-06 08:21:09.485995', true);
 INSERT INTO public.rental_requests OVERRIDING SYSTEM VALUE VALUES (4, 7, 4, 1, '2025-06-06', 'отклонено', '2025-06-06 08:23:09.181534', true);
-INSERT INTO public.rental_requests OVERRIDING SYSTEM VALUE VALUES (2, 7, 76, 1, '2025-06-06', 'одобрено', '2025-06-06 08:05:12.155505', true);
+INSERT INTO public.rental_requests OVERRIDING SYSTEM VALUE VALUES (5, 7, 43, 1, '2025-06-06', 'отклонено', '2025-06-06 08:32:01.146866', true);
+INSERT INTO public.rental_requests OVERRIDING SYSTEM VALUE VALUES (3, 7, 2, 1, '2025-06-06', 'отклонено', '2025-06-06 08:21:09.485995', true);
+INSERT INTO public.rental_requests OVERRIDING SYSTEM VALUE VALUES (2, 7, 76, 1, '2025-06-06', 'отклонено', '2025-06-06 08:05:12.155505', true);
+INSERT INTO public.rental_requests OVERRIDING SYSTEM VALUE VALUES (1, 7, 2, 7, '2025-06-06', 'отклонено', '2025-06-06 06:42:12.853094', false);
+INSERT INTO public.rental_requests OVERRIDING SYSTEM VALUE VALUES (6, 7, 3, 4, '2025-06-23', 'одобрено', '2025-06-23 09:23:04.814957', true);
 
 
 --
@@ -769,6 +816,7 @@ INSERT INTO public.rental_requests OVERRIDING SYSTEM VALUE VALUES (2, 7, 76, 1, 
 -- Data for Name: service_requests; Type: TABLE DATA; Schema: public; Owner: postgres
 --
 
+INSERT INTO public.service_requests VALUES (7, 7, 1, 'Замена масла', '2025-06-27 09:00:00', 'подтверждено', '2025-06-23 09:24:31.713934', true);
 
 
 --
@@ -780,7 +828,7 @@ INSERT INTO public.rental_requests OVERRIDING SYSTEM VALUE VALUES (2, 7, 76, 1, 
 
 
 --
--- TOC entry 5058 (class 0 OID 0)
+-- TOC entry 5063 (class 0 OID 0)
 -- Dependencies: 218
 -- Name: admins_id_seq; Type: SEQUENCE SET; Schema: public; Owner: postgres
 --
@@ -789,7 +837,7 @@ SELECT pg_catalog.setval('public.admins_id_seq', 3, true);
 
 
 --
--- TOC entry 5059 (class 0 OID 0)
+-- TOC entry 5064 (class 0 OID 0)
 -- Dependencies: 220
 -- Name: car_types_id_seq; Type: SEQUENCE SET; Schema: public; Owner: postgres
 --
@@ -798,7 +846,7 @@ SELECT pg_catalog.setval('public.car_types_id_seq', 6, true);
 
 
 --
--- TOC entry 5060 (class 0 OID 0)
+-- TOC entry 5065 (class 0 OID 0)
 -- Dependencies: 222
 -- Name: cars_id_seq; Type: SEQUENCE SET; Schema: public; Owner: postgres
 --
@@ -807,7 +855,7 @@ SELECT pg_catalog.setval('public.cars_id_seq', 76, true);
 
 
 --
--- TOC entry 5061 (class 0 OID 0)
+-- TOC entry 5066 (class 0 OID 0)
 -- Dependencies: 224
 -- Name: clients_id_seq; Type: SEQUENCE SET; Schema: public; Owner: postgres
 --
@@ -816,7 +864,7 @@ SELECT pg_catalog.setval('public.clients_id_seq', 7, true);
 
 
 --
--- TOC entry 5062 (class 0 OID 0)
+-- TOC entry 5067 (class 0 OID 0)
 -- Dependencies: 232
 -- Name: insurance_requests_id_seq; Type: SEQUENCE SET; Schema: public; Owner: postgres
 --
@@ -825,7 +873,7 @@ SELECT pg_catalog.setval('public.insurance_requests_id_seq', 13, true);
 
 
 --
--- TOC entry 5063 (class 0 OID 0)
+-- TOC entry 5068 (class 0 OID 0)
 -- Dependencies: 230
 -- Name: loan_requests_id_seq; Type: SEQUENCE SET; Schema: public; Owner: postgres
 --
@@ -834,7 +882,7 @@ SELECT pg_catalog.setval('public.loan_requests_id_seq', 5, true);
 
 
 --
--- TOC entry 5064 (class 0 OID 0)
+-- TOC entry 5069 (class 0 OID 0)
 -- Dependencies: 226
 -- Name: purchases_id_seq; Type: SEQUENCE SET; Schema: public; Owner: postgres
 --
@@ -843,25 +891,25 @@ SELECT pg_catalog.setval('public.purchases_id_seq', 22, true);
 
 
 --
--- TOC entry 5065 (class 0 OID 0)
+-- TOC entry 5070 (class 0 OID 0)
 -- Dependencies: 235
 -- Name: rental_requests_id_seq; Type: SEQUENCE SET; Schema: public; Owner: postgres
 --
 
-SELECT pg_catalog.setval('public.rental_requests_id_seq', 4, true);
+SELECT pg_catalog.setval('public.rental_requests_id_seq', 6, true);
 
 
 --
--- TOC entry 5066 (class 0 OID 0)
+-- TOC entry 5071 (class 0 OID 0)
 -- Dependencies: 234
 -- Name: service_requests_id_seq; Type: SEQUENCE SET; Schema: public; Owner: postgres
 --
 
-SELECT pg_catalog.setval('public.service_requests_id_seq', 6, true);
+SELECT pg_catalog.setval('public.service_requests_id_seq', 7, true);
 
 
 --
--- TOC entry 5067 (class 0 OID 0)
+-- TOC entry 5072 (class 0 OID 0)
 -- Dependencies: 228
 -- Name: test_drives_id_seq; Type: SEQUENCE SET; Schema: public; Owner: postgres
 --
@@ -1151,7 +1199,7 @@ ALTER TABLE ONLY public.test_drives
     ADD CONSTRAINT test_drives_client_id_fkey FOREIGN KEY (client_id) REFERENCES public.clients(id) ON DELETE CASCADE;
 
 
--- Completed on 2025-06-06 11:28:14
+-- Completed on 2025-06-23 12:33:07
 
 --
 -- PostgreSQL database dump complete

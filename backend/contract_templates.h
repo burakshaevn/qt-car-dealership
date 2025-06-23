@@ -18,6 +18,8 @@ QString getRentalContractHtml(const QString& currentDate, const QString& carName
 QString getInsuranceContractHtml(const QString& currentDate, const QString& carName, const QString& carColor, 
                                 const QString& insuranceType);
 
+QString getServiceContractHtml(const QString& currentDate, const QString& carName, const QString& carColor, const QString& serviceType, const QString& scheduledDate);
+
 } // namespace ContractTemplates
 
 #endif // CONTRACT_TEMPLATES_H 

@@ -88,6 +88,8 @@ private slots:
     void AddNotification(const QString& title, const QString& message);
     void AddNotification(const QString& title, QWidget* content);
 
+    void MarkNotificationsAsRead();
+
 private:
     Ui::MainWindow *ui;
 

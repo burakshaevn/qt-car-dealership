@@ -739,3 +739,16 @@ void ProductCard::generateAndShowInsuranceContract(const ProductInfo& product, c
     );
     saveContract(content, product);
 }
+
+void ProductCard::generateAndShowServiceContract(const ProductInfo& product, const QString& serviceType, const QString& scheduledDate)
+{
+    QString currentDate = QDateTime::currentDateTime().toString("dd.MM.yyyy");
+    QString content = ContractTemplates::getServiceContractHtml(
+        currentDate,
+        product.name_,
+        product.color_,
+        serviceType,
+        scheduledDate
+    );
+    saveContract(content, product);
+}
