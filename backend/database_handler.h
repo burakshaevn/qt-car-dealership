@@ -1,5 +1,5 @@
-#ifndef DATABASE_MANAGER_H
-#define DATABASE_MANAGER_H
+#ifndef DATABASE_HANDLERH_H
+#define DATABASE_HANDLERH_H
 
 #include <QSqlQuery>
 #include <QSqlError>
@@ -8,12 +8,12 @@
 #include <QDebug>
 #include <utility>
 
-class DatabaseManager {
+class DatabaseHandler {
 public:
-    DatabaseManager();
+    DatabaseHandler();
 
     template <typename Container, typename Port>
-    DatabaseManager(Container&& host, Port&& port, Container&& db_name, Container&& username, Container&& password)
+    DatabaseHandler(Container&& host, Port&& port, Container&& db_name, Container&& username, Container&& password)
     {
         db_ = QSqlDatabase::addDatabase("QPSQL");
         db_.setHostName(std::forward<Container>(host));
@@ -26,6 +26,8 @@ public:
     bool Open();
     void Close();
     void UpdateConnection(const QString& host, int port, const QString& db_name, const QString& username, const QString& password);
+
+    void LoadDefault();
 
     QString GetLastError() const;
 
@@ -48,4 +50,4 @@ private:
     QSqlDatabase db_;
 };
 
-#endif // DATABASE_MANAGER_H
+#endif // DATABASE_HANDLERH_H

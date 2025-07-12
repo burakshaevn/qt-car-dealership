@@ -1,16 +1,16 @@
-#include "database_manager.h"
+#include "database_handler.h"
 
-DatabaseManager::DatabaseManager() = default;
+DatabaseHandler::DatabaseHandler() = default;
 
-bool DatabaseManager::Open() {
+bool DatabaseHandler::Open() {
     return db_.open();
 }
 
-void DatabaseManager::Close() {
+void DatabaseHandler::Close() {
     db_.close();
 }
 
-void DatabaseManager::UpdateConnection(const QString& host, int port, const QString& db_name, const QString& username, const QString& password) {
+void DatabaseHandler::UpdateConnection(const QString& host, int port, const QString& db_name, const QString& username, const QString& password) {
     db_ = QSqlDatabase::addDatabase("QPSQL");
     db_.setHostName(host);
     db_.setPort(port);
@@ -19,11 +19,21 @@ void DatabaseManager::UpdateConnection(const QString& host, int port, const QStr
     db_.setPassword(password);
 }
 
-QString DatabaseManager::GetLastError() const{
+void DatabaseHandler::LoadDefault(){
+    QString hostname = "localhost";
+    int port = 5432;
+    QString dbname = "car_dealership";
+    QString username = "postgres";
+    QString password = "89274800234Nn";
+    UpdateConnection(hostname, port, dbname, username, password);
+    Open();
+}
+
+QString DatabaseHandler::GetLastError() const{
     return db_.lastError().text();
 }
 
-QString DatabaseManager::GetTableDescription(const QStringView table_name){
+QString DatabaseHandler::GetTableDescription(const QStringView table_name){
     QSqlQuery query;
     query.prepare("SELECT obj_description(oid) AS description FROM pg_class WHERE relname = :table_name;");
     query.bindValue(":table_name", table_name.toString());
@@ -33,7 +43,7 @@ QString DatabaseManager::GetTableDescription(const QStringView table_name){
     return QString();
 }
 
-QStringList DatabaseManager::GetTables() const {
+QStringList DatabaseHandler::GetTables() const {
     QVariant result = ExecuteSelectQuery(QString("SELECT table_name FROM information_schema.tables WHERE table_schema = 'public';"));
     QStringList tables;
     if (result.canConvert<QSqlQuery>()) {
@@ -48,12 +58,16 @@ QStringList DatabaseManager::GetTables() const {
     return tables;
 }
 
-bool DatabaseManager::ExecuteQuery(const QStringView string_query) {
+bool DatabaseHandler::ExecuteQuery(const QStringView string_query) {
     QSqlQuery query;
-    return query.exec(string_query.toString());
+    bool success = query.exec(string_query.toString());
+    if (!success) {
+        qDebug() << "Query execution failed:" << query.lastError().text();
+    }
+    return success;
 }
 
-QVariant DatabaseManager::ExecuteSelectQuery(const QStringView string_query) const {
+QVariant DatabaseHandler::ExecuteSelectQuery(const QStringView string_query) const {
     QSqlQuery query;
     if (!query.exec(string_query.toString())) {
         return query.lastError().text();
@@ -61,7 +75,7 @@ QVariant DatabaseManager::ExecuteSelectQuery(const QStringView string_query) con
     return QVariant::fromValue(query);
 }
 
-int DatabaseManager::GetRowsCount(QStringView table_name) const {
+int DatabaseHandler::GetRowsCount(QStringView table_name) const {
     QSqlQuery query;
     query.prepare("SELECT COUNT(*) FROM information_schema.columns WHERE table_name = :table_name;");
     query.bindValue(":table_name", table_name.toString());
@@ -71,7 +85,7 @@ int DatabaseManager::GetRowsCount(QStringView table_name) const {
     return false;
 }
 
-int DatabaseManager::GetMaxOrMinValueFromTable(const QString& max_or_min, const QString& column_name, const QString& table_name) {
+int DatabaseHandler::GetMaxOrMinValueFromTable(const QString& max_or_min, const QString& column_name, const QString& table_name) {
     QSqlQuery query;
     query.prepare(QString("SELECT %1(%2) FROM %3").arg(max_or_min.toUpper(), column_name, table_name));
 
@@ -86,7 +100,7 @@ int DatabaseManager::GetMaxOrMinValueFromTable(const QString& max_or_min, const 
     return -1;
 }
 
-const QStringList DatabaseManager::GetForeignKeysForColumn(const QString& table_name, const QString& column_name) {
+const QStringList DatabaseHandler::GetForeignKeysForColumn(const QString& table_name, const QString& column_name) {
     QSqlQuery query;
     query.prepare(R"(
         SELECT
@@ -136,7 +150,7 @@ const QStringList DatabaseManager::GetForeignKeysForColumn(const QString& table_
     return foreign_keys;
 }
 
-QList<QString> DatabaseManager::GetDistinctColors() {
+QList<QString> DatabaseHandler::GetDistinctColors() {
     QList<QString> colors;
     QSqlQuery query(db_);
     if (!query.exec("SELECT DISTINCT color FROM cars")) {

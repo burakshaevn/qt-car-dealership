@@ -12,5 +12,12 @@
         <file>delete.svg</file>
         <file>edit.svg</file>
         <file>Color Swatch 02.svg</file>
+        <file>Information Circle Contained.svg</file>
+        <file>check.svg</file>
+        <file>close.svg</file>
+        <file>done_all.svg</file>
+        <file>settings.svg</file>
+        <file>File text.svg</file>
+        <file>Inbox.svg</file>
     </qresource>
 </RCC>

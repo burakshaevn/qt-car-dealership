@@ -39,8 +39,4 @@ jobs:
     # Сборка
     - name: Build
       run: cmake --build build --config ${{ env.BUILD_TYPE }}
-
-    # Тесты (если есть)
-    # - name: Test
-    #   working-directory: ./build
-    #   run: ctest -C ${{ env.BUILD_TYPE }}
+ 
