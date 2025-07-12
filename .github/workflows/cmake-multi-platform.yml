@@ -1,4 +1,4 @@
-name: Build Qt + PostgreSQL Project
+name: Qt C++ Car Dealership Build
 
 on:
   push:
@@ -8,40 +8,73 @@ on:
 
 env:
   BUILD_TYPE: Release
-  QT_VERSION: 6.5.0   
+  QT_VERSION: 6.5.0
 
 jobs:
   build:
     runs-on: ubuntu-latest
 
+    services:
+      postgres:
+        image: postgres:17
+        env:
+          POSTGRES_PASSWORD: postgres
+          POSTGRES_DB: car_dealership
+        options: >-
+          --health-cmd pg_isready
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+        ports:
+          - 5432:5432
+
     steps:
     - uses: actions/checkout@v4
+      with:
+        repository: burakshaevn/qt-car-dealership
+        token: ${{ secrets.GITHUB_TOKEN }}
 
-    # Установка Qt
     - name: Install Qt
       uses: jurplel/install-qt-action@v3
       with:
         version: ${{ env.QT_VERSION }}
-        modules: qtbase qtsql qtdeclarative  # Добавьте нужные модули
+        modules: qtbase qtsql qtdeclarative
+        target: desktop
+        arch: gcc_64
+        install-deps: true
+        cache: false
+        cache-key-prefix: install-qt-action
+        setup-python: true
+        add-tools-to-path: true
+        set-env: true
+        no-qt-binaries: false
+        tools-only: false
+        aqtversion: ==3.1.*
+        py7zrversion: ==0.20.*
+        source: false
+        documentation: false
+        examples: false
 
-    # Установка PostgreSQL (libpq)
-    - name: Install PostgreSQL
+    - name: Install PostgreSQL Client
       run: |
         sudo apt-get update
-        sudo apt-get install -y libpq-dev postgresql-client
+        sudo apt-get install -y postgresql-client libpq-dev
 
-    # Настройка CMake (если у вас есть CMakeLists.txt)
+    - name: Setup Database
+      run: |
+        PGPASSWORD=postgres psql -h localhost -U postgres -d car_dealership -c "CREATE DATABASE car_dealership;" || true
+        PGPASSWORD=postgres psql -h localhost -U postgres -d car_dealership -f schemas/car-dealership.sql
+
     - name: Configure CMake
       run: |
-        cmake -B build \
-          -DCMAKE_BUILD_TYPE=${{ env.BUILD_TYPE }} \
-          -DCMAKE_PREFIX_PATH="${{ env.QT_DIR }}"  # Путь к Qt (автоматически задаётся в install-qt-action)
+        cmake -B ${{github.workspace}}/build \
+          -DCMAKE_BUILD_TYPE=${{env.BUILD_TYPE}} \
+          -DCMAKE_PREFIX_PATH=${{ env.QTDIR }} \
+          -DCMAKE_CXX_FLAGS="-I/usr/include/postgresql"
 
-    # Сборка
     - name: Build
-      run: cmake --build build --config ${{ env.BUILD_TYPE }}
+      run: cmake --build ${{github.workspace}}/build --config ${{env.BUILD_TYPE}}
 
-    # Тесты (если есть)
-    # - name: Test
-    #   working-directory: ./build
-    #   run: ctest -C ${{ env.BUILD_TYPE }}
+    - name: Test
+      working-directory: ${{github.workspace}}/build
+      run: ctest -C ${{env.BUILD_TYPE}} --output-on-failure
