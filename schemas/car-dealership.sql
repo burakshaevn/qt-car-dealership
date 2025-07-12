@@ -5,7 +5,7 @@
 -- Dumped from database version 17.4
 -- Dumped by pg_dump version 17.4
 
--- Started on 2025-06-23 12:33:07
+-- Started on 2025-07-12 09:48:37
 
 SET statement_timeout = 0;
 SET lock_timeout = 0;
@@ -776,6 +776,7 @@ INSERT INTO public.clients VALUES (7, 'Никита', 'Буракшаев', '792
 -- Data for Name: insurance_requests; Type: TABLE DATA; Schema: public; Owner: postgres
 --
 
+INSERT INTO public.insurance_requests VALUES (14, 7, 21, 'Комплекс', 'одобрено', '2025-06-23 09:47:39.108954', true);
 
 
 --
@@ -785,6 +786,7 @@ INSERT INTO public.clients VALUES (7, 'Никита', 'Буракшаев', '792
 --
 
 INSERT INTO public.loan_requests VALUES (5, 7, 45, 5563000, 12, 'отклонено', '2025-06-05 09:29:08.70719', true);
+INSERT INTO public.loan_requests VALUES (6, 7, 1, 100004, 2, 'одобрено', '2025-06-23 09:41:40.572766', true);
 
 
 --
@@ -794,6 +796,7 @@ INSERT INTO public.loan_requests VALUES (5, 7, 45, 5563000, 12, 'отклоне�
 --
 
 INSERT INTO public.purchases VALUES (22, 60, 7, '2025-06-04 15:43:24.990196', 'наличные', NULL, NULL, NULL);
+INSERT INTO public.purchases VALUES (23, 21, 7, '2025-06-23 09:48:01.749137', 'наличные', NULL, NULL, 'Комплекс');
 
 
 --
@@ -806,8 +809,9 @@ INSERT INTO public.rental_requests OVERRIDING SYSTEM VALUE VALUES (4, 7, 4, 1, '
 INSERT INTO public.rental_requests OVERRIDING SYSTEM VALUE VALUES (5, 7, 43, 1, '2025-06-06', 'отклонено', '2025-06-06 08:32:01.146866', true);
 INSERT INTO public.rental_requests OVERRIDING SYSTEM VALUE VALUES (3, 7, 2, 1, '2025-06-06', 'отклонено', '2025-06-06 08:21:09.485995', true);
 INSERT INTO public.rental_requests OVERRIDING SYSTEM VALUE VALUES (2, 7, 76, 1, '2025-06-06', 'отклонено', '2025-06-06 08:05:12.155505', true);
-INSERT INTO public.rental_requests OVERRIDING SYSTEM VALUE VALUES (1, 7, 2, 7, '2025-06-06', 'отклонено', '2025-06-06 06:42:12.853094', false);
-INSERT INTO public.rental_requests OVERRIDING SYSTEM VALUE VALUES (6, 7, 3, 4, '2025-06-23', 'одобрено', '2025-06-23 09:23:04.814957', true);
+INSERT INTO public.rental_requests OVERRIDING SYSTEM VALUE VALUES (7, 7, 4, 1, '2025-06-23', 'одобрено', '2025-06-23 09:35:19.63823', true);
+INSERT INTO public.rental_requests OVERRIDING SYSTEM VALUE VALUES (1, 7, 2, 7, '2025-06-06', 'отклонено', '2025-06-06 06:42:12.853094', true);
+INSERT INTO public.rental_requests OVERRIDING SYSTEM VALUE VALUES (6, 7, 3, 4, '2025-06-23', 'отклонено', '2025-06-23 09:23:04.814957', true);
 
 
 --
@@ -869,7 +873,7 @@ SELECT pg_catalog.setval('public.clients_id_seq', 7, true);
 -- Name: insurance_requests_id_seq; Type: SEQUENCE SET; Schema: public; Owner: postgres
 --
 
-SELECT pg_catalog.setval('public.insurance_requests_id_seq', 13, true);
+SELECT pg_catalog.setval('public.insurance_requests_id_seq', 14, true);
 
 
 --
@@ -878,7 +882,7 @@ SELECT pg_catalog.setval('public.insurance_requests_id_seq', 13, true);
 -- Name: loan_requests_id_seq; Type: SEQUENCE SET; Schema: public; Owner: postgres
 --
 
-SELECT pg_catalog.setval('public.loan_requests_id_seq', 5, true);
+SELECT pg_catalog.setval('public.loan_requests_id_seq', 6, true);
 
 
 --
@@ -887,7 +891,7 @@ SELECT pg_catalog.setval('public.loan_requests_id_seq', 5, true);
 -- Name: purchases_id_seq; Type: SEQUENCE SET; Schema: public; Owner: postgres
 --
 
-SELECT pg_catalog.setval('public.purchases_id_seq', 22, true);
+SELECT pg_catalog.setval('public.purchases_id_seq', 23, true);
 
 
 --
@@ -896,7 +900,7 @@ SELECT pg_catalog.setval('public.purchases_id_seq', 22, true);
 -- Name: rental_requests_id_seq; Type: SEQUENCE SET; Schema: public; Owner: postgres
 --
 
-SELECT pg_catalog.setval('public.rental_requests_id_seq', 6, true);
+SELECT pg_catalog.setval('public.rental_requests_id_seq', 7, true);
 
 
 --
@@ -1199,7 +1203,7 @@ ALTER TABLE ONLY public.test_drives
     ADD CONSTRAINT test_drives_client_id_fkey FOREIGN KEY (client_id) REFERENCES public.clients(id) ON DELETE CASCADE;
 
 
--- Completed on 2025-06-23 12:33:07
+-- Completed on 2025-07-12 09:48:37
 
 --
 -- PostgreSQL database dump complete

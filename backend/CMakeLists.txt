@@ -12,6 +12,9 @@ set(CMAKE_CXX_STANDARD_REQUIRED ON)
 find_package(QT NAMES Qt6 Qt5 REQUIRED COMPONENTS Core Widgets Sql)
 find_package(Qt${QT_VERSION_MAJOR} REQUIRED COMPONENTS Core Widgets Sql)
 
+# Find PostgreSQL
+find_package(PostgreSQL REQUIRED)
+
 add_library(backend
 
   database_handler.h database_handler.cpp
@@ -27,7 +30,7 @@ add_library(backend
   contract_templates.h contract_templates.cpp
 
 )
-target_link_libraries(backend Qt${QT_VERSION_MAJOR}::Core Qt${QT_VERSION_MAJOR}::Widgets Qt${QT_VERSION_MAJOR}::Sql)
+target_link_libraries(backend Qt${QT_VERSION_MAJOR}::Core Qt${QT_VERSION_MAJOR}::Widgets Qt${QT_VERSION_MAJOR}::Sql PostgreSQL::PostgreSQL)
 
 include(GNUInstallDirs)
 install(TARGETS backend
