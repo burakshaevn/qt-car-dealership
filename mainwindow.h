@@ -29,7 +29,7 @@
 #include "cart.h"
 #include "user.h"
 #include "table.h"
-#include "Products.h"
+#include "products.h"
 
 QT_BEGIN_NAMESPACE
 namespace Ui {
