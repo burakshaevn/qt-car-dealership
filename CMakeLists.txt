@@ -13,7 +13,7 @@ find_package(QT NAMES Qt6 Qt5 REQUIRED COMPONENTS Widgets Sql)
 find_package(Qt${QT_VERSION_MAJOR} REQUIRED COMPONENTS Widgets Sql)
 
 # Find PostgreSQL
-find_package(PostgreSQL REQUIRED)
+find_package(PostgreSQL COMPONENTS Libraries)
 
 set(PROJECT_SOURCES
         main.cpp
@@ -46,7 +46,11 @@ else()
     endif()
 endif()
 
-target_link_libraries(car-dealership PRIVATE Qt${QT_VERSION_MAJOR}::Widgets Qt${QT_VERSION_MAJOR}::Sql backend PostgreSQL::PostgreSQL)
+target_link_libraries(car-dealership PRIVATE Qt${QT_VERSION_MAJOR}::Widgets Qt${QT_VERSION_MAJOR}::Sql backend)
+
+target_include_directories(car-dealership PRIVATE ${PostgreSQL_INCLUDE_DIRS})
+target_link_libraries(car-dealership PRIVATE ${PostgreSQL_LIBRARIES})
+
 target_include_directories(car-dealership PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/backend)
 
 # Qt for iOS sets MACOSX_BUNDLE_GUI_IDENTIFIER automatically since Qt 6.1.
