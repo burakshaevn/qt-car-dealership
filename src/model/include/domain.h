@@ -4,6 +4,7 @@
 #include <QString>
 
 enum class Role {
+    Unknown,
     User,
     Admin
 };

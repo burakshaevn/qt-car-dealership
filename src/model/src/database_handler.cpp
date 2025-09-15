@@ -1,4 +1,4 @@
-#include "database_handler.h"
+#include "../include/database_handler.h"
 
 DatabaseHandler::DatabaseHandler() = default;
 
@@ -143,8 +143,10 @@ const QStringList DatabaseHandler::GetForeignKeysForColumn(const QString& table_
         QString referencing_column = query.value("referencing_column").toString();
         QString referenced_table = query.value("referenced_table").toString();
         QString referenced_column = query.value("referenced_column").toString();
-        foreign_keys.append(QString("%1(%2) -> %3(%4)")
-                                .arg(referencing_table, referencing_column, referenced_table, referenced_column));
+        foreign_keys.append(QString("%1(%2) -> %3(%4)").arg(referencing_table,
+                                                         referencing_column,
+                                                         referenced_table,
+                                                         referenced_column));
     }
 
     return foreign_keys;

@@ -7,21 +7,15 @@
 #include <QScrollArea>
 #include <QVBoxLayout>
 #include <QPushButton>
-#include <QDesktopServices>
+
 #include <QUrl>
 #include <QTemporaryFile>
 #include <QDateTime>
 #include <QStringConverter>
 #include <QTextStream>
-#include <QFileDialog>
-#include <QMessageBox>
-#include <QPdfWriter>
-#include <QTextDocument>
-#include <QPainter>
 
 #include "products.h"
 #include "database_handler.h"
-#include "contract_templates.h"
 
 class Products;
 class DatabaseHandler;
@@ -31,11 +25,9 @@ class ProductCard : public QObject
 {
     Q_OBJECT
 public:
-    explicit ProductCard(std::shared_ptr<DatabaseHandler> db_manager,
-                         std::shared_ptr<Products> Products,
-                         QObject* parent = nullptr);
+    explicit ProductCard(QSharedPointer<DatabaseHandler> db_manager, QSharedPointer<Products> Products, QObject* parent = nullptr);
 
-    void SetProductsPtr(std::shared_ptr<Products> Products);
+    void SetProductsPtr(QSharedPointer<Products> Products);
 
     void DrawItem(const ProductInfo& product);
     void DrawPurchasedItem(const ProductInfo& product);
@@ -77,9 +69,6 @@ public:
         if (card_container_ && layout_) {
             card_container_->setLayout(layout_);
         }
-        else {
-            qDebug() << "ProductCard::UpdateCardContainer(): card_container_ or layout_ is nullptr";
-        }
     }
     inline void card_container_PerformAdjustSize(){
         card_container_->adjustSize();
@@ -88,36 +77,22 @@ public:
         return card_container_;
     }
 
-    // Получить список всех ключей продуктов
+    /*!
+     * \brief Возвращает список всех ключей продуктов
+     * \return Список ключей. Ключи в формате: <name_product, color_product>
+     */
     inline QList<Products::ProductKey> GetAllProductKeys() const {
         return products_cards_.keys();
     }
 
-    // Получить текущий контейнер карточек
-    inline QWidget* GetCurrentContainer() const {
-        return card_container_;
-    }
-
-    // Contract generation methods moved from private to public
-    void generateAndShowContract(const ProductInfo& product);
-    void generateAndShowLoanContract(const ProductInfo& product, const QString& loanAmount, const QString& loanTerm);
-    void generateAndShowRentalContract(const ProductInfo& product, const QString& rentalDays, const QString& startDate);
-    void generateAndShowInsuranceContract(const ProductInfo& product, const QString& insuranceType);
-    void generateAndShowServiceContract(const ProductInfo& product, const QString& serviceType, const QString& scheduledDate);
-
-private slots:
-
 private:
-    QString generateContractHtml(const ProductInfo& product);
-    void saveContract(const QString& content, const ProductInfo& product);
-    void saveAsPdf(const QString& htmlContent, const QString& fileName);
     
     // Управление базой данных
-    std::weak_ptr<DatabaseHandler> db_manager_;
+    QWeakPointer<DatabaseHandler> m_database_handler;
 
     // Указатель на класс Products.
     // Хранит в себе только детальную информацию о каждом инструменте в магазине
-    std::weak_ptr<Products> products_;
+    QWeakPointer<Products> products_;
 
     // Контейнер для каталога
     QWidget* card_container_;

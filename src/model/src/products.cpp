@@ -1,40 +1,36 @@
-#include "products.h"
+#include "../include/products.h"
 
-#include "database_handler.h"
-#include "cart.h"
-#include "domain.h"
-#include "product_card.h"
+#include "../include/database_handler.h"
+#include "../include/domain.h"
+#include "../include/product_card.h"
 #include <QGraphicsBlurEffect>
 
-Products::Products(std::shared_ptr<ProductCard> product_card,
-                         std::shared_ptr<Cart> cart,
-                         std::shared_ptr<DatabaseHandler> db_manager)
-    : product_card_(std::move(product_card))
-    , cart_(std::move(cart))
-    , db_manager_(std::move(db_manager))
+Products::Products(QSharedPointer<ProductCard> product_card, QSharedPointer<DatabaseHandler> db_manager)
+    : m_product_cards(std::move(product_card))
+    , m_database_manager(std::move(db_manager))
 {}
 
 void Products::PushProduct(const ProductInfo& product) {
     // Составной ключ
     ProductKey key = std::make_tuple(product.name_, product.color_);
-    products_[key] = product;
+    m_products[key] = product;
 
-    if (std::find(available_colors_.begin(), available_colors_.end(), product.color_) == available_colors_.end()){
-        available_colors_.push_back(product.color_);
+    if (std::find(m_available_colors.begin(), m_available_colors.end(), product.color_) == m_available_colors.end()){
+        m_available_colors.push_back(product.color_);
     }
 }
 
 void Products::Clear() {
-    products_.clear();
+    m_products.clear();
 }
 
 QHash<Products::ProductKey, ProductInfo> Products::GetProducts() const {
-    return products_;
+    return m_products;
 }
 
 const ProductInfo* Products::FindProduct(const ProductKey& key) const {
-    auto iter = products_.find(key);
-    if (iter != products_.end()) {
+    auto iter = m_products.find(key);
+    if (iter != m_products.end()) {
         return &iter.value();
     }
     return nullptr;
@@ -42,7 +38,7 @@ const ProductInfo* Products::FindProduct(const ProductKey& key) const {
 
 QList<ProductInfo> Products::FindProductsByName(const QString& product_name) const {
     QList<ProductInfo> result;
-    for (const auto& product : products_) {
+    for (const auto& product : m_products) {
         if (product.name_ == product_name) {
             result.append(product);
         }
@@ -55,7 +51,7 @@ QList<ProductInfo> Products::FindRelevantProducts(const QString& term) const {
     QList<std::pair<ProductInfo, double>> scores;
 
     // Вычисляем TF-IDF для каждого инструмента
-    for (const auto& info : products_) {
+    for (const auto& info : m_products) {
         double tf_idf = ComputeTfIdf(info.name_, term);
         scores.append({info, tf_idf});
     }
@@ -78,12 +74,12 @@ QList<ProductInfo> Products::FindRelevantProducts(const QString& term) const {
 void Products::PullProducts()
 {
     // Выполняем запрос к базе данных
-    auto queryResult = db_manager_->ExecuteSelectQuery(QString("SELECT * FROM public.cars ORDER BY id ASC"));
+    auto queryResult = m_database_manager->ExecuteSelectQuery(QString("SELECT * FROM public.cars ORDER BY id ASC"));
     if (queryResult.canConvert<QSqlQuery>())
     {
         QSqlQuery query = queryResult.value<QSqlQuery>();
 
-        // Загружаем инструменты в Products_
+        // Загружаем инструменты в m_products
         Clear();
         while (query.next())
         {
@@ -106,10 +102,10 @@ void Products::PullProducts()
         for (const auto& product_info : GetProducts())
         {
             Products::ProductKey key = std::make_tuple(product_info.name_, product_info.color_);
-            if (product_card_.lock()->FindProductCard(key) == nullptr) {
+            if (m_product_cards.lock()->FindProductCard(key) == nullptr) {
 
-                QWidget* card = new QWidget(product_card_.lock()->GetCardContainer());
-                product_card_.lock()->AddProductCard(key, card);
+                QWidget* card = new QWidget(m_product_cards.lock()->GetCardContainer());
+                m_product_cards.lock()->AddProductCard(key, card);
                 card->setStyleSheet("background-color: #ffffff; border-radius: 39px;");
                 card->setFixedSize(831, 152);
 
@@ -167,6 +163,7 @@ void Products::PullProducts()
                     emit OpenInfoPage(product_info);
                 });
 
+                // Кнопка добавления продукта в корзину
                 // QPushButton* to_cart_ = new QPushButton(card);
                 // to_cart_->setObjectName("to_cart_");
                 // to_cart_->setIcon(QIcon("://Information Circle Contained.svg"));
@@ -190,15 +187,15 @@ void Products::PullProducts()
                 info_->move(779, 15);
 
                 // Добавляем карточку в компоновку
-                product_card_.lock()->AddWidgetToLayout(card);
+                m_product_cards.lock()->AddWidgetToLayout(card);
             }
         }
         // Устанавливаем обновленную компоновку для контейнера
-        product_card_.lock()->UpdateCardContainer();
+        m_product_cards.lock()->UpdateCardContainer();
     }
 }
 
-QList<ProductInfo> Products::PullAvailableColorsForProduct(const ProductInfo& product) const {
+QList<ProductInfo> Products::GetAllProductsWithName(const ProductInfo& product) const {
     QList<ProductInfo> temp;
 
     QSqlQuery query;
@@ -223,26 +220,34 @@ QList<ProductInfo> Products::PullAvailableColorsForProduct(const ProductInfo& pr
 }
 
 QStringList Products::GetAvailableColors() const {
-    return available_colors_;
+    return m_available_colors;
 }
 
 double Products::ComputeTfIdf(const QString& document, const QString& term) const {
-    // Подсчет частоты термина (TF — Term Frequency)
+    // Подсчет частоты термина (TF — Term Frequency) - отношение количества вхождений термина к общему числу слов
     int term_frequency = CountOccurrences(document, term);
     int total_terms = CountTotalWords(document);
+
     double tf = total_terms > 0 ? static_cast<double>(term_frequency) / total_terms : 0.0;
 
     // Подсчет обратной частотности (IDF — Inverse Document Frequency)
+    // TODO: Требуется реализация подсчета IDF на основе корпуса документов
+    // Временная заглушка - всегда возвращает 1.0
     int idf = 1.0;
 
-    // Итоговое значение TF-IDF
+    // Итоговое значение TF-IDF = TF * IDF
     return tf * idf;
 }
 
 int Products::CountOccurrences(const QString& document, const QString& term) const {
     int count = 0;
+    // Регулярное выражение для поиска точных совпадений слова:
+    // \\b - граница слова, QRegularExpression::escape - экранирование специальных символов
+    // CaseInsensitiveOption - поиск без учета регистра
     QRegularExpression regex("\\b" + QRegularExpression::escape(term) + "\\b", QRegularExpression::CaseInsensitiveOption);
     QRegularExpressionMatchIterator it = regex.globalMatch(document);
+
+    // Перебор всех найденных совпадений
     while (it.hasNext()) {
         it.next();
         ++count;

@@ -50,11 +50,14 @@
 4. Настроить подключение в конфигурационном файле
 
 ### Сборка проекта:
+
+> [!NOTE]  
+> Необходимо указать значение переменной DCMAKE_PREFIX_PATH — путь до компилятора и до расположения Postgres (пример см. ниже).
+
 ```bash
-mkdir build
-cd build
-cmake ..
-make
+mkdir .build
+cd .build
+cmake -S . -B build -DCMAKE_PREFIX_PATH="C:/dev/Qt/6.9.1/msvc2022_64;C:/dev/PostgreSQL/17"
 ```
 
 ## Скриншоты интерфейса

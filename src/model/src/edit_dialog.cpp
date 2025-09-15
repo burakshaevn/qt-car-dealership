@@ -1,4 +1,4 @@
-#include "edit_dialog.h"
+#include "../include/edit_dialog.h"
 
 EditDialog::EditDialog(const QSqlRecord& record, QWidget* parent)
     : QDialog(parent)
