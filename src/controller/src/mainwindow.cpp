@@ -1720,7 +1720,7 @@ void MainWindow::on_pushButton_to_pay_clicked()
 
 void MainWindow::on_pushButton_notifications_clicked()
 {
-    m_notifications_handler->LoadAndShowNotifications(m_user->GetId());
+    m_notifications_handler->loadAndShowNotifications(m_user->GetId());
     m_notifications_handler->exec();
 }
 

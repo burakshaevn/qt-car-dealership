@@ -22,25 +22,25 @@ public:
      * \brief Получает и отображает уведомления
      * \param user_id Для какого пользователя выполняется действие
      */
-    void LoadAndShowNotifications(const int user_id);
+    void loadAndShowNotifications(const int user_id);
 
     /*!
      * \brief Возвращает новые уведомления, если они есть
      * \param user_id Для какого пользователя выполняется поиск новых уведомлений
      * \return
      */
-    QVariant GetNewNotifications(const int user_id);
+    QVariant getNewNotifications(const int user_id);
 
     /*!
      * \brief Отмечает все уведомления как прочитанные
      * \param user_id Для какого пользователя выполняется действие
      */
-    void MarkNotificationsAsReaded(const int user_id);
+    void markNotificationsAsReaded(const int user_id);
 
     /*!
      * \brief Очищает ScrollArea от всех уведомлений
      */
-    void Clear();
+    void clear();
 
 protected:
     /*!
@@ -49,12 +49,20 @@ protected:
      */
     void resizeEvent(QResizeEvent *event) override;
 
+private slots:
+    /*!
+     * \brief onSortButtonClicked
+     */
+    void onSortButtonClicked();
+
 private:
     Ui::notifications *ui;
 
-    QVBoxLayout* m_notifications_layout { nullptr };
+    QVBoxLayout* m_notifications_layout;
 
     QWeakPointer<DatabaseHandler> m_database_handler;       ///< Предоставляет интерфейс для работы с БД
+
+    bool m_is_sorted_ascending;                             ///< Направление для сортировки по дате
 
     /*!
      * \brief Добавляет новое уведомление в ScrollArea
@@ -62,7 +70,7 @@ private:
      * \param date Дата уведомления
      * \param text Текст уведомления
      */
-    void AddNotification(const QStringView title, const QStringView date, const QStringView text);
+    void addNotification(const QStringView title, const QStringView date, const QStringView text);
 
     /*!
      * \brief Генерирует договор на основе уведомления
@@ -74,6 +82,12 @@ private:
      */
     void generateContractFromNotification(const QString& type, int requestId, int carId,
                                           const QString& additionalInfo, const QString& dateInfo);
+
+    /*!
+     * \brief Сортирует уведомления по дате
+     * \param ascending - направление сортировки
+     */
+    void sortNotifications(const bool ascending);
 };
 
 #endif // NOTIFICATIONS_HANDLER_H

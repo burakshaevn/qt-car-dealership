@@ -15,9 +15,13 @@
 NotificationsHandler::NotificationsHandler(QSharedPointer<DatabaseHandler> database_handler, QWidget *parent)
     : QDialog(parent)
     , ui(new Ui::notifications)
+    , m_notifications_layout(nullptr)
     , m_database_handler(std::move(database_handler))
+    , m_is_sorted_ascending(true)
 {
     ui->setupUi(this);
+
+    connect(ui->btn_sort_by_data, &QPushButton::clicked, this, &NotificationsHandler::onSortButtonClicked);
 
     QWidget *scrollWidget = new QWidget();
     m_notifications_layout = new QVBoxLayout(scrollWidget);
@@ -38,11 +42,11 @@ NotificationsHandler::~NotificationsHandler()
     delete ui;
 }
 
-void NotificationsHandler::LoadAndShowNotifications(const int user_id) {
+void NotificationsHandler::loadAndShowNotifications(const int user_id) {
 
-    this->Clear();
+    this->clear();
 
-    const auto notifications = GetNewNotifications(user_id);
+    const auto notifications = getNewNotifications(user_id);
 
     bool hasNotifications {false};
 
@@ -101,7 +105,6 @@ void NotificationsHandler::LoadAndShowNotifications(const int user_id) {
         notificationLayout->addWidget(titleLabel);
         notificationLayout->addWidget(messageLabel);
 
-        // TODO: Добавить кнопку для скачивания договора
         if ((type == "service"      && status == "подтверждено") ||
             (type == "insurance"    && status == "одобрено") ||
             (type == "loan"         && status == "одобрено") ||
@@ -124,7 +127,7 @@ void NotificationsHandler::LoadAndShowNotifications(const int user_id) {
                 margin: 5px;
             }
         )");
-
+        notificationWidget->setProperty("notificationDate", dateInfo);
         m_notifications_layout->addWidget(notificationWidget);
     }
 
@@ -148,25 +151,9 @@ void NotificationsHandler::LoadAndShowNotifications(const int user_id) {
     // MarkNotificationsAsReaded(user_id);
 }
 
-QVariant NotificationsHandler::GetNewNotifications(const int user_id) {
+QVariant NotificationsHandler::getNewNotifications(const int user_id) {
     // Получаем только НЕпрочитанные уведомления с дополнительными данными
     QVariant result = m_database_handler.lock()->ExecuteSelectQuery(
-        // QString("SELECT 'service' as type, id, status, service_type as additional_info, scheduled_date as date_info, car_id FROM service_requests "
-        //         "WHERE client_id = %1 AND (notification_shown = false OR notification_shown IS NULL) "
-        //         "UNION ALL "
-        //         "SELECT 'insurance' as type, id, status, insurance_type as additional_info, created_at as date_info, car_id FROM insurance_requests "
-        //         "WHERE client_id = %1 AND (notification_shown = false OR notification_shown IS NULL) "
-        //         "UNION ALL "
-        //         "SELECT 'loan' as type, id, status, CAST(loan_amount AS TEXT) as additional_info, created_at as date_info, car_id FROM loan_requests "
-        //         "WHERE client_id = %1 AND (notification_shown = false OR notification_shown IS NULL) "
-        //         "UNION ALL "
-        //         "SELECT 'test_drive' as type, id, status, 'Тест-драйв' as additional_info, scheduled_date as date_info, car_id FROM test_drives "
-        //         "WHERE client_id = %1 AND (notification_shown = false OR notification_shown IS NULL) "
-        //         "UNION ALL "
-        //         "SELECT 'rental' as type, id, status, CAST(rental_days AS TEXT) as additional_info, start_date as date_info, car_id FROM rental_requests "
-        //         "WHERE client_id = %1 AND (notification_shown = false OR notification_shown IS NULL) "
-        //         "ORDER BY date_info DESC")
-        //     .arg(user_id));
         QString("SELECT 'service' as type, id, status, service_type as additional_info, scheduled_date as date_info, car_id FROM service_requests "
                 "WHERE client_id = %1 "
                 "UNION ALL "
@@ -187,7 +174,7 @@ QVariant NotificationsHandler::GetNewNotifications(const int user_id) {
     return result;
 }
 
-void NotificationsHandler::MarkNotificationsAsReaded(const int user_id) {
+void NotificationsHandler::markNotificationsAsReaded(const int user_id) {
     // Помечаем как прочитанные только те уведомления, которые были показаны
     // (т.е. те, которые имеют notification_shown = false или NULL)
     QString updateQuery = QString(
@@ -206,7 +193,7 @@ void NotificationsHandler::MarkNotificationsAsReaded(const int user_id) {
     m_database_handler.lock()->ExecuteQuery(updateQuery);
 }
 
-void NotificationsHandler::Clear() {
+void NotificationsHandler::clear() {
     // Удаляем все виджеты из layout немедленно
     while (QLayoutItem* item = m_notifications_layout->takeAt(0)) {
         if (QWidget* widget = item->widget()) {
@@ -246,7 +233,20 @@ void NotificationsHandler::resizeEvent(QResizeEvent *event) {
     }
 }
 
-void NotificationsHandler::AddNotification(const QStringView title, const QStringView date, const QStringView text) {
+void NotificationsHandler::onSortButtonClicked()
+{
+    m_is_sorted_ascending = !m_is_sorted_ascending;
+
+    if (m_is_sorted_ascending) {
+        ui->btn_sort_by_data->setText("Сортировка по дате ↑");
+    } else {
+        ui->btn_sort_by_data->setText("Сортировка по дате ↓");
+    }
+
+    sortNotifications(m_is_sorted_ascending);
+}
+
+void NotificationsHandler::addNotification(const QStringView title, const QStringView date, const QStringView text) {
     QWidget *notificationWidget = new QWidget();
     QVBoxLayout *layout = new QVBoxLayout(notificationWidget);
 
@@ -257,6 +257,7 @@ void NotificationsHandler::AddNotification(const QStringView title, const QStrin
 
     titleLabel->setStyleSheet("font-weight: bold;");
     dateLabel->setStyleSheet("color: #666; font-size: 12px;");
+    dateLabel->setProperty("sortDate", date.toString());  // Дата сохраняется для сортировки в будущем
 
     layout->addWidget(titleLabel);
     layout->addWidget(dateLabel);
@@ -271,6 +272,9 @@ void NotificationsHandler::AddNotification(const QStringView title, const QStrin
             margin: 5px;
         }
     )");
+
+    QDateTime notificationDate = QDateTime::fromString(date.toString(), "dd.MM.yyyy");
+    notificationWidget->setProperty("notificationDate", notificationDate);
 
     m_notifications_layout->addWidget(notificationWidget);
 }
@@ -335,5 +339,39 @@ void NotificationsHandler::generateContractFromNotification(const QString& type,
 
         // Сохраняем договор
         ContractTemplates::saveContract(htmlContent, product);
+    }
+}
+
+void NotificationsHandler::sortNotifications(const bool ascending)
+{
+    // Сохраняем все виджеты уведомлений вместе с их датами
+    QList<QPair<QDateTime, QWidget*>> notificationWidgets;
+
+    while (QLayoutItem* item = m_notifications_layout->takeAt(0)) {
+        if (QWidget* widget = item->widget()) {
+            // Извлекаем дату из свойства виджета
+            QVariant dateVariant = widget->property("notificationDate");
+            if (dateVariant.isValid()) {
+                QDateTime date = dateVariant.toDateTime();
+                notificationWidgets.append(qMakePair(date, widget));
+            }
+        }
+        delete item;
+    }
+
+    // Сортируем виджеты по дате
+    std::sort(notificationWidgets.begin(), notificationWidgets.end(),
+              [ascending](const QPair<QDateTime, QWidget*>& a,
+                          const QPair<QDateTime, QWidget*>& b) {
+                  if (ascending) {
+                      return a.first < b.first;
+                  } else {
+                      return a.first > b.first;
+                  }
+              });
+
+    // Добавляем отсортированные виджеты обратно в layout
+    for (const auto& pair : notificationWidgets) {
+        m_notifications_layout->addWidget(pair.second);
     }
 }
