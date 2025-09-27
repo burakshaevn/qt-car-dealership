@@ -13,8 +13,8 @@ MainWindow::MainWindow(QWidget* parent)
 {
     ui->setupUi(this);
 
-    m_database_manager.reset(new DatabaseHandler);
-    m_database_manager->LoadDefault();
+    m_database_handler.reset(new DatabaseHandler);
+    m_database_handler->LoadDefault();
 
     // Переключаем пользователя на экран логина после запуска
     ui->stackedWidget->setCurrentWidget(ui->login);
@@ -32,7 +32,7 @@ void MainWindow::UpdateUser(const UserInfo& user, QWidget* parent)
 
 void MainWindow::on_pushButton_login_clicked()
 {
-    auto queryResult = m_database_manager->ExecuteSelectQuery(QString("SELECT * FROM public.admins WHERE username = '%1';").arg(ui->lineEdit_login->text()));
+    auto queryResult = m_database_handler->ExecuteSelectQuery(QString("SELECT * FROM public.admins WHERE username = '%1';").arg(ui->lineEdit_login->text()));
 
     if (queryResult.canConvert<QSqlQuery>())
     {
@@ -50,7 +50,7 @@ void MainWindow::on_pushButton_login_clicked()
                 QMessageBox::information(this, "Авторизация", "Выполнена авторизация как администратор.");
                 UpdateUser(user, this);
 
-                m_table.reset(new Table(m_database_manager, m_user.get(), nullptr));
+                m_table.reset(new Table(m_database_handler, m_user.get(), nullptr));
                 m_table->BuildAdminTables();
 
                 connect(m_table.get(), &Table::Logout, this, &MainWindow::on_pushButton_logout_clicked);
@@ -65,7 +65,7 @@ void MainWindow::on_pushButton_login_clicked()
         }
         else
         {
-            auto queryResult = m_database_manager->ExecuteSelectQuery(QString("SELECT * FROM public.clients WHERE email = '%1';").arg(ui->lineEdit_login->text()));
+            auto queryResult = m_database_handler->ExecuteSelectQuery(QString("SELECT * FROM public.clients WHERE email = '%1';").arg(ui->lineEdit_login->text()));
 
             if (queryResult.canConvert<QSqlQuery>())
             {
@@ -126,7 +126,7 @@ void MainWindow::on_pushButton_logout_clicked()
     if (m_user  && m_user->GetRole() == Role::User) {
         m_products.reset();
         m_product_cards.reset();
-        m_database_manager.reset();
+        m_database_handler.reset();
         m_floating_widget.reset();
 
         if (ui->scrollArea_catalog && ui->scrollArea_catalog->widget()) {
@@ -163,22 +163,31 @@ QList<Products::ProductKey> MainWindow::GetPurchasedProducts(int m_userid) const
         "WHERE p.client_id = %1"
     ).arg(m_userid);
 
-    if (!query.exec(query_str)) return m_products;
+    qDebug() << "GetPurchasedProducts: Executing query for user" << m_userid << ":" << query_str;
 
+    if (!query.exec(query_str)) {
+        qDebug() << "GetPurchasedProducts: Query failed:" << query.lastError().text();
+        return m_products;
+    }
+
+    int count = 0;
     while (query.next()) {
         QString name = query.value("name").toString();
         QString color = query.value("color").toString();
         Products::ProductKey key = std::make_tuple(name, color);
         m_products.append(key);
+        count++;
+        qDebug() << "GetPurchasedProducts: Found purchase" << count << ":" << name << color;
     }
 
+    qDebug() << "GetPurchasedProducts: Total purchases found:" << count;
     return m_products;
 }
 
 void MainWindow::BuildDependencies() {
-    if (!m_database_manager) {
-        m_database_manager.reset(new DatabaseHandler);
-        m_database_manager->LoadDefault();
+    if (!m_database_handler) {
+        m_database_handler.reset(new DatabaseHandler);
+        m_database_handler->LoadDefault();
     }
 
     if (!m_floating_widget) {
@@ -186,8 +195,8 @@ void MainWindow::BuildDependencies() {
     }
 
     if (!m_product_cards && !m_products) {
-        m_product_cards.reset(new ProductCard(m_database_manager, nullptr, this));
-        m_products.reset(new Products(m_product_cards, m_database_manager));
+        m_product_cards.reset(new ProductCard(m_database_handler, nullptr, this));
+        m_products.reset(new Products(m_product_cards, m_database_handler));
 
         connect(m_products.get(), &Products::OpenInfoPage, this, [this](const ProductInfo& product) {
             auto m_current_productcolors_ = m_products->GetAllProductsWithName(product);
@@ -199,7 +208,7 @@ void MainWindow::BuildDependencies() {
     }
 
     // Устанавливаем фильтр событий для панели уведомлений
-    m_notifications_handler.reset(new NotificationsHandler(m_database_manager, this));
+    m_notifications_handler.reset(new NotificationsHandler(m_database_handler, this));
     // ui->notifications_panel->installEventFilter(this);
 }
 
@@ -566,7 +575,6 @@ void MainWindow::SetupServicesScrollArea()
                 connect(cancelButton, &QPushButton::clicked, [&]() { dialog.reject(); });
 
                 if (dialog.exec() == QDialog::Accepted && accepted) {
-                    QSqlQuery query;
                     QString queryStr = QString(
                         "INSERT INTO rental_requests (client_id, car_id, start_date, rental_days, status) "
                         "VALUES (%1, %2, '%3', %4, 'не обработано');")
@@ -575,14 +583,14 @@ void MainWindow::SetupServicesScrollArea()
                         .arg(QDate::currentDate().toString("yyyy-MM-dd"))
                         .arg(termEdit->value());
 
-                    if (query.exec(queryStr)) {
-                        QMessageBox::information(this, "Успех",
+                    QString errorMessage;
+                    if (m_database_handler->ExecuteQueryWithUserMessage(queryStr, errorMessage)) {
+                        QMessageBox::information(this, "✅ Успех",
                             QString("Заявка на аренду на %1 дней создана.\nДата начала: %2")
                                 .arg(termEdit->value())
                                 .arg(QDate::currentDate().toString("dd.MM.yyyy")));
                     } else {
-                        QMessageBox::critical(this, "Ошибка",
-                            "Не удалось создать заявку: " + query.lastError().text());
+                        QMessageBox::warning(this, "❌ Ошибка", errorMessage);
                     }
                 }
             }
@@ -703,12 +711,38 @@ void MainWindow::SetupServicesScrollArea()
                 connect(cancelButton, &QPushButton::clicked, [&]() { dialog.reject(); });
 
                 if (dialog.exec() == QDialog::Accepted && accepted) {
+                    // Проверяем наличие автомобиля на складе
+                    int carId = carCombo->currentData().toInt();
+                    QSqlQuery stockQuery;
+                    stockQuery.prepare("SELECT name, color, stock_qty FROM cars WHERE id = :car_id");
+                    stockQuery.bindValue(":car_id", carId);
+                    
+                    if (!stockQuery.exec() || !stockQuery.next()) {
+                        QMessageBox::critical(this, "Ошибка", "Не удалось проверить наличие автомобиля");
+                        return;
+                    }
+                    
+                    QString carName = stockQuery.value(0).toString();
+                    QString carColor = stockQuery.value(1).toString();
+                    int stockQty = stockQuery.value(2).toInt();
+                    
+                    if (stockQty <= 0) {
+                        QMessageBox::warning(this, "Автомобиль недоступен", 
+                            QString("Автомобиль %1 (%2) временно недоступен для оформления кредита.\n\n"
+                                   "Возможные варианты:\n"
+                                   "• Оформить заявку на заказ автомобиля\n"
+                                   "• Выбрать другой автомобиль")
+                            .arg(carName)
+                            .arg(carColor));
+                        return;
+                    }
+                    
                     QSqlQuery query;
                     QString queryStr = QString(
                                            "INSERT INTO loan_requests (client_id, car_id, loan_amount, loan_term_months, status) "
                                            "VALUES (%1, %2, %3, %4, 'не обработано');")
                                            .arg(m_user->GetId())
-                                           .arg(carCombo->currentData().toInt())
+                                           .arg(carId)
                                            .arg(amountEdit->value())
                                            .arg(termEdit->value());
 
@@ -945,9 +979,12 @@ void MainWindow::RentalRequestHandler() {
 
     // Car selection
     QComboBox* carCombo = new QComboBox(&dialog);
-    QSqlQuery carQuery("SELECT id, CONCAT(name, ' (', color, ')') as display_name FROM cars WHERE available_for_rent = true ORDER BY name, color");
+    QSqlQuery carQuery("SELECT id, CONCAT(name, ' (', color, ')') as display_name, stock_qty FROM cars WHERE available_for_rent = true AND stock_qty > 0 ORDER BY name, color");
     while (carQuery.next()) {
-        carCombo->addItem(carQuery.value("display_name").toString(), carQuery.value("id").toInt());
+        QString displayName = carQuery.value("display_name").toString();
+        int stockQty = carQuery.value("stock_qty").toInt();
+        displayName += QString(" [В наличии: %1]").arg(stockQty);
+        carCombo->addItem(displayName, carQuery.value("id").toInt());
     }
     layout->addWidget(new QLabel("Автомобиль:", &dialog));
     layout->addWidget(carCombo);
@@ -986,7 +1023,31 @@ void MainWindow::RentalRequestHandler() {
         int carId = carCombo->currentData().toInt();
         int rentalDays = daysSpinBox->value();
 
-        QSqlQuery query;
+        // Проверяем наличие автомобиля на складе
+        QSqlQuery stockQuery;
+        stockQuery.prepare("SELECT name, color, stock_qty FROM cars WHERE id = :car_id");
+        stockQuery.bindValue(":car_id", carId);
+        
+        if (!stockQuery.exec() || !stockQuery.next()) {
+            QMessageBox::critical(this, "Ошибка", "Не удалось проверить наличие автомобиля");
+            return;
+        }
+        
+        QString carName = stockQuery.value(0).toString();
+        QString carColor = stockQuery.value(1).toString();
+        int stockQty = stockQuery.value(2).toInt();
+        
+        if (stockQty <= 0) {
+            QMessageBox::warning(this, "Автомобиль недоступен", 
+                QString("Автомобиль %1 (%2) временно недоступен для аренды.\n\n"
+                       "Возможные варианты:\n"
+                       "• Оформить заявку на заказ автомобиля\n"
+                       "• Выбрать другой автомобиль")
+                .arg(carName)
+                .arg(carColor));
+            return;
+        }
+
         QString queryStr = QString(
             "INSERT INTO rental_requests (client_id, car_id, start_date, rental_days, status) "
             "VALUES (%1, %2, '%3', %4, 'не обработано');")
@@ -995,17 +1056,17 @@ void MainWindow::RentalRequestHandler() {
             .arg(startDate.toString("yyyy-MM-dd"))
             .arg(rentalDays);
 
-        if (query.exec(queryStr))
+        QString errorMessage;
+        if (m_database_handler->ExecuteQueryWithUserMessage(queryStr, errorMessage))
         {
-            QMessageBox::information(this, "Успех",
+            QMessageBox::information(this, "✅ Успех",
                 QString("Заявка на аренду на %1 дней создана.\nДата начала: %2")
                     .arg(rentalDays)
                     .arg(startDate.toString("dd.MM.yyyy")));
         }
         else
         {
-            QMessageBox::critical(this, "Ошибка",
-                "Не удалось создать заявку: " + query.lastError().text());
+            QMessageBox::warning(this, "❌ Ошибка", errorMessage);
         }
     }
 }
@@ -1190,8 +1251,7 @@ void MainWindow::SelectionProcessing(const bool ok, const QStringView selected_t
     }
 }
 
-void MainWindow::ShowProductOnPersonalPage(const ProductInfo& product, QList<ProductInfo>& m_current_productcolors_)
-{
+void MainWindow::ShowProductOnPersonalPage(const ProductInfo& product, QList<ProductInfo>& m_current_productcolors_) {
     ui->label_name->setText(product.name_);
     ui->label_price->setText(FormatPrice(product.price_) + " руб.");
     m_current_product = product;
@@ -1200,19 +1260,18 @@ void MainWindow::ShowProductOnPersonalPage(const ProductInfo& product, QList<Pro
     QString imagePath = QDir::cleanPath(product.image_path_);
     QPixmap originalPixmap(imagePath);
 
-    if (!originalPixmap.isNull())
-    {
+    if (!originalPixmap.isNull()) {
         int fixedWidth = 394;
         QPixmap scaledPixmap = originalPixmap.scaled(fixedWidth, originalPixmap.height(), Qt::KeepAspectRatio, Qt::SmoothTransformation);
-
         int imageHeight = scaledPixmap.height();
-        int labelNameY = ui->label_name->y();
-        int imageY = labelNameY - imageHeight - 18;
 
         ui->label_car_image->setPixmap(scaledPixmap);
         ui->label_car_image->setFixedSize(fixedWidth, imageHeight);
         ui->label_car_image->show();
     }
+
+    ui->pushButton_order->setVisible(product.stock_qty_ <= 0); // Показываем кнопку "Заказать" только если нет в наличии
+    ui->pushButton_to_pay->setVisible(product.stock_qty_ > 0); // Показываем кнопку "К заявке" только если есть в наличии
 
     ui->stackedWidget->setCurrentWidget(ui->personal);
 }
@@ -1453,6 +1512,29 @@ void MainWindow::on_pushButton_test_drive_clicked()
 
     if (dialog.exec() == QDialog::Accepted && accepted)
     {
+        // Проверяем наличие автомобиля на складе
+        QSqlQuery stockQuery;
+        stockQuery.prepare("SELECT stock_qty FROM cars WHERE id = :car_id");
+        stockQuery.bindValue(":car_id", m_current_product.id_);
+        
+        if (!stockQuery.exec() || !stockQuery.next()) {
+            QMessageBox::critical(this, "Ошибка", "Не удалось проверить наличие автомобиля");
+            return;
+        }
+        
+        int stockQty = stockQuery.value(0).toInt();
+        
+        if (stockQty <= 0) {
+            QMessageBox::warning(this, "Автомобиль недоступен", 
+                QString("Автомобиль %1 (%2) временно недоступен для тест-драйва.\n\n"
+                       "Возможные варианты:\n"
+                       "• Оформить заявку на заказ автомобиля\n"
+                       "• Выбрать другой автомобиль")
+                .arg(m_current_product.name_)
+                .arg(m_current_product.color_));
+            return;
+        }
+
         QDate selectedDate = calendar->selectedDate();
         QTime selectedTime = timeEdit->time();
         QString dateTime = selectedDate.toString("yyyy-MM-dd") + " " + selectedTime.toString("HH:mm");
@@ -1492,7 +1574,8 @@ void MainWindow::on_pushButton_to_pay_clicked()
 
     QDialog dialog(this);
     dialog.setWindowTitle("Оформление заявки на покупку");
-    dialog.setFixedSize(500, 400);
+    dialog.setMinimumSize(500, 400);
+    dialog.resize(500, 500); // Начальный размер, но может увеличиваться
     dialog.setStyleSheet(
         "QDialog {"
         "    background-color: #ffffff;"
@@ -1577,6 +1660,31 @@ void MainWindow::on_pushButton_to_pay_clicked()
     insuranceTypeCombo->hide();
     layout->addWidget(insuranceTypeCombo);
 
+    // Выбор комплектации (трим)
+    QLabel* trimLabel = new QLabel("Комплектация (если доступно):", &dialog);
+    QComboBox* trimCombo = new QComboBox(&dialog);
+    {
+        QSqlQuery q;
+        q.prepare("SELECT DISTINCT trim FROM cars WHERE name = :name AND trim IS NOT NULL AND trim <> ''");
+        q.bindValue(":name", m_current_product.name_);
+        if (q.exec()) {
+            while (q.next()) {
+                trimCombo->addItem(q.value(0).toString());
+            }
+        }
+        if (!m_current_product.trim_.isEmpty()) {
+            int idx = trimCombo->findText(m_current_product.trim_);
+            if (idx >= 0) trimCombo->setCurrentIndex(idx);
+        }
+    }
+    if (trimCombo->count() > 0) {
+        layout->addWidget(trimLabel);
+        layout->addWidget(trimCombo);
+    } else {
+        trimLabel->hide();
+        trimCombo->hide();
+    }
+
     // Чекбокс для аренды
     QCheckBox* rentalCheckBox = new QCheckBox("Взять в аренду", &dialog);
     layout->addWidget(rentalCheckBox);
@@ -1640,35 +1748,90 @@ void MainWindow::on_pushButton_to_pay_clicked()
     if (dialog.exec() == QDialog::Accepted && accepted)
     {
         QSqlQuery query;
-        
+        QString selectedTrim = trimCombo->isVisible() ? trimCombo->currentText() : QString();
+        int targetCarId = m_current_product.id_;
+        int targetStock = m_current_product.stock_qty_;
+        if (trimCombo->isVisible() && !selectedTrim.isEmpty() && selectedTrim != m_current_product.trim_) {
+            QSqlQuery find;
+            find.prepare("SELECT id, stock_qty FROM cars WHERE name = :name AND trim = :trim AND color = :color ORDER BY stock_qty DESC LIMIT 1");
+            find.bindValue(":name", m_current_product.name_);
+            find.bindValue(":trim", selectedTrim);
+            find.bindValue(":color", m_current_product.color_);
+            if (find.exec() && find.next()) {
+                targetCarId = find.value(0).toInt();
+                targetStock = find.value(1).toInt();
+            } else {
+                // Попробуем без учета цвета
+                find.finish();
+                find.prepare("SELECT id, stock_qty FROM cars WHERE name = :name AND trim = :trim ORDER BY stock_qty DESC LIMIT 1");
+                find.bindValue(":name", m_current_product.name_);
+                find.bindValue(":trim", selectedTrim);
+                if (find.exec() && find.next()) {
+                    targetCarId = find.value(0).toInt();
+                    targetStock = find.value(1).toInt();
+                } else {
+                    // Если автомобиль с выбранным trim не найден, то его нет в наличии
+                    targetStock = 0;
+                }
+            }
+        }
+
         // Прямая покупка
         if (buyCheckBox->isChecked())
         {
-            QString queryStr = QString("INSERT INTO purchases (client_id, car_id) VALUES (%1, %2);")
-                .arg(m_user->GetId())
-                .arg(m_current_product.id_);
-
-            if (query.exec(queryStr))
-            {
-                QMessageBox::information(this, "Успех", QString("Поздравляем с покупкой автомобиля %1!")
-                    .arg(m_current_product.name_));
-            }
-            else
-            {
-                QMessageBox::critical(this, "Ошибка", "Не удалось оформить покупку: " + query.lastError().text());
-                return;
+            if (targetStock > 0) {
+                // Создаем заявку на покупку вместо прямой покупки
+                QString queryStr = QString("INSERT INTO purchase_requests (client_id, car_id, status) VALUES (%1, %2, 'не обработано');")
+                    .arg(m_user->GetId())
+                    .arg(targetCarId);
+                
+                QSqlQuery purchaseQuery;
+                if (purchaseQuery.exec(queryStr)) {
+                    QMessageBox::information(this, "Заявка создана", QString("Заявка на покупку автомобиля %1 отправлена на рассмотрение!")
+                        .arg(m_current_product.name_));
+                } else {
+                    QMessageBox::critical(this, "Ошибка", "Не удалось создать заявку на покупку: " + purchaseQuery.lastError().text());
+                    return;
+                }
+            } else {
+                // Нет в наличии — оформляем заявку на заказ
+                QSqlQuery ins;
+                ins.prepare("INSERT INTO order_requests (client_id, car_name, color, trim, status) VALUES (:client_id, :car_name, :color, :trim, 'не обработано')");
+                ins.bindValue(":client_id", m_user->GetId());
+                ins.bindValue(":car_name", m_current_product.name_);
+                ins.bindValue(":color", m_current_product.color_);
+                ins.bindValue(":trim", selectedTrim.isEmpty() ? m_current_product.trim_ : selectedTrim);
+                if (ins.exec()) {
+                    QMessageBox::information(this, "Заявка создана", "Автомобиль отсутствует на складе. Заявка на заказ отправлена менеджеру.");
+                } else {
+                    QMessageBox::critical(this, "Ошибка", "Не удалось создать заявку на заказ: " + ins.lastError().text());
+                    return;
+                }
             }
         }
 
         // Оформление кредита
         if (loanCheckBox->isChecked())
         {
+            // Проверяем наличие автомобиля на складе
+            qDebug() << "Кредит: targetStock =" << targetStock << "для автомобиля" << m_current_product.name_;
+            if (targetStock <= 0) {
+                QMessageBox::warning(this, "Автомобиль недоступен", 
+                    QString("Автомобиль %1 (%2) временно недоступен для оформления кредита.\n\n"
+                           "Возможные варианты:\n"
+                           "• Оформить заявку на заказ автомобиля\n"
+                           "• Выбрать другой автомобиль")
+                    .arg(m_current_product.name_)
+                    .arg(m_current_product.color_));
+                return;
+            }
+            
             int months = loanTermCombo->currentText().split(" ")[0].toInt();
             QString queryStr = QString(
                 "INSERT INTO loan_requests (client_id, car_id, loan_amount, loan_term_months, status) "
                 "VALUES (%1, %2, %3, %4, 'не обработано');")
                 .arg(m_user->GetId())
-                .arg(m_current_product.id_)
+                .arg(targetCarId)
                 .arg(m_current_product.price_)
                 .arg(months);
 
@@ -1682,11 +1845,13 @@ void MainWindow::on_pushButton_to_pay_clicked()
         // Оформление страховки
         if (insuranceCheckBox->isChecked())
         {
+            // Страхование можно оформить даже если автомобиля нет в наличии
+            // (клиент может застраховать свою машину через автосалон)
             QString queryStr = QString(
                 "INSERT INTO insurance_requests (client_id, car_id, insurance_type, status) "
                 "VALUES (%1, %2, '%3', 'не обработано');")
                 .arg(m_user->GetId())
-                .arg(m_current_product.id_)
+                .arg(targetCarId)
                 .arg(insuranceTypeCombo->currentText());
 
             if (!query.exec(queryStr))
@@ -1699,22 +1864,246 @@ void MainWindow::on_pushButton_to_pay_clicked()
         // Оформление аренды
         if (rentalCheckBox->isChecked())
         {
+            // Проверяем наличие автомобиля на складе
+            if (targetStock <= 0) {
+                QMessageBox::warning(this, "Автомобиль недоступен", 
+                    QString("Автомобиль %1 (%2) временно недоступен для аренды.\n\n"
+                           "Возможные варианты:\n"
+                           "• Оформить заявку на заказ автомобиля\n"
+                           "• Выбрать другой автомобиль")
+                    .arg(m_current_product.name_)
+                    .arg(m_current_product.color_));
+                return;
+            }
+            
             QString queryStr = QString(
                 "INSERT INTO rental_requests (client_id, car_id, rental_days, start_date, status) "
                 "VALUES (%1, %2, %3, '%4', 'не обработано');")
                 .arg(m_user->GetId())
-                .arg(m_current_product.id_)
+                .arg(targetCarId)
                 .arg(rentalTermCombo->currentText().split(" ")[0].toInt())
                 .arg(QDate::currentDate().toString("yyyy-MM-dd"));
 
-            if (!query.exec(queryStr))
+            QString errorMessage;
+            if (!m_database_handler->ExecuteQueryWithUserMessage(queryStr, errorMessage))
             {
-                QMessageBox::critical(this, "Ошибка", "Не удалось оформить заявку на аренду: " + query.lastError().text());
+                QMessageBox::warning(this, "❌ Ошибка", errorMessage);
                 return;
             }
         }
 
         QMessageBox::information(this, "Успех", "Заявка успешно оформлена!");
+    }
+}
+
+void MainWindow::on_pushButton_order_clicked()
+{
+    if (!m_user) {
+        QMessageBox::warning(this, "Ошибка", "Авторизуйтесь для оформления заказа.");
+        return;
+    }
+
+    if (m_current_product.name_.isEmpty()) {
+        QMessageBox::warning(this, "Ошибка", "Не выбран автомобиль для заказа.");
+        return;
+    }
+
+    QDialog dialog(this);
+    dialog.setWindowTitle("Заказ автомобиля");
+    dialog.setFixedSize(500, 400);
+    dialog.setStyleSheet(
+        "QDialog {"
+        "    background-color: #ffffff;"
+        "}"
+        "QLabel {"
+        "    color: #1d1b20;"
+        "    font: 500 12pt 'JetBrains Mono';"
+        "    margin-top: 10px;"
+        "}"
+        "QComboBox {"
+        "    padding: 8px;"
+        "    border: 2px solid #e0e0e0;"
+        "    border-radius: 8px;"
+        "    background: #fafafa;"
+        "    font: 11pt 'JetBrains Mono';"
+        "    min-height: 30px;"
+        "}"
+        "QPushButton {"
+        "    padding: 10px 20px;"
+        "    border-radius: 8px;"
+        "    font: 600 11pt 'JetBrains Mono';"
+        "    min-width: 100px;"
+        "}"
+        "QPushButton[type='primary'] {"
+        "    background-color: #FF6B35;"
+        "    color: white;"
+        "    border: none;"
+        "}"
+        "QPushButton[type='primary']:hover {"
+        "    background-color: #E55A2B;"
+        "}"
+        "QPushButton[type='secondary'] {"
+        "    background-color: #fafafa;"
+        "    color: #1d1b20;"
+        "    border: 2px solid #e0e0e0;"
+        "}"
+        "QPushButton[type='secondary']:hover {"
+        "    background-color: #e0e0e0;"
+        "}"
+    );
+
+    QVBoxLayout* layout = new QVBoxLayout(&dialog);
+    layout->setSpacing(15);
+    layout->setContentsMargins(30, 30, 30, 30);
+
+    // Информация об автомобиле
+    QLabel* carInfoLabel = new QLabel(QString("Автомобиль: %1\nЦвет: %2\nЦена: %3 руб.")
+        .arg(m_current_product.name_)
+        .arg(m_current_product.color_)
+        .arg(FormatPrice(m_current_product.price_)), &dialog);
+    layout->addWidget(carInfoLabel);
+
+    // Выбор комплектации
+    QLabel* trimLabel = new QLabel("Выберите комплектацию:", &dialog);
+    layout->addWidget(trimLabel);
+
+    QComboBox* trimCombo = new QComboBox(&dialog);
+    
+    // Загружаем доступные комплектации
+    QSqlQuery query;
+    query.prepare("SELECT DISTINCT trim FROM cars WHERE name = :name AND trim IS NOT NULL AND trim <> ''");
+    query.bindValue(":name", m_current_product.name_);
+    if (query.exec()) {
+        while (query.next()) {
+            trimCombo->addItem(query.value(0).toString());
+        }
+    }
+    
+    // Если нет комплектаций, добавляем текущую или "Стандартная"
+    if (trimCombo->count() == 0) {
+        if (!m_current_product.trim_.isEmpty()) {
+            trimCombo->addItem(m_current_product.trim_);
+        } else {
+            trimCombo->addItem("Стандартная");
+        }
+    } else {
+        // Выбираем текущую комплектацию если есть
+        if (!m_current_product.trim_.isEmpty()) {
+            int idx = trimCombo->findText(m_current_product.trim_);
+            if (idx >= 0) trimCombo->setCurrentIndex(idx);
+        }
+    }
+    
+    layout->addWidget(trimCombo);
+
+    // Показываем информацию о наличии
+    QLabel* stockLabel = new QLabel("", &dialog);
+    layout->addWidget(stockLabel);
+    
+    // Функция для обновления информации о наличии
+    auto updateStockInfo = [=](const QString& trim) {
+        QSqlQuery stockQuery;
+        stockQuery.prepare("SELECT stock_qty FROM cars WHERE name = :name AND trim = :trim AND color = :color");
+        stockQuery.bindValue(":name", m_current_product.name_);
+        stockQuery.bindValue(":trim", trim);
+        stockQuery.bindValue(":color", m_current_product.color_);
+        
+        if (stockQuery.exec() && stockQuery.next()) {
+            int stock = stockQuery.value(0).toInt();
+            if (stock > 0) {
+                stockLabel->setText(QString("В наличии: %1 шт.").arg(stock));
+                stockLabel->setStyleSheet("color: #4CAF50;");
+            } else {
+                stockLabel->setText("Нет в наличии - будет создана заявка на заказ");
+                stockLabel->setStyleSheet("color: #FF6B35;");
+            }
+        } else {
+            stockLabel->setText("Нет в наличии - будет создана заявка на заказ");
+            stockLabel->setStyleSheet("color: #FF6B35;");
+        }
+    };
+    
+    // Обновляем при изменении комплектации
+    connect(trimCombo, QOverload<int>::of(&QComboBox::currentIndexChanged), [=]() {
+        updateStockInfo(trimCombo->currentText());
+    });
+    
+    // Инициализируем информацию о наличии
+    updateStockInfo(trimCombo->currentText());
+
+    // Кнопки
+    QHBoxLayout* buttonLayout = new QHBoxLayout();
+    buttonLayout->setSpacing(15);
+
+    QPushButton* okButton = new QPushButton("Заказать", &dialog);
+    okButton->setProperty("type", "primary");
+
+    QPushButton* cancelButton = new QPushButton("Отмена", &dialog);
+    cancelButton->setProperty("type", "secondary");
+
+    buttonLayout->addWidget(cancelButton);
+    buttonLayout->addWidget(okButton);
+    layout->addLayout(buttonLayout);
+
+    bool accepted = false;
+    connect(okButton, &QPushButton::clicked, [&]() {
+        accepted = true;
+        dialog.accept();
+    });
+    connect(cancelButton, &QPushButton::clicked, &dialog, &QDialog::reject);
+
+    if (dialog.exec() == QDialog::Accepted && accepted)
+    {
+        QString selectedTrim = trimCombo->currentText();
+        
+        // Проверяем наличие выбранной комплектации
+        QSqlQuery checkQuery;
+        checkQuery.prepare("SELECT id, stock_qty FROM cars WHERE name = :name AND trim = :trim AND color = :color");
+        checkQuery.bindValue(":name", m_current_product.name_);
+        checkQuery.bindValue(":trim", selectedTrim);
+        checkQuery.bindValue(":color", m_current_product.color_);
+        
+        int targetCarId = m_current_product.id_;
+        int targetStock = 0;
+        
+        if (checkQuery.exec() && checkQuery.next()) {
+            targetCarId = checkQuery.value(0).toInt();
+            targetStock = checkQuery.value(1).toInt();
+        }
+        
+        if (targetStock > 0) {
+            // Есть в наличии - создаем заявку на покупку
+            QSqlQuery purchaseQuery;
+            purchaseQuery.prepare("INSERT INTO purchase_requests (client_id, car_id, status) VALUES (:client_id, :car_id, 'не обработано')");
+            purchaseQuery.bindValue(":client_id", m_user->GetId());
+            purchaseQuery.bindValue(":car_id", targetCarId);
+            
+            if (purchaseQuery.exec()) {
+                QMessageBox::information(this, "Заявка создана", QString("Заявка на покупку автомобиля %1 (%2) отправлена на рассмотрение!")
+                    .arg(m_current_product.name_)
+                    .arg(selectedTrim));
+            } else {
+                QMessageBox::critical(this, "Ошибка", "Не удалось создать заявку на покупку: " + purchaseQuery.lastError().text());
+            }
+        } else {
+            // Нет в наличии - создаем заявку на заказ
+            QSqlQuery orderQuery;
+            orderQuery.prepare("INSERT INTO order_requests (client_id, car_name, color, trim, status) VALUES (:client_id, :car_name, :color, :trim, 'не обработано')");
+            orderQuery.bindValue(":client_id", m_user->GetId());
+            orderQuery.bindValue(":car_name", m_current_product.name_);
+            orderQuery.bindValue(":color", m_current_product.color_);
+            orderQuery.bindValue(":trim", selectedTrim);
+            
+            if (orderQuery.exec()) {
+                QMessageBox::information(this, "Заявка создана", 
+                    QString("Автомобиль %1 (%2, %3) отсутствует на складе.\nЗаявка на заказ отправлена менеджеру.")
+                    .arg(m_current_product.name_)
+                    .arg(m_current_product.color_)
+                    .arg(selectedTrim));
+            } else {
+                QMessageBox::critical(this, "Ошибка", "Не удалось создать заявку на заказ: " + orderQuery.lastError().text());
+            }
+        }
     }
 }
 
@@ -1912,7 +2301,7 @@ void MainWindow::on_pushButton_settings_clicked()
         // Добавляем условие WHERE
         updateQuery += QString(" WHERE id = %1").arg(m_user->GetId());
 
-        if (m_database_manager->ExecuteQuery(updateQuery)) {
+        if (m_database_handler->ExecuteQuery(updateQuery)) {
             // Обновляем данные пользователя в памяти
             if (m_user) {
                 m_user->SetName(firstName + " " + lastName);
@@ -1927,7 +2316,7 @@ void MainWindow::on_pushButton_settings_clicked()
             dialogPtr->accept();
         } else {
             QMessageBox::critical(dialogPtr, "Ошибка",
-                "Не удалось обновить данные профиля: " + m_database_manager->GetLastError());
+                "Не удалось обновить данные профиля: " + m_database_handler->GetLastError());
         }
     });
 
@@ -2151,7 +2540,30 @@ void MainWindow::on_btn_profile_clicked()
     }
 
     if (ui->stackedWidget->currentWidget() == ui->user_page) return;
-    if (m_product_cards && m_products) m_product_cards->UpdatePurchasedProductsWidget(ui->scrollArea_purchased_cars, m_user->GetId());
+    
+    // Проверяем, есть ли у пользователя покупки
+    QList<Products::ProductKey> purchasedProducts = GetPurchasedProducts(m_user->GetId());
+    bool hasPurchases = !purchasedProducts.isEmpty();
+    
+    qDebug() << "Profile: User" << m_user->GetId() << "has" << purchasedProducts.size() << "purchases";
+    
+    // Скрываем/показываем секцию "Приобретено ранее" в зависимости от наличия покупок
+    if (ui->groupBox_6) {
+        ui->groupBox_6->setVisible(hasPurchases);
+        qDebug() << "groupBox_6 (label) visibility set to:" << hasPurchases;
+    }
+    if (ui->scrollArea_purchased_cars) {
+        ui->scrollArea_purchased_cars->setVisible(hasPurchases);
+        qDebug() << "scrollArea_purchased_cars visibility set to:" << hasPurchases;
+    }
+    
+    // Обновляем виджет купленных товаров только если есть покупки
+    if (hasPurchases && m_product_cards && m_products) {
+        m_product_cards->UpdatePurchasedProductsWidget(ui->scrollArea_purchased_cars, m_user->GetId());
+        qDebug() << "Updated purchased products widget for user" << m_user->GetId();
+    } else {
+        qDebug() << "No purchases found for user" << m_user->GetId() << "- not updating widget";
+    }
 
     SetupServicesScrollArea();
 

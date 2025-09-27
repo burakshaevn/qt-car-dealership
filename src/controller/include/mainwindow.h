@@ -50,6 +50,8 @@ private slots:
 
     void on_pushButton_test_drive_clicked();
 
+    void on_pushButton_order_clicked();
+
     void on_pushButton_notifications_clicked();
 
     void on_pushButton_settings_clicked();
@@ -68,7 +70,7 @@ private:
     ProductInfo m_current_product;                      ///< Информация о текущем товаре, который выбрал пользователь
     int m_current_color_index = 0;                      ///< Индекс текущего цвета у товара, который выбрал пользователь
 
-    QSharedPointer<DatabaseHandler> m_database_manager; ///< Предоставляет интерфейс управления подключением и отправка запросов базе данных
+    QSharedPointer<DatabaseHandler> m_database_handler; ///< Предоставляет интерфейс управления подключением и отправка запросов базе данных
 
     QSharedPointer<Products> m_products;                ///< Предоставляет интерфейс для коллективного управления карточками товаров (автомобилей)
 

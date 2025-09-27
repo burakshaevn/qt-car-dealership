@@ -887,4 +887,129 @@ QString getTestDriveContractHtml(const QString& currentDate, const QString& carN
         .arg(scheduledDate);
 }
 
+QString getOrderContractHtml(const QString& currentDate, const QString& carName, const QString& carColor,
+                            const QString& carPrice, const QString& trim)
+{
+    return QString(R"(
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8">
+    <title>Договор заказа автомобиля</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 20px;
+            line-height: 1.6;
+        }
+        .header {
+            text-align: center;
+            margin-bottom: 30px;
+        }
+        .contract-title {
+            font-size: 18px;
+            font-weight: bold;
+            margin-bottom: 20px;
+        }
+        .section {
+            margin-bottom: 20px;
+        }
+        .section h2 {
+            font-size: 14px;
+            margin-bottom: 10px;
+            color: #333;
+        }
+        .section p {
+            margin-bottom: 8px;
+        }
+        .section ul {
+            margin-left: 20px;
+        }
+        .signatures {
+            display: flex;
+            justify-content: space-between;
+            margin-top: 40px;
+        }
+        .signature-block {
+            width: 45%;
+        }
+        .dotted-line {
+            border-bottom: 1px dotted #000;
+            margin-top: 20px;
+            height: 1px;
+        }
+    </style>
+</head>
+<body>
+    <div class="header">
+        <div class="contract-title">ДОГОВОР ЗАКАЗА АВТОМОБИЛЯ</div>
+        <p>г. Москва, %1</p>
+    </div>
+
+    <div class="section">
+        <p>ООО "Автосалон Mercedes-Benz", именуемое в дальнейшем "Продавец", с одной стороны, и физическое лицо, именуемое в дальнейшем "Покупатель", с другой стороны, заключили настоящий договор о нижеследующем:</p>
+    </div>
+
+    <div class="section">
+        <h2>1. ПРЕДМЕТ ДОГОВОРА</h2>
+        <p>1.1. Продавец обязуется поставить, а Покупатель принять и оплатить заказанный автомобиль со следующими характеристиками:</p>
+        <ul>
+            <li>Марка, модель: <strong>%2</strong></li>
+            <li>Цвет: <strong>%3</strong></li>
+            <li>Комплектация: <strong>%5</strong></li>
+            <li>Стоимость: <strong>%4 рублей</strong></li>
+        </ul>
+    </div>
+
+    <div class="section">
+        <h2>2. СРОКИ ПОСТАВКИ</h2>
+        <p>2.1. Срок поставки заказанного автомобиля составляет 30 (тридцать) календарных дней с момента подписания настоящего договора.</p>
+        <p>2.2. В случае задержки поставки более чем на 10 дней, Покупатель вправе отказаться от договора с возвратом уплаченной суммы.</p>
+    </div>
+
+    <div class="section">
+        <h2>3. ПОРЯДОК РАСЧЕТОВ</h2>
+        <p>3.1. Покупатель вносит предоплату в размере 30% от стоимости автомобиля при подписании настоящего договора.</p>
+        <p>3.2. Оставшаяся сумма оплачивается при получении автомобиля.</p>
+    </div>
+
+    <div class="section">
+        <h2>4. ОТВЕТСТВЕННОСТЬ СТОРОН</h2>
+        <p>4.1. За нарушение сроков поставки Продавец уплачивает Покупателю неустойку в размере 0.1% от стоимости автомобиля за каждый день просрочки.</p>
+        <p>4.2. При отказе Покупателя от получения заказанного автомобиля, предоплата не возвращается.</p>
+    </div>
+
+    <div class="section">
+        <h2>5. ПРОЧИЕ УСЛОВИЯ</h2>
+        <p>5.1. Настоящий договор составлен в двух экземплярах, по одному для каждой из сторон.</p>
+        <p>5.2. Все споры решаются путем переговоров, а при недостижении согласия - в судебном порядке.</p>
+    </div>
+
+    <div class="signatures">
+        <div class="signature-block">
+            <p><strong>Продавец:</strong></p>
+            <p>ООО "Автосалон Mercedes-Benz"</p>
+            <p>ИНН: 1234567890</p>
+            <p>ОГРН: 1234567890123</p>
+            <div class="dotted-line"></div>
+        </div>
+
+        <div class="signature-block">
+            <p><strong>Покупатель:</strong></p>
+            <p>ФИО: _____________________</p>
+            <p>Паспорт: _________________</p>
+            <p>Адрес: ___________________</p>
+            <div class="dotted-line"></div>
+        </div>
+    </div>
+</body>
+</html>
+    )")
+        .arg(currentDate)
+        .arg(carName)
+        .arg(carColor)
+        .arg(carPrice)
+        .arg(trim);
+}
+
 } // namespace ContractTemplates 

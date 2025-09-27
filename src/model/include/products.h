@@ -30,7 +30,7 @@ struct ProductInfo
     ProductInfo() = default;
     explicit ProductInfo(const int id, const QString& name, const QString& color,
                          const int price, const QString& description, const QString& image_path,
-                         const int type_id/*, const PurchaseMethod& purchas_method*/)
+                         const int type_id/*, const PurchaseMethod& purchas_method*/, const QString& trim = QString(), const int stock_qty = 0)
         : id_(id)
         , name_(name)
         , color_(color)
@@ -38,6 +38,8 @@ struct ProductInfo
         , description_(description)
         , image_path_(image_path)
         , type_id_(type_id)
+        , trim_(trim)
+        , stock_qty_(stock_qty)
         // , purchas_method_(purchas_method)
     {}
     int id_ = 0;
@@ -47,6 +49,8 @@ struct ProductInfo
     QString description_;
     QString image_path_;
     int type_id_ = 0;
+    QString trim_;
+    int stock_qty_ = 0;
     PurchaseMethod purchas_method_ = PurchaseMethod::Unknown;
 
 };

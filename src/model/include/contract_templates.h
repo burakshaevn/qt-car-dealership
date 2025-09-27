@@ -19,9 +19,9 @@ namespace ContractTemplates {
 void saveAsPdf(const QString& htmlContent, const QString& fileName);
 
 /*!
- * \brief saveContract
- * \param content
- * \param product
+ * \brief Сохраняет HTML-договор как PDF файл
+ * \param content HTML-содержимое договора для сохранения
+ * \param product Информация о продукте для генерации имени файла
  */
 void saveContract(const QString& content, const ProductInfo& product);
 
@@ -94,6 +94,18 @@ QString getServiceContractHtml(const QString& currentDate, const QString& carNam
  */
 QString getTestDriveContractHtml(const QString& currentDate, const QString& carName, const QString& carColor,
                                  const QString& scheduledDate);
+
+/*!
+ * \brief Генерирует HTML-шаблон договора заказа автомобиля
+ * \param currentDate Текущая дата оформления договора
+ * \param carName Наименование автомобиля
+ * \param carColor Цвет автомобиля
+ * \param carPrice Стоимость автомобиля
+ * \param trim Комплектация автомобиля
+ * \return HTML-код договора заказа
+ */
+QString getOrderContractHtml(const QString& currentDate, const QString& carName, const QString& carColor,
+                            const QString& carPrice, const QString& trim);
 
 } // namespace ContractTemplates
 

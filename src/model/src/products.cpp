@@ -4,6 +4,7 @@
 #include "../include/domain.h"
 #include "../include/product_card.h"
 #include <QGraphicsBlurEffect>
+#include <QSqlRecord>
 
 Products::Products(QSharedPointer<ProductCard> product_card, QSharedPointer<DatabaseHandler> db_manager)
     : m_product_cards(std::move(product_card))
@@ -90,6 +91,12 @@ void Products::PullProducts()
             product.price_ = query.value("price").toDouble();
             product.description_ = query.value("description").toString();
             product.type_id_ = query.value("type_id").toInt();
+            if (query.record().indexOf("trim") != -1) {
+                product.trim_ = query.value("trim").toString();
+            }
+            if (query.record().indexOf("stock_qty") != -1) {
+                product.stock_qty_ = query.value("stock_qty").toInt();
+            }
 
             QString image_path = QDir::cleanPath(QCoreApplication::applicationDirPath() + "/../../resources/" + query.value("image_url").toString().replace("\\", "/"));
 
@@ -211,7 +218,9 @@ QList<ProductInfo> Products::GetAllProductsWithName(const ProductInfo& product) 
                 query.value("price").toInt(),
                 query.value("description").toString(),
                 QCoreApplication::applicationDirPath() + "/../../resources/" + query.value("image_url").toString(),
-                query.value("type_id").toInt()
+                query.value("type_id").toInt(),
+                query.record().indexOf("trim") != -1 ? query.value("trim").toString() : QString(),
+                query.record().indexOf("stock_qty") != -1 ? query.value("stock_qty").toInt() : 0
             });
         }
     }

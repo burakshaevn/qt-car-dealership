@@ -22,6 +22,13 @@ add_subdirectory(src/model)
 add_subdirectory(src/controller)
 add_subdirectory(src/view)
 
+# Add tests (optional - only if testing is enabled)
+option(BUILD_TESTS "Build tests" ON)
+if(BUILD_TESTS)
+    enable_testing()
+    add_subdirectory(src/model/tests)
+endif()
+
 # Main application sources
 set(PROJECT_SOURCES
   main.cpp

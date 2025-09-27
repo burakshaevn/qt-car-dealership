@@ -60,6 +60,9 @@ public:
      */
     void LoadDefault();
 
+    // Ensures inventory-related schema (stock/trim/order_requests) exists
+    void EnsureInventorySchema();
+
     /*!
      * \brief Возвращает последнюю ошибку, возникшую в БД
      * \returns Текст ошибки в виде строки
@@ -85,6 +88,14 @@ public:
      * \return true - запрос выполнен успешно, false - запрос не выполнен
      */
     bool ExecuteQuery(const QStringView string_query);
+
+    /*!
+     * \brief Выполняет SQL-запрос с красивой обработкой ошибок
+     * \param string_query — сам SQL-запрос передаётся в виде ссылки на строку
+     * \param error_message — сообщение об ошибке для пользователя
+     * \return true - запрос выполнен успешно, false - запрос не выполнен
+     */
+    bool ExecuteQueryWithUserMessage(const QStringView string_query, QString& error_message);
 
     /*!
      * \brief Выполняет переданный ей SELECT SQL-запрос

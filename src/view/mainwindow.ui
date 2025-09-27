@@ -1144,6 +1144,24 @@ QScrollArea#scrollArea_catalog &gt; QWidget &gt; QScrollBar::handle:vertical {
              </property>
             </widget>
            </item>
+           <item>
+            <widget class="QPushButton" name="pushButton_order">
+             <property name="styleSheet">
+              <string notr="true">QPushButton {
+	background-color: #FF6B35;
+	color: white;
+	border-radius: 11px; 
+	font: 14pt &quot;JetBrains Mono&quot;;
+}
+QPushButton:hover {
+	background-color: #E55A2B;
+}</string>
+             </property>
+             <property name="text">
+              <string>Заказать</string>
+             </property>
+            </widget>
+           </item>
           </layout>
          </widget>
         </item>

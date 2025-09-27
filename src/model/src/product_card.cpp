@@ -74,7 +74,14 @@ void ProductCard::DrawItem(const ProductInfo& product)
         product_name->setReadOnly(true);
 
         // Описание
-        QLabel* product_description = new QLabel(product.color_, card);
+        QString descText = product.color_;
+        if (!product.trim_.isEmpty()) {
+            descText += " • " + product.trim_;
+        }
+        if (product.stock_qty_ <= 0) {
+            descText += " • Нет в наличии";
+        }
+        QLabel* product_description = new QLabel(descText, card);
         product_description->setStyleSheet("font: 15pt 'JetBrains Mono'; color: #555555;");
         product_description->setAlignment(Qt::AlignLeft | Qt::AlignVCenter);
         product_description->setFixedSize(411, 24);

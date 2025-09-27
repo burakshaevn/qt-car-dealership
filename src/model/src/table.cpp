@@ -1,5 +1,24 @@
 #include "../include/table.h"
 #include "edit_dialog.h"
+#include <QWidget>
+#include <QString>
+
+// Вспомогательная функция для преобразования отображаемого названия в имя таблицы
+QString GetTableNameFromDisplayName(const QString& display_name) {
+    if (display_name == "Администраторы") return "admins";
+    else if (display_name == "Автомобили") return "cars";
+    else if (display_name == "Типы автомобилей") return "car_types";
+    else if (display_name == "Клиенты") return "clients";
+    else if (display_name == "Продажи") return "purchases";
+    else if (display_name == "Заявки на обслуживание") return "service_requests";
+    else if (display_name == "Заявки на страхование") return "insurance_requests";
+    else if (display_name == "Заявки на кредитование") return "loan_requests";
+    else if (display_name == "Заявки на покупку") return "purchase_requests";
+    else if (display_name == "Заявки на заказ") return "order_requests";
+    else if (display_name == "Заявки на тест-драйв") return "test_drives";
+    else if (display_name == "Заявки на аренду") return "rental_requests";
+    else return display_name; // fallback
+}
 
 Table::Table(QSharedPointer<DatabaseHandler> db_manager, const User* user, QWidget* parent)
     : QWidget(parent)
@@ -23,7 +42,13 @@ void Table::BuildAdminTables(){
     m_current_table = Tables::unknown;
 
     auto* layout = new QVBoxLayout(this);
-    m_table_selector->addItems(m_database_handler->GetTables());
+    
+    QStringList tables = m_database_handler->GetTables();
+    qDebug() << "BuildAdminTables: Got tables from database:" << tables;
+    m_table_selector->addItems(tables);
+    qDebug() << "BuildAdminTables: ComboBox items count:" << m_table_selector->count();
+    qDebug() << "BuildAdminTables: ComboBox items:" << m_table_selector->itemText(11);
+    
     m_table_selector->setCurrentIndex(-1);
     m_table_selector->setStyleSheet(R"(
         QComboBox{
@@ -165,7 +190,8 @@ bool Table::eventFilter(QObject* obj, QEvent* event) {
 }
 
 void Table::LoadTable() {
-    QString table_name = m_table_selector->currentText();
+    QString display_name = m_table_selector->currentText();
+    QString table_name = GetTableNameFromDisplayName(display_name);
 
     // Показываем или скрываем кнопки обработки заявок в зависимости от выбранной таблицы
     ShowRequestButtons(IsRequestTable(table_name));
@@ -213,14 +239,23 @@ void Table::LoadTable() {
                     "LEFT JOIN clients c ON lr.client_id = c.id "
                     "LEFT JOIN cars ON lr.car_id = cars.id";
     }
-    else if (table_name == "sell_requests") {
-        query_str = "SELECT sr.id as \"№\", CONCAT(c.first_name, ' ', c.last_name) as \"Клиент\", "
+    else if (table_name == "purchase_requests") {
+        query_str = "SELECT pr.id as \"№\", CONCAT(c.first_name, ' ', c.last_name) as \"Клиент\", "
                     "c.phone as \"Телефон\", "
-                    "cars.name as \"Автомобиль\", cars.price as \"Цена\", cars.color as \"Цвет\", "
-                    "sr.status as \"Статус\", sr.created_at as \"Дата создания\" "
-                    "FROM sell_requests sr "
-                    "LEFT JOIN clients c ON sr.client_id = c.id "
-                    "LEFT JOIN cars ON sr.car_id = cars.id";
+                    "CONCAT(cars.name, ' (', cars.color, ')') as \"Автомобиль\", "
+                    "cars.price as \"Цена\", "
+                    "pr.status as \"Статус\", pr.created_at as \"Дата создания\" "
+                    "FROM purchase_requests pr "
+                    "LEFT JOIN clients c ON pr.client_id = c.id "
+                    "LEFT JOIN cars ON pr.car_id = cars.id";
+    }
+    else if (table_name == "order_requests") {
+        query_str = "SELECT ord.id as \"№\", CONCAT(c.first_name, ' ', c.last_name) as \"Клиент\", "
+                    "c.phone as \"Телефон\", "
+                    "ord.car_name as \"Автомобиль\", ord.color as \"Цвет\", ord.trim as \"Комплектация\", "
+                    "ord.status as \"Статус\", ord.created_at as \"Дата создания\" "
+                    "FROM order_requests ord "
+                    "LEFT JOIN clients c ON ord.client_id = c.id";
     }
     else if (table_name == "rental_requests") {
         query_str = "SELECT rr.id as \"№\", "
@@ -323,11 +358,12 @@ void Table::AddRecord() {
     }
 
     // Получаем имя таблицы
-    QString tableName = m_table_selector->currentText();
-    if (tableName.isEmpty()) {
+    QString displayName = m_table_selector->currentText();
+    if (displayName.isEmpty()) {
         QMessageBox::critical(this, "Ошибка", "Выберите таблицу для добавления записи.");
         return;
     }
+    QString tableName = GetTableNameFromDisplayName(displayName);
 
     // Получаем модель и создаём пустую запись
     QAbstractItemModel* model = m_data_table->model();
@@ -392,7 +428,8 @@ void Table::DeleteRecord() {
         QMessageBox::critical(this, "Ошибка", "Выберите таблицу для удаления записи.");
         return;
     }
-    QString table_name = m_table_selector->currentText();
+    QString display_name = m_table_selector->currentText();
+    QString table_name = GetTableNameFromDisplayName(display_name);
     QString col_name = "id";
 
     int id = -1; // Для хранения идентификатора, если есть primary_key
@@ -508,7 +545,8 @@ void Table::EditRecord() {
         return;
     }
 
-    QString table_name = m_table_selector->currentText();
+    QString display_name = m_table_selector->currentText();
+    QString table_name = GetTableNameFromDisplayName(display_name);
     QString primary_key_column = GetPrimaryKeyColumnName(table_name);
 
     if (primary_key_column.isEmpty()) {
@@ -676,11 +714,13 @@ bool Table::GetConfirmation(const QString& table_name, const QString& primary_ke
 
 bool Table::IsRequestTable(const QString& table_name) const {
     return table_name == "service_requests" ||
-           table_name == "insurance_requests" ||
-           table_name == "loan_requests" ||
-           table_name == "sell_requests" ||
-           table_name == "test_drives" ||
-           table_name == "rental_requests";
+        table_name == "insurance_requests" ||
+        table_name == "loan_requests" ||
+        table_name == "purchase_requests" ||
+        table_name == "sell_requests" ||
+        table_name == "test_drives" ||
+        table_name == "rental_requests" ||
+        table_name == "order_requests";
 }
 
 void Table::ShowRequestButtons(bool show) {
@@ -720,7 +760,8 @@ void Table::ApproveRequest()
 
     int row = currentIndex.row();
     int id = m_data_table->model()->data(m_data_table->model()->index(row, 0)).toInt();
-    QString table_name = m_table_selector->currentText();
+    QString display_name = m_table_selector->currentText();
+    QString table_name = GetTableNameFromDisplayName(display_name);
 
     // Используем правильные статусы в зависимости от типа таблицы
     QString status;
@@ -745,7 +786,8 @@ void Table::RejectRequest()
 
     int row = currentIndex.row();
     int id = m_data_table->model()->data(m_data_table->model()->index(row, 0)).toInt();
-    QString table_name = m_table_selector->currentText();
+    QString display_name = m_table_selector->currentText();
+    QString table_name = GetTableNameFromDisplayName(display_name);
 
     // Используем правильные статусы в зависимости от типа таблицы
     QString status;

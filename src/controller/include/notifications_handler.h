@@ -3,6 +3,10 @@
 
 #include <QDialog>
 #include <QVBoxLayout>
+#include <QString>
+#include <QStringView>
+#include <QResizeEvent>
+#include <QVariant>
 
 #include "database_handler.h"
 
@@ -55,6 +59,21 @@ private slots:
      */
     void onSortButtonClicked();
 
+    /*!
+     * \brief onFilterChanged - обработчик изменения фильтра
+     */
+    void onFilterChanged();
+
+    /*!
+     * \brief onMarkAllReadClicked - обработчик кнопки "Прочитать все"
+     */
+    void onMarkAllReadClicked();
+
+    /*!
+     * \brief onClearOldClicked - обработчик кнопки "Удалить старые"
+     */
+    void onClearOldClicked();
+
 private:
     Ui::notifications *ui;
 
@@ -63,6 +82,8 @@ private:
     QWeakPointer<DatabaseHandler> m_database_handler;       ///< Предоставляет интерфейс для работы с БД
 
     bool m_is_sorted_ascending;                             ///< Направление для сортировки по дате
+    int m_current_user_id;                                  ///< ID текущего пользователя
+    QString m_current_filter;                               ///< Текущий фильтр
 
     /*!
      * \brief Добавляет новое уведомление в ScrollArea
