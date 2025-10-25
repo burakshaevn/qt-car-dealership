@@ -207,10 +207,14 @@ void ProductCard::RestoreHiddenToCartButtons()
 {
     for (const auto& name : hidden_to_cart_buttons_)
     {
-        auto to_cart_button = products_cards_[name]->findChild<QPushButton*>("to_cart_", Qt::FindChildrenRecursively);
-        if (to_cart_button)
+        QWidget* card = products_cards_[name];
+        if (card)
         {
-            to_cart_button->show();
+            auto to_cart_button = card->findChild<QPushButton*>("to_cart_", Qt::FindChildrenRecursively);
+            if (to_cart_button)
+            {
+                to_cart_button->show();
+            }
         }
     }
     hidden_to_cart_buttons_.clear();
@@ -336,7 +340,8 @@ void ProductCard::HideOldCards()
     // Скрываем все карточки и удаляем их из layout
     for (auto it = products_cards_.begin(); it != products_cards_.end(); ++it)
     {
-        if (QWidget* card = it.value())
+        QWidget* card = it.value();
+        if (card)
         {
             layout_->removeWidget(card);
             card->hide();

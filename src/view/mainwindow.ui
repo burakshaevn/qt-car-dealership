@@ -46,9 +46,14 @@
        <string notr="true"/>
       </property>
       <property name="currentIndex">
-       <number>0</number>
+       <number>2</number>
       </property>
       <widget class="QWidget" name="user_page">
+       <property name="styleSheet">
+        <string notr="true">QWidget {
+	background-color: #fafafa;
+}</string>
+       </property>
        <layout class="QGridLayout" name="gridLayout_7">
         <property name="leftMargin">
          <number>0</number>
@@ -137,12 +142,7 @@
              </property>
              <property name="styleSheet">
               <string notr="true">QScrollArea {
-	background-color: #fafafa;
-    border-radius: 61px;
-} 
-
-QScrollArea &gt; QWidget {
-	background-color: #fafafa;
+	background-color: transparent;
     border-radius: 61px;
 } </string>
              </property>
@@ -879,6 +879,11 @@ QLineEdit:focus {
        </layout>
       </widget>
       <widget class="QWidget" name="main">
+       <property name="styleSheet">
+        <string notr="true">QWidget {
+	background-color: #fafafa;
+}</string>
+       </property>
        <layout class="QGridLayout" name="gridLayout_3">
         <item row="1" column="2">
          <widget class="QScrollArea" name="scrollArea_catalog">
@@ -895,8 +900,8 @@ QLineEdit:focus {
            </size>
           </property>
           <property name="styleSheet">
-           <string notr="true">QScrollArea#scrollArea_catalog {
-    background: #fafafa;
+           <string notr="true">QScrollArea {
+    background: transparent;
     border-radius: 61px;
     border: none;
 }
@@ -1036,6 +1041,11 @@ QScrollArea#scrollArea_catalog &gt; QWidget &gt; QScrollBar::handle:vertical {
        </layout>
       </widget>
       <widget class="QWidget" name="personal">
+       <property name="styleSheet">
+        <string notr="true">QWidget {
+	background-color: #fafafa;
+}</string>
+       </property>
        <layout class="QGridLayout" name="gridLayout_4">
         <item row="2" column="4">
          <spacer name="horizontalSpacer_8">

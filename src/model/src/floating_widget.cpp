@@ -21,7 +21,7 @@ void FloatingWidget::BuildFloatingMenu(
     // Создаём виджет для фона с эффектом блюра
     QWidget* background_widget = new QWidget(this);
     background_widget->setFixedSize(88, 485);
-    background_widget->setStyleSheet("background-color: #fafafa; border-radius: 39px;");
+    background_widget->setStyleSheet("background-color: #ffffff; border-radius: 39px;");
 
     // Создаём layout для кнопок
     QVBoxLayout* menu_layout = new QVBoxLayout(this);

@@ -15,7 +15,11 @@ set(CMAKE_CXX_STANDARD_REQUIRED ON)
 # Find packages
 find_package(QT NAMES Qt6 Qt5 REQUIRED COMPONENTS Widgets Sql)
 find_package(Qt${QT_VERSION_MAJOR} REQUIRED COMPONENTS Widgets Sql)
-find_package(PostgreSQL REQUIRED)
+# find_package(PostgreSQL REQUIRED)
+
+# Если не находит PostgreSQL, можно явно указать путь:
+set(PostgreSQL_ADDITIONAL_VERSIONS "18")
+set(PostgreSQL_ROOT "C:/.dev/PostgreSQL/18")
 
 # Add subdirectories for MVC components
 add_subdirectory(src/model)

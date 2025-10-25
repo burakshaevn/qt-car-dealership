@@ -7,6 +7,7 @@
 #include <QScrollArea>
 #include <QVBoxLayout>
 #include <QPushButton>
+#include <QPointer>
 
 #include <QUrl>
 #include <QTemporaryFile>
@@ -97,12 +98,12 @@ private:
     // Контейнер для каталога
     QWidget* card_container_;
     QVBoxLayout* layout_;
-    QHash<Products::ProductKey, QWidget*> products_cards_;
+    QHash<Products::ProductKey, QPointer<QWidget>> products_cards_;
 
     // Контейнер для купленных товаров
     QWidget* purchased_container_;
     QVBoxLayout* purchased_layout_;
-    QHash<Products::ProductKey, QWidget*> purchased_cards_;
+    QHash<Products::ProductKey, QPointer<QWidget>> purchased_cards_;
 
     // Неупорядоченное множество названий предметов.
     // В этот контейнер добавляются названия предметов, у которых была скрыта кнопка добавления в корзину.
