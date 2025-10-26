@@ -29,9 +29,20 @@ void DatabaseHandler::LoadDefault(){
     int port = 5432;
     QString dbname = "car_dealership";
     QString username = "postgres";
-    QString password = "89274800234Nn";
+    
+    // Попытка получить пароль из переменной окружения, иначе - дефолтный
+    QString password = qEnvironmentVariable("PGPASSWORD", "89274800234Nn");
+    
     UpdateConnection(hostname, port, dbname, username, password);
-    Open();
+    
+    if (!Open()) {
+        qCritical() << "Не удалось подключиться к базе данных!";
+        qCritical() << "Проверьте, что PostgreSQL запущен и доступен на" << hostname << ":" << port;
+        qCritical() << "Ошибка:" << GetLastError();
+        return;
+    }
+    
+    qDebug() << "Успешное подключение к базе данных:" << dbname;
     EnsureInventorySchema();
 }
 

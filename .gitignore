@@ -78,3 +78,7 @@ CMakeLists.txt.user*
 *.build/
 build/
 !build.py
+
+# Deployment directory
+deploy/
+/deploy*/

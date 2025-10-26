@@ -5,6 +5,7 @@
 #include "../include/product_card.h"
 #include <QGraphicsBlurEffect>
 #include <QSqlRecord>
+#include <QFile>
 
 Products::Products(QSharedPointer<ProductCard> product_card, QSharedPointer<DatabaseHandler> db_manager)
     : m_product_cards(std::move(product_card))
@@ -98,7 +99,26 @@ void Products::PullProducts()
                 product.stock_qty_ = query.value("stock_qty").toInt();
             }
 
-            QString image_path = QDir::cleanPath(QCoreApplication::applicationDirPath() + "/../../resources/" + query.value("image_url").toString().replace("\\", "/"));
+            // Получаем путь к изображению из БД
+            QString imageUrl = query.value("image_url").toString().replace("\\", "/");
+            
+            // Пробуем найти ресурсы в нескольких местах:
+            // 1. Рядом с exe (для развернутого приложения)
+            QString deployedPath = QDir::cleanPath(QCoreApplication::applicationDirPath() + "/resources/" + imageUrl);
+            // 2. В папке проекта (для debug из build)
+            QString debugPath = QDir::cleanPath(QCoreApplication::applicationDirPath() + "/../../resources/" + imageUrl);
+            
+            // Выбираем существующий путь
+            QString image_path;
+            if (QFile::exists(deployedPath)) {
+                image_path = deployedPath;
+            } else if (QFile::exists(debugPath)) {
+                image_path = debugPath;
+            } else {
+                // Если ничего не найдено, используем первый путь и выведем предупреждение
+                image_path = deployedPath;
+                qWarning() << "Image not found:" << imageUrl << "- tried both" << deployedPath << "and" << debugPath;
+            }
 
             product.image_path_ = image_path;
 
