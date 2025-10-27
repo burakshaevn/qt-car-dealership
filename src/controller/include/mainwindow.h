@@ -64,6 +64,9 @@ private slots:
 
     void on_btn_sortByType_clicked();
 
+protected:
+    void resizeEvent(QResizeEvent *event) override;
+
 private:
     Ui::MainWindow *ui;
 
@@ -102,6 +105,11 @@ private:
      * \brief Инициализация бокового меню
      */
     void SetupFloatingMenu();
+
+    /*!
+     * \brief Обновление позиции плавающего меню при изменении размера окна
+     */
+    void UpdateFloatingMenuPosition();
 
     /*!
      * \brief Загружает доступные услуги для клиента в ScrollArea на странице пользователя

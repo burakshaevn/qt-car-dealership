@@ -185,49 +185,74 @@ void ProductCard::DrawPurchasedItem(const ProductInfo& product)
 
 int ProductCard::DrawRelevantProducts(QScrollArea* scrollArea,const QString& term)
 {
-    QList<ProductInfo> relevant_products = products_.lock()->FindRelevantProducts(term);
+    // БЕЗОПАСНОСТЬ: Проверяем lock() перед использованием
+    auto products = products_.lock();
+    if (!products) {
+        qWarning() << "Products was deleted during DrawRelevantProducts!";
+        return 0;
+    }
+    
+    QList<ProductInfo> relevant_products = products->FindRelevantProducts(term);
     if (!relevant_products.empty())
     {
-
-        HideOldCards();
         EnsureContainerInScrollArea(scrollArea);
 
+        // Сначала скрываем ВСЕ карточки
+        for (auto it = products_cards_.begin(); it != products_cards_.end(); ++it)
+        {
+            QWidget* card = it.value();
+            if (card) {
+                card->hide();
+            }
+        }
+
+        // Показываем только релевантные
         for(const auto& instrument : relevant_products)
         {
-            DrawItem(instrument);
+            Products::ProductKey key = std::make_tuple(instrument.name_, instrument.color_);
+            if (products_cards_.contains(key))
+            {
+                // Если карточка существует, показываем её
+                QWidget* card = products_cards_[key];
+                if (card)
+                {
+                    card->show();
+                }
+            }
+            else
+            {
+                // Если карточки нет, создаем новую
+                DrawItem(instrument);
+            }
         }
-        card_container_->adjustSize();
+        
+        if (card_container_) {
+            card_container_->adjustSize();
+        }
 
         return relevant_products.size();
     }
     return 0;
 }
 
-void ProductCard::RestoreHiddenToCartButtons()
-{
-    for (const auto& name : hidden_to_cart_buttons_)
-    {
-        QWidget* card = products_cards_[name];
-        if (card)
-        {
-            auto to_cart_button = card->findChild<QPushButton*>("to_cart_", Qt::FindChildrenRecursively);
-            if (to_cart_button)
-            {
-                to_cart_button->show();
-            }
-        }
-    }
-    hidden_to_cart_buttons_.clear();
-}
 
 void ProductCard::UpdateProductsWidget(QScrollArea* scrollArea, const QStringView typeFilter, const QStringView colorFilter)
 {
+    // БЕЗОПАСНОСТЬ: Кэшируем lock() результаты
+    auto dbHandler = m_database_handler.lock();
+    auto products = products_.lock();
+    
+    if (!dbHandler || !products) {
+        qWarning() << "Database handler or Products was deleted during UpdateProductsWidget!";
+        return;
+    }
+    
     int typeId = -1;
 
     // Фильтрация по типу машины
     if (typeFilter != "Смотреть всё")
     {
-        auto result = m_database_handler.lock()->ExecuteSelectQuery(QString("SELECT id FROM car_types WHERE name = '%1'").arg(typeFilter));
+        auto result = dbHandler->ExecuteSelectQuery(QString("SELECT id FROM car_types WHERE name = '%1'").arg(typeFilter));
         if (result.canConvert<QSqlQuery>())
         {
             QSqlQuery query = result.value<QSqlQuery>();
@@ -238,46 +263,52 @@ void ProductCard::UpdateProductsWidget(QScrollArea* scrollArea, const QStringVie
         }
     }
 
-    HideOldCards();
     EnsureContainerInScrollArea(scrollArea);
 
-    for (auto it = products_cards_.constBegin(); it != products_cards_.constEnd(); ++it)
+    // Итерируемся по ВСЕМ продуктам, а не только по существующим карточкам
+    const auto& allProducts = products->GetProducts();
+    for (auto it = allProducts.constBegin(); it != allProducts.constEnd(); ++it)
     {
-        Products::ProductKey name;
-        QWidget* card;
-        std::tie(name, card) = std::make_pair(it.key(), it.value());
-
-        const auto& instrument = products_.lock()->FindProduct(name);
-
-        bool shouldDisplay = false;
+        const Products::ProductKey& key = it.key();
+        const ProductInfo& instrument = it.value();
 
         // Фильтрация по типу
-        bool typeMatch = (typeFilter == "Смотреть всё") || (instrument->type_id_ == typeId);
+        bool typeMatch = (typeFilter == "Смотреть всё") || (instrument.type_id_ == typeId);
 
         // Фильтрация по цвету
         bool colorMatch = true; // По умолчанию показываем все цвета
         if (!colorFilter.isEmpty() && colorFilter != "Смотреть всё")
         {
-            colorMatch = (instrument->color_ == colorFilter);
+            colorMatch = (instrument.color_ == colorFilter);
         }
 
         // Комбинированная фильтрация
-        shouldDisplay = typeMatch && colorMatch;
+        bool shouldDisplay = typeMatch && colorMatch;
 
-        if (shouldDisplay && card)
+        // Проверяем, есть ли уже карточка в кэше
+        if (products_cards_.contains(key))
         {
-            // Просто показываем существующую карточку
-            card->show();
-            layout_->addWidget(card);
+            // Карточка существует - показываем или скрываем
+            QWidget* card = products_cards_[key];
+            if (card)
+            {
+                if (shouldDisplay) {
+                    card->show();
+                } else {
+                    card->hide();
+                }
+            }
         }
         else if (shouldDisplay)
         {
-            // Если карточки нет, создаем новую
-            DrawItem(*instrument);
+            // Карточки нет и она нужна - создаем новую
+            DrawItem(instrument);
         }
     }
 
-    card_container_->adjustSize();
+    if (card_container_) {
+        card_container_->adjustSize();
+    }
 }
 
 void ProductCard::EnsureContainerInScrollArea(QScrollArea* target_scroll_area)
@@ -289,19 +320,21 @@ void ProductCard::EnsureContainerInScrollArea(QScrollArea* target_scroll_area)
     }
 
     // Если контейнер уже находится в этом scroll area, ничего не делаем
-    if (card_container_ && card_container_->parent() == target_scroll_area->viewport())
+    QWidget* currentWidget = target_scroll_area->widget();
+    if (currentWidget == card_container_ && card_container_)
     {
-        return;
+        return;  // Уже на месте, ничего не делаем
     }
 
-    // Если в scroll area уже есть виджет, удаляем его
-    if (QWidget* old_widget = target_scroll_area->takeWidget())
+    // Если в scroll area есть ДРУГОЙ виджет, удаляем его
+    if (currentWidget && currentWidget != card_container_)
     {
-        old_widget->deleteLater();
+        target_scroll_area->takeWidget();
+        currentWidget->deleteLater();
     }
 
     // Если у нас нет контейнера или он был удален, создаем новый
-    if (!card_container_ || !card_container_->parent())
+    if (!card_container_)
     {
         card_container_ = new QWidget();
         card_container_->setSizePolicy(QSizePolicy::Expanding, QSizePolicy::Minimum);
@@ -310,6 +343,9 @@ void ProductCard::EnsureContainerInScrollArea(QScrollArea* target_scroll_area)
         layout_->setAlignment(Qt::AlignTop);
         layout_->setSpacing(22);
         layout_->setContentsMargins(22, 22, 22, 22);
+        
+        // Очищаем старые карточки, т.к. они были удалены вместе со старым контейнером
+        products_cards_.clear();
     }
 
     // Устанавливаем контейнер в scroll area
@@ -328,27 +364,6 @@ void ProductCard::EnsureContainerInScrollArea(QScrollArea* target_scroll_area)
     target_scroll_area->setWidgetResizable(true);
     card_container_->show();
     target_scroll_area->viewport()->update();
-}
-
-void ProductCard::HideOldCards()
-{
-    if (!card_container_)
-    {
-        return;
-    }
-
-    // Скрываем все карточки и удаляем их из layout
-    for (auto it = products_cards_.begin(); it != products_cards_.end(); ++it)
-    {
-        QWidget* card = it.value();
-        if (card)
-        {
-            layout_->removeWidget(card);
-            card->hide();
-        }
-    }
-
-    card_container_->adjustSize();
 }
 
 QWidget* ProductCard::FindProductCard(const Products::ProductKey& product)
@@ -370,13 +385,33 @@ void ProductCard::AddProductCard(const Products::ProductKey& key, QWidget* instr
 
 void ProductCard::UpdatePurchasedProductsWidget(QScrollArea* scrollArea, const int found_user_id)
 {
-    if (!m_database_handler.lock() || !products_.lock())
+    // БЕЗОПАСНОСТЬ: Кэшируем lock() результаты
+    auto dbHandler = m_database_handler.lock();
+    auto products = products_.lock();
+    
+    if (!dbHandler || !products)
     {
+        qWarning() << "Database handler or Products was deleted during UpdatePurchasedProductsWidget!";
         return;
     }
 
-    HideOldPurchasedCards();
     EnsurePurchasedContainerInScrollArea(scrollArea);
+    
+    // Проверяем, загружены ли продукты в кэш
+    const auto& allProducts = products->GetProducts();
+    qDebug() << "UpdatePurchasedProductsWidget: Products cache has" << allProducts.size() << "items";
+    if (allProducts.isEmpty()) {
+        qWarning() << "UpdatePurchasedProductsWidget: ERROR - Products cache is EMPTY! Call CacheProducts() first!";
+    }
+
+    // Сначала скрываем ВСЕ купленные карточки
+    for (auto it = purchased_cards_.begin(); it != purchased_cards_.end(); ++it)
+    {
+        QWidget* card = it.value();
+        if (card) {
+            card->hide();
+        }
+    }
 
     QSqlQuery query;
     QString query_str = QString(
@@ -392,55 +427,100 @@ void ProductCard::UpdatePurchasedProductsWidget(QScrollArea* scrollArea, const i
         return;
     }
 
+    int purchaseCount = 0;
+    int cardsShown = 0;
+    int cardsCreated = 0;
+    int productsNotFound = 0;
+    
     while (query.next())
     {
+        purchaseCount++;
         QString name = query.value("name").toString();
         QString color = query.value("color").toString();
         Products::ProductKey key = std::make_tuple(name, color);
+        
+        qDebug() << "UpdatePurchasedProductsWidget: Processing purchase" << purchaseCount << ":" << name << color;
 
-        // Проверяем, есть ли уже карточка с таким ключом
+        // Проверяем, есть ли уже карточка в кэше
         if (purchased_cards_.contains(key))
         {
-            // Если карточка существует, просто показываем её
+            // Если карточка существует, показываем её
             QWidget* card = purchased_cards_[key];
             if (card)
             {
                 card->show();
-                purchased_layout_->addWidget(card);
+                cardsShown++;
+                qDebug() << "  -> Showing existing card for" << name << color;
+            }
+            else
+            {
+                qDebug() << "  -> WARNING: Card in cache but pointer is null for" << name << color;
             }
         }
         else
         {
             // Если карточки нет, создаем новую
-            const auto& product = products_.lock()->FindProduct(key);
+            const auto& product = products->FindProduct(key);
             if (product)
             {
                 DrawPurchasedItem(*product);
+                cardsCreated++;
+                qDebug() << "  -> Created new card for" << name << color;
+            }
+            else
+            {
+                productsNotFound++;
+                qWarning() << "  -> ERROR: Product NOT FOUND in cache for" << name << color;
+                qWarning() << "     This means the product exists in 'purchases' table but NOT in 'cars' table!";
             }
         }
     }
+    
+    qDebug() << "UpdatePurchasedProductsWidget: Summary:";
+    qDebug() << "  Total purchases from DB:" << purchaseCount;
+    qDebug() << "  Cards shown (existing):" << cardsShown;
+    qDebug() << "  Cards created (new):" << cardsCreated;
+    qDebug() << "  Products NOT FOUND:" << productsNotFound;
 
-    purchased_container_->adjustSize();
+    if (purchased_container_) {
+        purchased_container_->adjustSize();
+    }
 }
 
 void ProductCard::EnsurePurchasedContainerInScrollArea(QScrollArea* target_scroll_area)
 {
-    if (!target_scroll_area)
-    {
+    if (!target_scroll_area) {
         qDebug() << "Target scroll area is null!";
         return;
     }
 
     // Если контейнер уже находится в этом scroll area, ничего не делаем
-    if (purchased_container_ && purchased_container_->parent() == target_scroll_area->viewport())
+    QWidget* currentWidget = target_scroll_area->widget();
+    if (currentWidget == purchased_container_ && purchased_container_)
     {
-        return;
+        return;  // Уже на месте, ничего не делаем
     }
 
-    // Если в scroll area уже есть виджет, удаляем его
-    if (QWidget* old_widget = target_scroll_area->takeWidget())
+    // Если в scroll area есть ДРУГОЙ виджет, удаляем его
+    if (currentWidget && currentWidget != purchased_container_)
     {
-        old_widget->deleteLater();
+        target_scroll_area->takeWidget();
+        currentWidget->deleteLater();
+    }
+
+    // Если у нас нет контейнера или он был удален, создаем новый
+    if (!purchased_container_)
+    {
+        purchased_container_ = new QWidget();
+        purchased_container_->setSizePolicy(QSizePolicy::Expanding, QSizePolicy::Minimum);
+
+        purchased_layout_ = new QVBoxLayout(purchased_container_);
+        purchased_layout_->setAlignment(Qt::AlignTop);
+        purchased_layout_->setSpacing(22);
+        purchased_layout_->setContentsMargins(22, 22, 22, 22);
+        
+        // Очищаем старые карточки, т.к. они были удалены вместе со старым контейнером
+        purchased_cards_.clear();
     }
 
     // Устанавливаем контейнер в scroll area
@@ -456,25 +536,9 @@ void ProductCard::EnsurePurchasedContainerInScrollArea(QScrollArea* target_scrol
         "}"
         );
 
-    target_scroll_area->setWidgetResizable(true);
-    purchased_container_->show();
-    target_scroll_area->viewport()->update();
-}
-
-void ProductCard::HideOldPurchasedCards()
-{
-    if (!purchased_container_)
-    {
-        return;
-    }
-
-    // Скрываем все виджеты в контейнере
-    const auto widgets = purchased_container_->findChildren<QWidget*>();
-    for (QWidget* widget : widgets)
-    {
-        if (widget && widget->isVisible())
-        {
-            widget->hide();
-        }
-    }
+    // if (target_scroll_area && purchased_container_) {
+        target_scroll_area->setWidgetResizable(true);
+        purchased_container_->show();
+        target_scroll_area->viewport()->update();
+    // }
 }

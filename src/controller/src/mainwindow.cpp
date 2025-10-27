@@ -1304,27 +1304,6 @@ void MainWindow::on_pushButton_back_clicked()
 {
     if (!m_user || m_user->GetRole() != Role::User) return;
 
-    // Clean up scroll areas
-    if (ui->scrollArea_catalog && ui->scrollArea_catalog->widget())
-    {
-        QWidget* oldCatalogWidget = ui->scrollArea_catalog->takeWidget();
-        if (oldCatalogWidget)
-        {
-            oldCatalogWidget->hide();
-            oldCatalogWidget->deleteLater();
-        }
-    }
-
-    if (ui->scrollArea_purchased_cars && ui->scrollArea_purchased_cars->widget())
-    {
-        QWidget* oldPurchasedWidget = ui->scrollArea_purchased_cars->takeWidget();
-        if (oldPurchasedWidget)
-        {
-            oldPurchasedWidget->hide();
-            oldPurchasedWidget->deleteLater();
-        }
-    }
-
     // Reset current product state
     m_current_product = ProductInfo();
     m_current_color_index = 0;
@@ -2575,10 +2554,6 @@ void MainWindow::on_btn_profile_clicked()
 void MainWindow::on_btn_sortByColor_clicked()
 {
     if (m_user.get()) {
-        if (!m_product_cards->hidden_to_cart_buttons_IsEmpty())
-        {
-            m_product_cards->RestoreHiddenToCartButtons();
-        }
         if (m_user->GetRole() == Role::User)
         {
             bool ok;
@@ -2633,10 +2608,6 @@ void MainWindow::on_btn_sortByType_clicked()
 {
     if (m_user.get())
     {
-        if (!m_product_cards->hidden_to_cart_buttons_IsEmpty())
-        {
-            m_product_cards->RestoreHiddenToCartButtons();
-        }
         if (m_user->GetRole() == Role::User)
         {
             QStringList types;  // Список типов авто для выпадающего списка
@@ -2673,7 +2644,7 @@ void MainWindow::SetupFloatingMenu()
 
     m_floating_widget->BuildFloatingMenu(
         58,                                                 // Позиция виджета по оси Х
-        58,                                                 // Позиция виджета по оси Y
+        this->height(),                                     // Высота родительского окна
         [this]() { this->on_btn_sortByType_clicked(); },    // Соритровка по типам
         [this]() { this->on_btn_search_clicked(); },        // Поиск по запросу
         [this]() { this->on_btn_sortByColor_clicked(); },   // Сортировка по цветам
@@ -2686,3 +2657,20 @@ void MainWindow::SetupFloatingMenu()
     }
 }
 
+void MainWindow::UpdateFloatingMenuPosition()
+{
+    if (m_floating_widget) {
+        // Пересчитываем позицию виджета по центру высоты окна
+        int x = 58;  // Фиксированная позиция по X
+        int y = (this->height() - m_floating_widget->height()) / 2;  // Центр по Y
+        m_floating_widget->move(x, y);
+    }
+}
+
+void MainWindow::resizeEvent(QResizeEvent *event)
+{
+    QMainWindow::resizeEvent(event);  // Вызываем базовую реализацию
+
+    // Обновляем позицию плавающего меню при изменении размера окна
+    UpdateFloatingMenuPosition();
+}

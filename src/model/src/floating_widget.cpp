@@ -8,7 +8,7 @@ FloatingWidget::FloatingWidget(QWidget* parent)
 
 void FloatingWidget::BuildFloatingMenu(
     const size_t x,
-    const size_t y,
+    const size_t parent_height,
     const std::function<void()>& onMoreClicked,
     const std::function<void()>& onSearchClicked,
     const std::function<void()>& onColorFilterClicked,
@@ -77,6 +77,6 @@ void FloatingWidget::BuildFloatingMenu(
     menu_layout->addWidget(sort_by_color);
     menu_layout->addWidget(user_button);
 
-    this->move(x, y);
+    this->move(x, (parent_height - this->height()) / 2);
     this->show();
 }

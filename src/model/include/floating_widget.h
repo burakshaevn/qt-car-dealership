@@ -18,8 +18,7 @@ public:
 
     /*!
      * \brief BuildFloatingMenu - Создает и настраивает плавающее боковое меню
-     * \param x — Координата X для расположения меню (в пикселях)
-     * \param y — Координата Y для расположения меню (в пикселях)
+     * \param parent_height — Высота родительского окна в пикселях (чтобы отобразить плавающее меню по центру по высоте)
      * \param onMoreClicked — Колбэк, вызываемый при клике на кнопку "Еще" (должен быть std::function<void()> или лямбда-функцией)
      * \param onSearchClicked — Колбэк, вызываемый при клике на кнопку поиска
      * \param onColorFilterClicked — Колбэк, вызываемый при клике на фильтр по цвету
@@ -35,7 +34,7 @@ public:
      */
     void BuildFloatingMenu(
         const size_t x,
-        const size_t y,
+        const size_t parent_height,
         const std::function<void()>& onMoreClicked,
         const std::function<void()>& onSearchClicked,
         const std::function<void()>& onColorFilterClicked,

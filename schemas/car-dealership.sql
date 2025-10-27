@@ -48,7 +48,7 @@ CREATE FUNCTION public.handle_approved_loan_request() RETURNS trigger
     LANGUAGE plpgsql
     AS $$
 BEGIN
-    IF NEW.status = 'approved' AND OLD.status != 'approved' THEN
+    IF NEW.status = 'одобрено' AND OLD.status != 'одобрено' THEN
         INSERT INTO purchases (car_id, client_id, тип_оплаты, сумма_кредита, срок_кредита_месяцев)
         VALUES (NEW.car_id, NEW.client_id, 'кредит', NEW.loan_amount, NEW.loan_term_months);
     END IF;

@@ -338,11 +338,11 @@ void NotificationsHandler::markNotificationsAsReaded(const int user_id) {
 }
 
 void NotificationsHandler::clear() {
-    // Удаляем все виджеты из layout немедленно
+    // БЕЗОПАСНОСТЬ: Используем deleteLater() вместо delete для виджетов в event loop
     while (QLayoutItem* item = m_notifications_layout->takeAt(0)) {
         if (QWidget* widget = item->widget()) {
-            // Удаляем виджет немедленно, а не через deleteLater()
-            delete widget;
+            // Безопасное удаление виджета через deleteLater()
+            widget->deleteLater();
         }
         delete item;
     }
@@ -356,7 +356,7 @@ void NotificationsHandler::clear() {
             if (scrollLayout) {
                 while (QLayoutItem* item = scrollLayout->takeAt(0)) {
                     if (QWidget* widget = item->widget()) {
-                        delete widget;
+                        widget->deleteLater(); // Безопасное удаление
                     }
                     delete item;
                 }

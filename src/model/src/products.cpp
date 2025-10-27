@@ -126,13 +126,20 @@ void Products::PullProducts()
         }
 
         // Создаем карточки для инструментов
+        // БЕЗОПАСНОСТЬ: Кэшируем lock() чтобы избежать краша
+        auto productCards = m_product_cards.lock();
+        if (!productCards) {
+            qWarning() << "ProductCards was deleted during PullProducts!";
+            return;
+        }
+        
         for (const auto& product_info : GetProducts())
         {
             Products::ProductKey key = std::make_tuple(product_info.name_, product_info.color_);
-            if (m_product_cards.lock()->FindProductCard(key) == nullptr) {
+            if (productCards->FindProductCard(key) == nullptr) {
 
-                QWidget* card = new QWidget(m_product_cards.lock()->GetCardContainer());
-                m_product_cards.lock()->AddProductCard(key, card);
+                QWidget* card = new QWidget(productCards->GetCardContainer());
+                productCards->AddProductCard(key, card);
                 card->setStyleSheet("background-color: #ffffff; border-radius: 39px;");
                 card->setFixedSize(831, 152);
 
@@ -214,11 +221,11 @@ void Products::PullProducts()
                 info_->move(779, 15);
 
                 // Добавляем карточку в компоновку
-                m_product_cards.lock()->AddWidgetToLayout(card);
+                productCards->AddWidgetToLayout(card);
             }
         }
         // Устанавливаем обновленную компоновку для контейнера
-        m_product_cards.lock()->UpdateCardContainer();
+        productCards->UpdateCardContainer();
     }
 }
 
@@ -231,13 +238,27 @@ QList<ProductInfo> Products::GetAllProductsWithName(const ProductInfo& product) 
 
     if (query.exec()) {
         while (query.next()) {
+            // Формируем путь к изображению (поддержка debug и deployed версий)
+            QString imageUrl = query.value("image_url").toString().replace("\\", "/");
+            QString deployedPath = QDir::cleanPath(QCoreApplication::applicationDirPath() + "/resources/" + imageUrl);
+            QString debugPath = QDir::cleanPath(QCoreApplication::applicationDirPath() + "/../../resources/" + imageUrl);
+            QString image_path;
+            if (QFile::exists(deployedPath)) {
+                image_path = deployedPath;
+            } else if (QFile::exists(debugPath)) {
+                image_path = debugPath;
+            } else {
+                image_path = deployedPath;
+                qWarning() << "Image not found in GetAllProductsWithName:" << imageUrl << "- tried both" << deployedPath << "and" << debugPath;
+            }
+            
             temp.append(ProductInfo{
                 query.value("id").toInt(),
                 query.value("name").toString(),
                 query.value("color").toString(),
                 query.value("price").toInt(),
                 query.value("description").toString(),
-                QCoreApplication::applicationDirPath() + "/../../resources/" + query.value("image_url").toString(),
+                image_path,
                 query.value("type_id").toInt(),
                 query.record().indexOf("trim") != -1 ? query.value("trim").toString() : QString(),
                 query.record().indexOf("stock_qty") != -1 ? query.value("stock_qty").toInt() : 0
