@@ -88,6 +88,11 @@ QGroupBox::title {
       </property>
       <item row="0" column="0">
        <widget class="QScrollArea" name="scrollArea">
+        <property name="styleSheet">
+         <string notr="true">QWidget {
+	background-color: transparent;
+}</string>
+        </property>
         <property name="frameShape">
          <enum>QFrame::Shape::NoFrame</enum>
         </property>
@@ -176,13 +181,6 @@ QGroupBox::title {
        </property>
        <property name="flat">
         <bool>false</bool>
-       </property>
-      </widget>
-     </item>
-     <item>
-      <widget class="QPushButton" name="btn_clear_old">
-       <property name="text">
-        <string>Удалить</string>
        </property>
       </widget>
      </item>

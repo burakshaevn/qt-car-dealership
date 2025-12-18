@@ -29,10 +29,9 @@ NotificationsHandler::NotificationsHandler(QSharedPointer<DatabaseHandler> datab
     connect(ui->btn_sort_by_data, &QPushButton::clicked, this, &NotificationsHandler::onSortButtonClicked);
     connect(ui->filterCombo, QOverload<int>::of(&QComboBox::currentIndexChanged), this, &NotificationsHandler::onFilterChanged);
     connect(ui->btn_mark_all_read, &QPushButton::clicked, this, &NotificationsHandler::onMarkAllReadClicked);
-    connect(ui->btn_clear_old, &QPushButton::clicked, this, &NotificationsHandler::onClearOldClicked);
-    
+
     // Устанавливаем фильтр "Все уведомления" по умолчанию
-    ui->filterCombo->setCurrentIndex(0); // Индекс 0 = "Все уведомления"
+    ui->filterCombo->setCurrentIndex(0);
 
     QWidget *scrollWidget = new QWidget();
     m_notifications_layout = new QVBoxLayout(scrollWidget);
@@ -72,7 +71,6 @@ void NotificationsHandler::loadAndShowNotifications(const int user_id) {
     }
     qDebug() << "Total notifications found:" << totalCount;
     
-    // Сбрасываем курсор в начало
     query.first();
     query.previous();
     
@@ -189,8 +187,6 @@ void NotificationsHandler::loadAndShowNotifications(const int user_id) {
     QTimer::singleShot(100, this, [this]() {
         ui->scrollArea->verticalScrollBar()->setValue(0);
     });
-
-    // MarkNotificationsAsReaded(user_id);
 }
 
 QVariant NotificationsHandler::getNewNotifications(const int user_id) {
@@ -338,10 +334,8 @@ void NotificationsHandler::markNotificationsAsReaded(const int user_id) {
 }
 
 void NotificationsHandler::clear() {
-    // БЕЗОПАСНОСТЬ: Используем deleteLater() вместо delete для виджетов в event loop
     while (QLayoutItem* item = m_notifications_layout->takeAt(0)) {
         if (QWidget* widget = item->widget()) {
-            // Безопасное удаление виджета через deleteLater()
             widget->deleteLater();
         }
         delete item;
@@ -356,7 +350,7 @@ void NotificationsHandler::clear() {
             if (scrollLayout) {
                 while (QLayoutItem* item = scrollLayout->takeAt(0)) {
                     if (QWidget* widget = item->widget()) {
-                        widget->deleteLater(); // Безопасное удаление
+                        widget->deleteLater();
                     }
                     delete item;
                 }
@@ -388,124 +382,6 @@ void NotificationsHandler::onSortButtonClicked()
     }
 
     sortNotifications(m_is_sorted_ascending);
-}
-
-void NotificationsHandler::addNotification(const QStringView title, const QStringView date, const QStringView text) {
-    // Создаем красивый виджет уведомления в стиле диалогов выбора услуг
-    QWidget *notificationWidget = new QWidget();
-    notificationWidget->setFixedHeight(120);
-    
-    QHBoxLayout *mainLayout = new QHBoxLayout(notificationWidget);
-    mainLayout->setContentsMargins(15, 15, 15, 15);
-    mainLayout->setSpacing(15);
-    
-    // Иконка уведомления
-    QLabel *iconLabel = new QLabel("🔔");
-    iconLabel->setStyleSheet(
-        "QLabel {"
-        "    font-size: 24px;"
-        "    color: #2196F3;"
-        "    background: #e3f2fd;"
-        "    border-radius: 20px;"
-        "    padding: 10px;"
-        "    min-width: 40px;"
-        "    max-width: 40px;"
-        "    min-height: 40px;"
-        "    max-height: 40px;"
-        "}"
-    );
-    iconLabel->setAlignment(Qt::AlignCenter);
-    
-    // Основной контент
-    QVBoxLayout *contentLayout = new QVBoxLayout();
-    contentLayout->setSpacing(5);
-    
-    // Заголовок уведомления
-    QLabel *titleLabel = new QLabel(title.toString());
-    titleLabel->setStyleSheet(
-        "QLabel {"
-        "    font: 700 14pt 'JetBrains Mono';"
-        "    color: #1d1b20;"
-        "    margin-bottom: 5px;"
-        "}"
-    );
-    
-    // Текст уведомления
-    QLabel *textLabel = new QLabel(text.toString());
-    textLabel->setWordWrap(true);
-    textLabel->setStyleSheet(
-        "QLabel {"
-        "    font: 11pt 'JetBrains Mono';"
-        "    color: #666666;"
-        "    line-height: 1.4;"
-        "}"
-    );
-    
-    // Дата уведомления
-    QLabel *dateLabel = new QLabel(date.toString());
-    dateLabel->setStyleSheet(
-        "QLabel {"
-        "    font: 10pt 'JetBrains Mono';"
-        "    color: #999999;"
-        "    margin-top: 5px;"
-        "}"
-    );
-    dateLabel->setProperty("sortDate", date.toString());
-    
-    contentLayout->addWidget(titleLabel);
-    contentLayout->addWidget(textLabel);
-    contentLayout->addWidget(dateLabel);
-    contentLayout->addStretch();
-    
-    // Кнопка действия (опционально)
-    QPushButton *actionButton = new QPushButton("📄");
-    actionButton->setFixedSize(35, 35);
-    actionButton->setStyleSheet(
-        "QPushButton {"
-        "    background: #f5f5f5;"
-        "    border: 2px solid #e0e0e0;"
-        "    border-radius: 17px;"
-        "    font-size: 16px;"
-        "}"
-        "QPushButton:hover {"
-        "    background: #e3f2fd;"
-        "    border: 2px solid #2196F3;"
-        "}"
-        "QPushButton:pressed {"
-        "    background: #bbdefb;"
-        "}"
-    );
-    actionButton->setToolTip("Создать договор");
-    
-    // Соединяем кнопку с генерацией договора
-    connect(actionButton, &QPushButton::clicked, [this, title]() {
-        // Здесь можно добавить логику для генерации договора
-        QMessageBox::information(this, "Договор", "Функция создания договора будет реализована");
-    });
-    
-    mainLayout->addWidget(iconLabel);
-    mainLayout->addLayout(contentLayout, 1);
-    mainLayout->addWidget(actionButton);
-    
-    // Стиль для всего виджета уведомления
-    notificationWidget->setStyleSheet(
-        "QWidget {"
-        "    background: #ffffff;"
-        "    border: 2px solid #e0e0e0;"
-        "    border-radius: 12px;"
-        "    margin: 8px 0px;"
-        "}"
-        "QWidget:hover {"
-        "    border: 2px solid #2196F3;"
-        "    background: #fafafa;"
-        "}"
-    );
-    
-    // Сохраняем дату для сортировки
-    QDateTime notificationDate = QDateTime::fromString(date.toString(), "dd.MM.yyyy");
-    notificationWidget->setProperty("notificationDate", notificationDate);
-    
-    m_notifications_layout->addWidget(notificationWidget);
 }
 
 void NotificationsHandler::generateContractFromNotification(const QString& type, int requestId, int carId,
@@ -660,67 +536,3 @@ void NotificationsHandler::onMarkAllReadClicked()
     QMessageBox::information(this, "Успех", "Все уведомления помечены как прочитанные");
     loadAndShowNotifications(m_current_user_id);
 }
-
-void NotificationsHandler::onClearOldClicked()
-{
-    if (m_current_user_id == -1) return;
-    
-    QMessageBox::StandardButton reply = QMessageBox::question(this, "Подтверждение", 
-        "Скрыть все уведомления?",
-        QMessageBox::Yes | QMessageBox::No);
-    
-    if (reply == QMessageBox::Yes) {
-        // Список таблиц для скрытия всех уведомлений
-        QStringList tables = {"service_requests", "insurance_requests", "loan_requests", 
-                             "test_drives", "rental_requests", "purchase_requests", "order_requests"};
-        
-        int totalHidden = 0;
-        bool allSuccess = true;
-        
-        // Скрываем все уведомления в каждой таблице отдельно
-        for (const QString& table : tables) {
-            // Сначала считаем количество записей для скрытия
-            QSqlQuery countQuery;
-            QString countQueryStr = QString("SELECT COUNT(*) FROM %1 WHERE client_id = %2 AND (notification_shown = false OR notification_shown IS NULL)")
-                .arg(table)
-                .arg(m_current_user_id);
-            
-            int recordsToHide = 0;
-            if (countQuery.exec(countQueryStr) && countQuery.next()) {
-                recordsToHide = countQuery.value(0).toInt();
-            }
-            
-            if (recordsToHide > 0) {
-                QString updateQuery = QString("UPDATE %1 SET notification_shown = true WHERE client_id = %2 AND (notification_shown = false OR notification_shown IS NULL)")
-                    .arg(table)
-                    .arg(m_current_user_id);
-                
-                qDebug() << "Executing update query for" << table << ":" << updateQuery;
-                qDebug() << "Records to hide from" << table << ":" << recordsToHide;
-                
-                QVariant result = m_database_handler.lock()->ExecuteQuery(updateQuery);
-                if (result.toBool()) {
-                    totalHidden += recordsToHide;
-                    qDebug() << "Successfully hidden" << recordsToHide << "records from" << table;
-                } else {
-                    qDebug() << "Failed to hide records from" << table;
-                    allSuccess = false;
-                }
-            } else {
-                qDebug() << "No records to hide found in" << table;
-            }
-        }
-        
-        if (totalHidden > 0) {
-            if (allSuccess) {
-                QMessageBox::information(this, "Успех", QString("Скрыто %1 уведомлений").arg(totalHidden));
-            } else {
-                QMessageBox::warning(this, "Предупреждение", QString("Скрыто %1 уведомлений, но некоторые не удалось скрыть. Проверьте логи для подробностей.").arg(totalHidden));
-            }
-            loadAndShowNotifications(m_current_user_id);
-        } else {
-            QMessageBox::information(this, "Информация", "Нет уведомлений для скрытия.");
-        }
-    }
-}
-

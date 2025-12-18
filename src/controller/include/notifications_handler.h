@@ -69,11 +69,6 @@ private slots:
      */
     void onMarkAllReadClicked();
 
-    /*!
-     * \brief onClearOldClicked - обработчик кнопки "Удалить старые"
-     */
-    void onClearOldClicked();
-
 private:
     Ui::notifications *ui;
 
@@ -84,14 +79,6 @@ private:
     bool m_is_sorted_ascending;                             ///< Направление для сортировки по дате
     int m_current_user_id;                                  ///< ID текущего пользователя
     QString m_current_filter;                               ///< Текущий фильтр
-
-    /*!
-     * \brief Добавляет новое уведомление в ScrollArea
-     * \param title Заголовок уведомления
-     * \param date Дата уведомления
-     * \param text Текст уведомления
-     */
-    void addNotification(const QStringView title, const QStringView date, const QStringView text);
 
     /*!
      * \brief Генерирует договор на основе уведомления
