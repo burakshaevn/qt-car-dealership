@@ -2,8 +2,8 @@
 #define USER_H
 
 #include <QMainWindow>
-#include "domain.h"
-#include "products.h"
+#include "../include/domain.h"
+#include "../include/products.h"
 
 struct UserInfo {
     UserInfo()
@@ -26,7 +26,7 @@ struct UserInfo {
     QString full_name_;
     QString email_;
     QString password_;
-    Role role_;
+    Role role_ = Role::Unknown;
     QList<Products::ProductKey> products_; // Хранит составной ключ: название + цвет купленного предмета
 };
 
