@@ -207,6 +207,23 @@ void Table::LoadTable() {
                     "LEFT JOIN clients c ON sr.client_id = c.id "
                     "LEFT JOIN cars ON sr.car_id = cars.id";
     }
+    else if (table_name == "purchases") {
+        // Продажи: показываем понятные имена вместо id и итог по каждой продаже
+        query_str =
+            "SELECT "
+            "p.id as \"№\", "
+            "CONCAT(cl.first_name, ' ', cl.last_name) as \"Клиент\", "
+            "CONCAT(c.name, ' (', c.color, ')') as \"Автомобиль\", "
+            "p.тип_оплаты as \"Тип оплаты\", "
+            "COALESCE(p.сумма_кредита, 0) as \"Сумма кредита\", "
+            "COALESCE(p.срок_кредита_месяцев, 0) as \"Срок кредита (мес)\", "
+            "COALESCE(p.тип_страховки, '-') as \"Тип страховки\", "
+            "p.purchase_date as \"Дата продажи\", "
+            "c.price as \"Итого\" "
+            "FROM purchases p "
+            "JOIN clients cl ON cl.id = p.client_id "
+            "JOIN cars c ON c.id = p.car_id";
+    }
     else if (table_name == "test_drives") {
         query_str = "SELECT td.id as \"№\", "
                    "CONCAT(c.first_name, ' ', c.last_name) as \"Клиент\", "
@@ -295,7 +312,24 @@ void Table::LoadTable() {
 
         // Обновление описания таблицы
         m_description_table->clear();
-        m_description_table->setText(m_database_handler->GetTableDescription(table_name));
+        QString description_text = m_database_handler->GetTableDescription(table_name);
+
+        // Если это раздел "Продажи" (purchases), добавим сумму всех продаж за всё время
+        if (table_name == "purchases") {
+            QSqlQuery sumQuery;
+            // Суммируем цену автомобилей по всем покупкам
+            const QString sumQueryStr = R"(
+                SELECT COALESCE(SUM(c.price), 0) AS total
+                FROM purchases p
+                JOIN cars c ON c.id = p.car_id
+            )";
+            if (sumQuery.exec(sumQueryStr) && sumQuery.next()) {
+                const qint64 total = sumQuery.value("total").toLongLong();
+                description_text += "\nИтого продаж за всё время: " + FormatPrice(static_cast<int>(total)) + " руб.";
+            }
+        }
+
+        m_description_table->setText(description_text);
         m_description_table->setWordWrap(true);
         m_description_table->setTextInteractionFlags(Qt::TextBrowserInteraction);
         m_description_table->setAlignment(Qt::AlignLeft | Qt::AlignTop);

@@ -18,6 +18,7 @@ MainWindow::MainWindow(QWidget* parent)
 
     // Переключаем пользователя на экран логина после запуска
     ui->stackedWidget->setCurrentWidget(ui->login);
+
 }
 
 MainWindow::~MainWindow()
