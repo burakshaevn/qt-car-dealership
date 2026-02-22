@@ -28,9 +28,9 @@ const Role& User::GetRole() const{
     return user_.role_;
 }
 
-void User::SetProducts(const QList<Products::ProductKey> products){
+void User::SetProducts(const QList<ProductRepository::ProductKey> products){
     user_.products_ = products;
 }
-QList<Products::ProductKey> User::GetProducts() const {
+QList<ProductRepository::ProductKey> User::GetProducts() const {
     return user_.products_;
 }

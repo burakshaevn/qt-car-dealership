@@ -7,6 +7,7 @@
 #include <QVariant>
 #include <QDebug>
 #include <utility>
+#include <optional>
 
 class DatabaseHandler {
 public:
@@ -60,7 +61,9 @@ public:
      */
     void LoadDefault();
 
-    // Ensures inventory-related schema (stock/trim/order_requests) exists
+    /*!
+     * \brief Убеждается, что схема для инвентаря (stock/trim/order_requests) существует
+     */
     void EnsureInventorySchema();
 
     /*!
@@ -103,6 +106,30 @@ public:
      * \return QVariant
      */
     QVariant ExecuteSelectQuery(const QStringView string_query) const;
+
+    /*!
+     * \brief Возвращает id типа автомобиля по его имени
+     * \param type_name — имя типа из таблицы car_types
+     * \returns std::optional<int> с id, если найден
+     */
+    std::optional<int> TryGetCarTypeId(const QStringView type_name) const;
+
+    /*!
+     * \brief Проверяет, существует ли цвет среди автомобилей
+     * \param color — название цвета
+     * \returns true, если цвет есть
+     */
+    bool IsKnownColor(const QStringView color) const;
+
+    /*!
+     * \brief Возвращает список типов автомобилей из таблицы car_types
+     */
+    QStringList GetCarTypeNames() const;
+
+    /*!
+     * \brief Возвращает дефолтный цвет для каталога (предпочтительно "Белый")
+     */
+    QString GetDefaultCatalogColor() const;
 
     /*!
      * \brief Возвращает количество столбцов у таблицы

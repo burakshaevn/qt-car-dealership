@@ -15,17 +15,24 @@
 #include <QRegularExpression>
 #include <QRegularExpressionValidator>
 
+/*!
+ * \brief Dialog for editing records
+ */
 class EditDialog : public QDialog {
     Q_OBJECT
 
 public:
     explicit EditDialog(const QSqlRecord& record, QWidget* parent = nullptr);
 
+    /*!
+     * \brief Get updated record
+     * \return Updated record
+     */
     QSqlRecord GetUpdatedRecord() const;
 
 private:
-    QSqlRecord record_;
-    QVector<QLineEdit*> fields_;
+    QSqlRecord record_; ///< Record to edit
+    QVector<QLineEdit*> fields_; ///< Fields to edit
 };
 
 #endif // EDIT_DIALOG_H

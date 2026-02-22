@@ -14,7 +14,7 @@
    <string>Mercedez-Benz Car Dealership</string>
   </property>
   <property name="windowIcon">
-   <iconset resource="../../resources/resources.qrc">
+   <iconset>
     <normaloff>:/logo.svg</normaloff>:/logo.svg</iconset>
   </property>
   <widget class="QWidget" name="centralwidget">
@@ -46,7 +46,7 @@
        <string notr="true"/>
       </property>
       <property name="currentIndex">
-       <number>3</number>
+       <number>0</number>
       </property>
       <widget class="QWidget" name="user_page">
        <property name="styleSheet">
@@ -127,7 +127,7 @@
             </spacer>
            </item>
            <item row="0" column="1" rowspan="2" colspan="2">
-            <widget class="QScrollArea" name="scrollArea_purchased_cars">
+            <widget class="QListView" name="purchasedListView">
              <property name="minimumSize">
               <size>
                <width>875</width>
@@ -141,10 +141,10 @@
               </size>
              </property>
              <property name="styleSheet">
-              <string notr="true">QScrollArea {
+              <string notr="true">QListView {
 	background-color: transparent;
-    border-radius: 61px;
-} </string>
+    border: none;
+}</string>
              </property>
              <property name="verticalScrollBarPolicy">
               <enum>Qt::ScrollBarPolicy::ScrollBarAlwaysOff</enum>
@@ -152,22 +152,6 @@
              <property name="horizontalScrollBarPolicy">
               <enum>Qt::ScrollBarPolicy::ScrollBarAlwaysOff</enum>
              </property>
-             <property name="widgetResizable">
-              <bool>false</bool>
-             </property>
-             <property name="alignment">
-              <set>Qt::AlignmentFlag::AlignHCenter|Qt::AlignmentFlag::AlignTop</set>
-             </property>
-             <widget class="QWidget" name="scrollAreaWidgetContents_2">
-              <property name="geometry">
-               <rect>
-                <x>0</x>
-                <y>0</y>
-                <width>981</width>
-                <height>685</height>
-               </rect>
-              </property>
-             </widget>
             </widget>
            </item>
            <item row="1" column="3">
@@ -319,7 +303,7 @@
                  <string/>
                 </property>
                 <property name="icon">
-                 <iconset resource="../../resources/resources.qrc">
+                 <iconset>
                   <normaloff>:/settings.svg</normaloff>:/settings.svg</iconset>
                 </property>
                 <property name="iconSize">
@@ -355,7 +339,7 @@
                  <string/>
                 </property>
                 <property name="icon">
-                 <iconset resource="../../resources/resources.qrc">
+                 <iconset>
                   <normaloff>:/Inbox.svg</normaloff>:/Inbox.svg</iconset>
                 </property>
                 <property name="iconSize">
@@ -397,7 +381,7 @@
                  <string/>
                 </property>
                 <property name="icon">
-                 <iconset resource="../../resources/resources.qrc">
+                 <iconset>
                   <normaloff>:/navigate_next.svg</normaloff>:/navigate_next.svg</iconset>
                 </property>
                 <property name="iconSize">
@@ -487,41 +471,53 @@
             </spacer>
            </item>
            <item row="0" column="3">
-            <widget class="QScrollArea" name="scrollArea_services">
+            <widget class="QListView" name="purchaseMethodListView">
              <property name="minimumSize">
               <size>
                <width>875</width>
                <height>191</height>
               </size>
              </property>
-             <property name="maximumSize">
-              <size>
-               <width>16777215</width>
-               <height>16777215</height>
-              </size>
-             </property>
              <property name="styleSheet">
-              <string notr="true">QScrollArea {
+              <string notr="true">QListView {
 	background-color: transparent;
     border-radius: 39px;
-} </string>
+    border: none;
+}
+QListView::item {
+	background: transparent;
+}</string>
+             </property>
+             <property name="frameShape">
+              <enum>QFrame::Shape::NoFrame</enum>
+             </property>
+             <property name="verticalScrollBarPolicy">
+              <enum>Qt::ScrollBarPolicy::ScrollBarAlwaysOff</enum>
              </property>
              <property name="horizontalScrollBarPolicy">
               <enum>Qt::ScrollBarPolicy::ScrollBarAsNeeded</enum>
              </property>
-             <property name="widgetResizable">
-              <bool>true</bool>
+             <property name="horizontalScrollMode">
+              <enum>QAbstractItemView::ScrollMode::ScrollPerPixel</enum>
              </property>
-             <widget class="QWidget" name="scrollAreaWidgetContents_4">
-              <property name="geometry">
-               <rect>
-                <x>0</x>
-                <y>0</y>
-                <width>875</width>
-                <height>191</height>
-               </rect>
-              </property>
-             </widget>
+             <property name="movement">
+              <enum>QListView::Movement::Static</enum>
+             </property>
+             <property name="flow">
+              <enum>QListView::Flow::LeftToRight</enum>
+             </property>
+             <property name="resizeMode">
+              <enum>QListView::ResizeMode::Adjust</enum>
+             </property>
+             <property name="spacing">
+              <number>21</number>
+             </property>
+             <property name="viewMode">
+              <enum>QListView::ViewMode::ListMode</enum>
+             </property>
+             <property name="wrapping" stdset="0">
+              <bool>false</bool>
+             </property>
             </widget>
            </item>
            <item row="0" column="1">
@@ -725,7 +721,6 @@
 	font: 16pt &quot;JetBrains Mono&quot;;
 	padding-left: 27px;
 }
-
 QLineEdit:focus {
     border: 2px solid #140f10;  
 }</string>
@@ -766,7 +761,6 @@ QLineEdit:focus {
 	font: 16pt &quot;JetBrains Mono&quot;;
 	padding-left: 27px;
 }
-
 QLineEdit:focus {
     border: 2px solid #140f10;  
 }</string>
@@ -885,79 +879,6 @@ QLineEdit:focus {
 }</string>
        </property>
        <layout class="QGridLayout" name="gridLayout_3">
-        <item row="1" column="2">
-         <widget class="QScrollArea" name="scrollArea_catalog">
-          <property name="sizePolicy">
-           <sizepolicy hsizetype="Fixed" vsizetype="Minimum">
-            <horstretch>0</horstretch>
-            <verstretch>0</verstretch>
-           </sizepolicy>
-          </property>
-          <property name="minimumSize">
-           <size>
-            <width>875</width>
-            <height>504</height>
-           </size>
-          </property>
-          <property name="styleSheet">
-           <string notr="true">QScrollArea {
-    background: transparent;
-    border-radius: 61px;
-    border: none;
-}
-
-QScrollArea#scrollArea_catalog &gt; QWidget &gt; QWidget {
-    background: transparent;
-    border-radius: 61px;
-}
-
-QScrollArea#scrollArea_catalog &gt; QWidget &gt; QScrollBar {
-    background: transparent;
-}
-
-QScrollArea#scrollArea_catalog &gt; QWidget &gt; QScrollBar:vertical {
-    width: 12px;
-    margin: 10px;
-}
-
-QScrollArea#scrollArea_catalog &gt; QWidget &gt; QScrollBar::handle:vertical {
-    background: #e0e0e0;
-    border-radius: 6px;
-    min-height: 20px;
-}</string>
-          </property>
-          <property name="frameShape">
-           <enum>QFrame::Shape::NoFrame</enum>
-          </property>
-          <property name="verticalScrollBarPolicy">
-           <enum>Qt::ScrollBarPolicy::ScrollBarAlwaysOff</enum>
-          </property>
-          <property name="horizontalScrollBarPolicy">
-           <enum>Qt::ScrollBarPolicy::ScrollBarAlwaysOff</enum>
-          </property>
-          <property name="widgetResizable">
-           <bool>true</bool>
-          </property>
-          <property name="alignment">
-           <set>Qt::AlignmentFlag::AlignHCenter|Qt::AlignmentFlag::AlignTop</set>
-          </property>
-          <widget class="QWidget" name="scrollAreaWidgetContents">
-           <property name="geometry">
-            <rect>
-             <x>0</x>
-             <y>0</y>
-             <width>875</width>
-             <height>504</height>
-            </rect>
-           </property>
-           <property name="styleSheet">
-            <string notr="true">QWidget#scrollAreaWidgetContents {
-                        background: transparent;
-                    }</string>
-           </property>
-          </widget>
-         </widget>
-        </item>
         <item row="1" column="0">
          <spacer name="horizontalSpacer_10">
           <property name="orientation">
@@ -1038,6 +959,9 @@ QScrollArea#scrollArea_catalog &gt; QWidget &gt; QScrollBar::handle:vertical {
           </property>
          </spacer>
         </item>
+        <item row="1" column="2">
+         <widget class="QListView" name="catalogListView"/>
+        </item>
        </layout>
       </widget>
       <widget class="QWidget" name="personal">
@@ -1098,7 +1022,6 @@ QScrollArea#scrollArea_catalog &gt; QWidget &gt; QScrollBar::handle:vertical {
 	background-color: transparent;
 	color: #1d1b20; 
 	border-radius: 18px;
-
 	font: 14pt &quot;JetBrains Mono&quot;;
 }</string>
              </property>
@@ -1114,7 +1037,6 @@ QScrollArea#scrollArea_catalog &gt; QWidget &gt; QScrollBar::handle:vertical {
 	background-color: transparent;
 	color: #1d1b20; 
 	border-radius: 18px;
-
 	font: 14pt &quot;JetBrains Mono&quot;;
 }</string>
              </property>
@@ -1130,7 +1052,6 @@ QScrollArea#scrollArea_catalog &gt; QWidget &gt; QScrollBar::handle:vertical {
 	background-color: transparent;
 	color: #1d1b20; 
 	border-radius: 18px;
-
 	font: 14pt &quot;JetBrains Mono&quot;;
 }</string>
              </property>
@@ -1270,7 +1191,6 @@ QPushButton:hover {
 	color: #1d1b20;
 	font: 28pt &quot;JetBrains Mono&quot;;
 }
-
 QPushButton::pressed {
 	background-color: transparent;  
 	border-radius: 25px; 
@@ -1283,7 +1203,7 @@ QPushButton::pressed {
             <string/>
            </property>
            <property name="icon">
-            <iconset resource="../../resources/resources.qrc">
+            <iconset>
              <normaloff>:/navigate_before.svg</normaloff>:/navigate_before.svg</iconset>
            </property>
            <property name="iconSize">
@@ -1309,7 +1229,6 @@ QPushButton::pressed {
 	color: #1d1b20;
 	font: 28pt &quot;JetBrains Mono&quot;;
 }
-
 QPushButton::pressed {
 	background-color: transparent;  
 	border-radius: 25px; 
@@ -1322,7 +1241,7 @@ QPushButton::pressed {
             <string/>
            </property>
            <property name="icon">
-            <iconset resource="../../resources/resources.qrc">
+            <iconset>
              <normaloff>:/navigate_next.svg</normaloff>:/navigate_next.svg</iconset>
            </property>
            <property name="iconSize">
@@ -1367,8 +1286,6 @@ QPushButton::pressed {
    </layout>
   </widget>
  </widget>
- <resources>
-  <include location="../../resources/resources.qrc"/>
- </resources>
+ <resources/>
  <connections/>
 </ui>

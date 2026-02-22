@@ -1,18 +1,16 @@
-#include "../include/products.h"
+#include "../include/ProductRepository.h"
 
-#include "../include/database_handler.h"
+#include "../include/DatabaseHandler.h"
 #include "../include/domain.h"
-#include "../include/product_card.h"
 #include <QGraphicsBlurEffect>
 #include <QSqlRecord>
 #include <QFile>
 
-Products::Products(QSharedPointer<ProductCard> product_card, QSharedPointer<DatabaseHandler> db_manager)
-    : m_product_cards(std::move(product_card))
-    , m_database_manager(std::move(db_manager))
+ProductRepository::ProductRepository(QSharedPointer<DatabaseHandler> db_manager)
+    : m_database_manager(std::move(db_manager))
 {}
 
-void Products::PushProduct(const ProductInfo& product) {
+void ProductRepository::PushProduct(const ProductInfo& product) {
     // Составной ключ
     ProductKey key = std::make_tuple(product.name_, product.color_);
     m_products[key] = product;
@@ -22,15 +20,15 @@ void Products::PushProduct(const ProductInfo& product) {
     }
 }
 
-void Products::Clear() {
+void ProductRepository::Clear() {
     m_products.clear();
 }
 
-QHash<Products::ProductKey, ProductInfo> Products::GetProducts() const {
+QHash<ProductRepository::ProductKey, ProductInfo> ProductRepository::GetProducts() const {
     return m_products;
 }
 
-const ProductInfo* Products::FindProduct(const ProductKey& key) const {
+const ProductInfo* ProductRepository::FindProduct(const ProductKey& key) const {
     auto iter = m_products.find(key);
     if (iter != m_products.end()) {
         return &iter.value();
@@ -38,7 +36,7 @@ const ProductInfo* Products::FindProduct(const ProductKey& key) const {
     return nullptr;
 }
 
-QList<ProductInfo> Products::FindProductsByName(const QString& product_name) const {
+QList<ProductInfo> ProductRepository::FindProductsByName(const QString& product_name) const {
     QList<ProductInfo> result;
     for (const auto& product : m_products) {
         if (product.name_ == product_name) {
@@ -48,7 +46,7 @@ QList<ProductInfo> Products::FindProductsByName(const QString& product_name) con
     return result;
 }
 
-QList<ProductInfo> Products::FindRelevantProducts(const QString& term) const {
+QList<ProductInfo> ProductRepository::FindRelevantProducts(const QString& term) const {
     // Хранилище для всех инструментов и их релевантности
     QList<std::pair<ProductInfo, double>> scores;
 
@@ -73,7 +71,7 @@ QList<ProductInfo> Products::FindRelevantProducts(const QString& term) const {
     return result;
 }
 
-void Products::PullProducts()
+void ProductRepository::PullProducts()
 {
     // Выполняем запрос к базе данных
     auto queryResult = m_database_manager->ExecuteSelectQuery(QString("SELECT * FROM public.cars ORDER BY id ASC"));
@@ -125,111 +123,10 @@ void Products::PullProducts()
             PushProduct(product);
         }
 
-        // Создаем карточки для инструментов
-        // БЕЗОПАСНОСТЬ: Кэшируем lock() чтобы избежать краша
-        auto productCards = m_product_cards.lock();
-        if (!productCards) {
-            qWarning() << "ProductCards was deleted during PullProducts!";
-            return;
-        }
-        
-        for (const auto& product_info : GetProducts())
-        {
-            Products::ProductKey key = std::make_tuple(product_info.name_, product_info.color_);
-            if (productCards->FindProductCard(key) == nullptr) {
-
-                QWidget* card = new QWidget(productCards->GetCardContainer());
-                productCards->AddProductCard(key, card);
-                card->setStyleSheet("background-color: #ffffff; border-radius: 39px;");
-                card->setFixedSize(831, 152);
-
-                QPixmap originalPixmap(product_info.image_path_);
-                if (!originalPixmap.isNull())
-                {
-                    // Масштабируем изображение с фиксированной высотой 147
-                    QPixmap scaledPixmap = originalPixmap.scaledToHeight(130, Qt::SmoothTransformation);
-
-                    // Рассчитываем позицию X
-                    int fieldWidth = 367; // Ширина поля
-                    int imageWidth = scaledPixmap.width(); // Ширина изображения после масштабирования
-                    int x = (fieldWidth - imageWidth) / 2; // Центрируем изображение по горизонтали
-
-                    // Убедимся, что X не выходит за пределы поля
-                    x = std::max(0, x); // Если X отрицательный, устанавливаем его в 0
-
-                    // Создаем QLabel для изображения
-                    QLabel* instrument_image = new QLabel(card);
-                    instrument_image->setPixmap(scaledPixmap);
-                    instrument_image->setFixedSize(imageWidth, 130); // Фиксируем размер изображения
-                    instrument_image->move(x, 11); // Устанавливаем позицию (X, Y)
-                }
-
-                // Название
-                QLineEdit* product_name = new QLineEdit(product_info.name_, card);
-                product_name->setStyleSheet("font: 700 20pt 'Open Sans'; color: #1d1b20;");
-                product_name->setAlignment(Qt::AlignLeft);
-                product_name->setCursorPosition(0);
-                product_name->setFixedSize(410, 32);
-                product_name->move(367, 15);
-                product_name->setReadOnly(true);
-
-                // Описание
-                QLabel* product_description = new QLabel(product_info.color_, card);
-                product_description->setStyleSheet("font: 15pt 'JetBrains Mono'; color: #555555;");
-                product_description->setAlignment(Qt::AlignLeft | Qt::AlignVCenter);
-                product_description->setFixedSize(411, 24);
-                product_description->move(367, 64);
-
-                // Цена
-                QLabel* product_price = new QLabel(FormatPrice(product_info.price_) + " руб.", card);
-                product_price->setStyleSheet("font: 700 20pt 'Open Sans'; color: #1d1b20;");
-                product_price->setAlignment(Qt::AlignRight | Qt::AlignVCenter);
-                product_price->setFixedSize(405, 32);
-                product_price->move(400, 106);
-
-                // Кнопка добавления в корзину
-                QPushButton* info_ = new QPushButton(card);
-                info_->setObjectName("info_");
-                info_->setIcon(QIcon("://Information Circle Contained.svg"));
-                info_->setIconSize(QSize(32, 32));
-                info_->setStyleSheet("border: none; outline: none;");
-                connect(info_, &QPushButton::clicked, this, [this, product_info]() {
-                    emit OpenInfoPage(product_info);
-                });
-
-                // Кнопка добавления продукта в корзину
-                // QPushButton* to_cart_ = new QPushButton(card);
-                // to_cart_->setObjectName("to_cart_");
-                // to_cart_->setIcon(QIcon("://Information Circle Contained.svg"));
-                // to_cart_->setIconSize(QSize(32, 32));
-                // to_cart_->setStyleSheet("border: none; outline: none;");
-
-                // connect(to_cart_, &QPushButton::clicked, this, [this, instrument_info, to_cart_]() {
-                //     if (cart_->InstrumentInCart(instrument_info.name_)) {
-                //         to_cart_->setIcon(QIcon(":/bookmark_filled.svg"));
-                //         cart_->AddToCart(instrument_info.name_);
-                //         cart_->PlusToTotalCost(instrument_info.price_);
-                //     }
-                //     else {
-                //         to_cart_->setIcon(QIcon(":/bookmark.svg"));
-                //         cart_->DeleteFromCart(instrument_info.name_);
-                //         cart_->MinusToTotalCost(instrument_info.price_);
-                //     }
-                //     emit CartUpdated(cart_->GetTotalCost());
-                // });
-
-                info_->move(779, 15);
-
-                // Добавляем карточку в компоновку
-                productCards->AddWidgetToLayout(card);
-            }
-        }
-        // Устанавливаем обновленную компоновку для контейнера
-        productCards->UpdateCardContainer();
     }
 }
 
-QList<ProductInfo> Products::GetAllProductsWithName(const ProductInfo& product) const {
+QList<ProductInfo> ProductRepository::GetAllProductsWithName(const ProductInfo& product) const {
     QList<ProductInfo> temp;
 
     QSqlQuery query;
@@ -249,7 +146,7 @@ QList<ProductInfo> Products::GetAllProductsWithName(const ProductInfo& product) 
                 image_path = debugPath;
             } else {
                 image_path = deployedPath;
-                qWarning() << "Image not found in GetAllProductsWithName:" << imageUrl << "- tried both" << deployedPath << "and" << debugPath;
+                qWarning() << "Image not found in GetAllProductRepositoryWithName:" << imageUrl << "- tried both" << deployedPath << "and" << debugPath;
             }
             
             temp.append(ProductInfo{
@@ -269,11 +166,11 @@ QList<ProductInfo> Products::GetAllProductsWithName(const ProductInfo& product) 
     return std::move(temp);
 }
 
-QStringList Products::GetAvailableColors() const {
+QStringList ProductRepository::GetAvailableColors() const {
     return m_available_colors;
 }
 
-double Products::ComputeTfIdf(const QString& document, const QString& term) const {
+double ProductRepository::ComputeTfIdf(const QString& document, const QString& term) const {
     // Подсчет частоты термина (TF — Term Frequency) - отношение количества вхождений термина к общему числу слов
     int term_frequency = CountOccurrences(document, term);
     int total_terms = CountTotalWords(document);
@@ -289,7 +186,7 @@ double Products::ComputeTfIdf(const QString& document, const QString& term) cons
     return tf * idf;
 }
 
-int Products::CountOccurrences(const QString& document, const QString& term) const {
+int ProductRepository::CountOccurrences(const QString& document, const QString& term) const {
     int count = 0;
     // Регулярное выражение для поиска точных совпадений слова:
     // \\b - граница слова, QRegularExpression::escape - экранирование специальных символов
@@ -306,7 +203,7 @@ int Products::CountOccurrences(const QString& document, const QString& term) con
 }
 
 // Подсчет общего количества слов в документе.
-int Products::CountTotalWords(const QString& document) const {
+int ProductRepository::CountTotalWords(const QString& document) const {
     QRegularExpression wordRegex("\\s+"); // Используем регулярное выражение для разделения по пробелам
     return document.split(wordRegex, Qt::SkipEmptyParts).size();
 }

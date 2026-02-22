@@ -7,7 +7,7 @@
 #include <QtCore/QDateTime>
 #include <QtCore/QObject>
 
-#include "products.h"
+#include "ProductRepository.h"
 
 namespace ContractTemplates {
 

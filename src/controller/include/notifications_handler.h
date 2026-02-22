@@ -8,7 +8,7 @@
 #include <QResizeEvent>
 #include <QVariant>
 
-#include "database_handler.h"
+#include "DatabaseHandler.h"
 
 namespace Ui {
 class notifications;

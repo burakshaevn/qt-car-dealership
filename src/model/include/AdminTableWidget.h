@@ -1,7 +1,7 @@
 #pragma once
 
-#ifndef TABLE_MANAGER_H
-#define TABLE_MANAGER_H
+#ifndef ADMINTABLEWIDGET_H
+#define ADMINTABLEWIDGET_H
 
 #include <QWidget>
 #include <QVBoxLayout>
@@ -16,31 +16,31 @@
 #include <QInputDialog>
 #include <QSqlField>
 #include <QTableWidget>
-#include <QStandardItemModel>
 #include <QScrollArea>
 #include <QMouseEvent>
 
-#include "database_handler.h"
+#include "AdminTableModel.h"
+#include "DatabaseHandler.h"
 #include "domain.h"
 #include "user.h"
 
 /*!
- * \class Table
+ * \class AdminTableWidget
  * \brief Класс для управления и отображения таблиц базы данных с административными функциями
  * \details Предоставляет интерфейс для просмотра, добавления, редактирования и удаления записей
  *          в различных таблицах базы данных, а также обработки заявок (подтверждение/отклонение)
  */
-class Table : public QWidget {
+class AdminTableWidget : public QWidget {
     Q_OBJECT
 
 public:
     /*!
-     * \brief Конструктор класса Table
+     * \brief Конструктор класса AdminTableWidget
      * \param db_manager Умный указатель на обработчик базы данных
      * \param user Указатель на объект пользователя для проверки прав доступа
      * \param parent Родительский виджет (опционально)
      */
-    explicit Table(QSharedPointer<DatabaseHandler> db_manager, const User* user, QWidget* parent = nullptr);
+    explicit AdminTableWidget(QSharedPointer<DatabaseHandler> db_manager, const User* user, QWidget* parent = nullptr);
 
     /*!
      * \brief Строит административный интерфейс таблиц
@@ -120,6 +120,7 @@ signals:
 
 protected:
     QSharedPointer<DatabaseHandler> m_database_handler;    ///< Умный указатель на обработчик БД
+    QScopedPointer<AdminTableModel> m_table_model;         ///< Модель данных админской таблицы
 
     Tables m_current_table;                                ///< Текущая выбранная таблица из enum Tables
     QTableView* m_data_table;                              ///< Виджет для отображения данных таблицы
@@ -151,4 +152,4 @@ protected:
     void ShowRequestButtons(bool show);
 };
 
-#endif // TABLE_MANAGER_H
+#endif // ADMINTABLEWIDGET_H

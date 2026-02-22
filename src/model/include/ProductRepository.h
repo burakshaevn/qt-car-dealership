@@ -8,22 +8,15 @@
 #include <QRegularExpression>
 #include <QHash>
 #include <QDir>
+#include <QSharedPointer>
 #include <QLabel>
 #include <QPixmap>
 #include <QCoreApplication>
-#include <QLineEdit>
-#include <QPushButton>
+
+#include "PurchaseMethod.h"
 
 class DatabaseHandler;
-class ProductCard;
 
-enum class PurchaseMethod {
-    Unknown     = 0,
-    Standart    = 1,    ///< Стандартная покупка без кредитов, аренды и тест-драйвов
-    Rental      = 2,    ///< Взятие в аренду
-    TestDrive   = 3,    ///< Взятие на тест-драйв
-    Credit      = 4,    ///< Приобретено в кредит
-};
 
 struct ProductInfo
 {
@@ -68,22 +61,21 @@ struct hash<std::tuple<QString, QString>> {
 
 }
 
-class Products : public QObject
+class ProductRepository : public QObject
 {
     Q_OBJECT
 public:
     using ProductKey = std::tuple<QString, QString>; ///< Составной ключ состоит из: <name_product, color_product>
 
     /*!
-     * \brief Конструктор класса Products
-     * \param product_card — Умный указатель на объект ProductCard для управления карточками товаров
+     * \brief Конструктор класса ProductRepository
      * \param db_manager — Умный указатель на объект DatabaseHandler для работы с базой данных
-     * \details Инициализирует объект Products с переданными зависимостями.
+     * \details Инициализирует объект ProductRepository с переданной зависимостью.
      *          Использует семантику перемещения для эффективной передачи владения ресурсами.
-     * \note Оба параметра обязательны для корректной работы объекта
+     * \note Параметр обязателен для корректной работы объекта
      * \warning Передача nullptr может привести к неопределенному поведению
      */
-    explicit Products(QSharedPointer<ProductCard> product_card, QSharedPointer<DatabaseHandler> db_manager);
+    explicit ProductRepository(QSharedPointer<DatabaseHandler> db_manager);
 
     /*!
      * \brief Добавляет новый продукт
@@ -125,15 +117,13 @@ public:
 
     /*!
      * \brief Кэширование товаров из базы данных
-     * \details Загружает данные о товарах из таблицы 'cars' в основное хранилище 'm_products'
-     * и создает графические карточки для каждого товара. Функция выполняет следующие действия:
+     * \details Загружает данные о товарах из таблицы 'cars' в основное хранилище 'm_products'.
+     * Функция выполняет следующие действия:
      * 1. Выполняет SQL-запрос к базе данных для получения всех записей из таблицы 'cars'
      * 2. Очищает текущее хранилище продуктов
      * 3. Заполняет m_products данными из базы
-     * 4. Создает графические карточки для каждого продукта с изображением, названием, описанием и ценой
-     * 5. Добавляет кнопку для просмотра дополнительной информации о продукте
      * \note Использует ORDER BY id ASC для гарантированного порядка загрузки
-     * \warning Требует корректной инициализации m_database_manager и m_product_cards
+     * \warning Требует корректной инициализации m_database_manager
      */
     void PullProducts();
 
@@ -150,19 +140,10 @@ public:
      */
     QStringList GetAvailableColors() const;
 
-signals:
-    /*!
-     * \brief Открывает персональную страницу с информацией о выбранном продукте
-     * \param product_info — что за продукт нужно вывести на экран
-     */
-    void OpenInfoPage(const ProductInfo product_info);
-
 private:
     QHash<ProductKey, ProductInfo> m_products;              ///< Хранилище продуктов
 
     QSharedPointer<DatabaseHandler> m_database_manager;     ///< Указатель на БД для работы с ней
-
-    QWeakPointer<ProductCard> m_product_cards;              ///< Указатель на сами карточки продуктов
 
     QStringList m_available_colors;                         ///< Список строк всех доступных цветов для всех автомобилей
 

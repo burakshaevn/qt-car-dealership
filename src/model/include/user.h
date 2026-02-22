@@ -3,7 +3,7 @@
 
 #include <QMainWindow>
 #include "../include/domain.h"
-#include "../include/products.h"
+#include "../include/ProductRepository.h"
 
 struct UserInfo {
     UserInfo()
@@ -14,7 +14,7 @@ struct UserInfo {
         , role_(Role::User)
         , products_()
     {}
-    UserInfo(const int id, const QString& full_name, const QString& email, const QString& password, const Role& role, const QList<Products::ProductKey> products)
+    UserInfo(const int id, const QString& full_name, const QString& email, const QString& password, const Role& role, const QList<ProductRepository::ProductKey> products)
         : id_(id)
         , full_name_(full_name)
         , email_(email)
@@ -27,7 +27,7 @@ struct UserInfo {
     QString email_;
     QString password_;
     Role role_ = Role::Unknown;
-    QList<Products::ProductKey> products_; // Хранит составной ключ: название + цвет купленного предмета
+    QList<ProductRepository::ProductKey> products_; // Хранит составной ключ: название + цвет купленного предмета
 };
 
 class User : public QMainWindow
@@ -53,8 +53,8 @@ public:
     void SetRole(const Role& role);
     const Role& GetRole() const;
 
-    void SetProducts(const QList<Products::ProductKey> products);
-    QList<Products::ProductKey> GetProducts() const;
+    void SetProducts(const QList<ProductRepository::ProductKey> products);
+    QList<ProductRepository::ProductKey> GetProducts() const;
 
 private:
     UserInfo user_;

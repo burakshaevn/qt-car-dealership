@@ -1,10 +1,9 @@
 #include "notifications_handler.h"
 #include "ui_notifications.h"
 
-#include "products.h"
+#include "ProductRepository.h"
 #include "domain.h"
 #include "contract_templates.h"
-#include "product_card.h"
 
 #include <QTimer>
 #include <QScrollBar>
