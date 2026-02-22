@@ -1,0 +1,46 @@
+QMainWindow, QDialog, QWidget {
+    background-color: #171b22;
+    color: #e7edf5;
+    font-family: "JetBrains Mono";
+}
+
+QGroupBox {
+    border: 1px solid #343d4c;
+    border-radius: 10px;
+    margin-top: 8px;
+    padding: 8px;
+    background: #1f2631;
+}
+
+QGroupBox::title {
+    subcontrol-origin: margin;
+    left: 8px;
+    padding: 0 4px;
+    color: #b8c6d8;
+}
+
+QPushButton {
+    background: #252d39;
+    border: 1px solid #3c485b;
+    border-radius: 8px;
+    padding: 6px 12px;
+    color: #e7edf5;
+}
+
+QPushButton:hover {
+    background: #2c3645;
+}
+
+QLineEdit, QComboBox, QSpinBox, QDoubleSpinBox, QTimeEdit {
+    border: 1px solid #3c485b;
+    border-radius: 8px;
+    padding: 6px 8px;
+    background: #252d39;
+    color: #e7edf5;
+}
+
+QListView, QTableView {
+    border: 1px solid #343d4c;
+    border-radius: 10px;
+    background: #1f2631;
+}

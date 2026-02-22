@@ -1,4 +1,5 @@
 #include "ProfileController.h"
+#include "ThemeStyleProvider.h"
 
 #include "ProductListModel.h"
 #include "ProductCardDelegate.h"
@@ -63,7 +64,7 @@ void ProfileController::ConfigurePurchasedListView()
     purchased_list_view_->setHorizontalScrollBarPolicy(Qt::ScrollBarAlwaysOff);
     purchased_list_view_->setSpacing(22);
     purchased_list_view_->setUniformItemSizes(true);
-    purchased_list_view_->setStyleSheet("QListView { background: transparent; border: none; }");
+    ApplyThemeStyle(purchased_list_view_, "ListViewTransparent");
 }
 
 void ProfileController::UpdatePurchasedList(int userId)

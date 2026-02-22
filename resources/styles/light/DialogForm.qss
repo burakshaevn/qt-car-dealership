@@ -1,0 +1,58 @@
+QDialog {
+    background-color: #ffffff;
+}
+QLabel {
+    color: #1d1b20;
+    font: 500 12pt "JetBrains Mono";
+}
+QLabel[type="header"] {
+    font: 700 16pt "JetBrains Mono";
+}
+QLabel#carInfo {
+    background: #f6f8fb;
+    border: 1px solid #d9e1ea;
+    border-radius: 10px;
+    padding: 12px;
+    font: 700 11pt "JetBrains Mono";
+}
+QLabel#sectionTitle {
+    font: 700 12pt "JetBrains Mono";
+    margin-top: 4px;
+}
+QLineEdit, QComboBox, QSpinBox, QDoubleSpinBox, QTimeEdit {
+    padding: 7px 10px;
+    border: 1px solid #d9e1ea;
+    border-radius: 8px;
+    background: #fafbfd;
+    min-height: 28px;
+    font: 10.5pt "JetBrains Mono";
+}
+QLineEdit:focus, QComboBox:focus, QSpinBox:focus, QDoubleSpinBox:focus, QTimeEdit:focus {
+    border: 1px solid #2196F3;
+}
+QCheckBox {
+    font: 10.5pt "JetBrains Mono";
+    spacing: 8px;
+}
+QPushButton {
+    padding: 9px 14px;
+    border-radius: 8px;
+    font: 600 10.5pt "JetBrains Mono";
+    min-width: 110px;
+}
+QPushButton[type="primary"] {
+    background-color: #2196F3;
+    color: #ffffff;
+    border: none;
+}
+QPushButton[type="primary"]:hover {
+    background-color: #1976D2;
+}
+QPushButton[type="secondary"] {
+    background-color: #fafbfd;
+    color: #1d1b20;
+    border: 1px solid #d9e1ea;
+}
+QPushButton[type="secondary"]:hover {
+    background-color: #eef3f8;
+}

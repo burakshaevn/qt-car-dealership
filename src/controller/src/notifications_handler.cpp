@@ -4,6 +4,7 @@
 #include "ProductRepository.h"
 #include "domain.h"
 #include "contract_templates.h"
+#include "ThemeStyleProvider.h"
 
 #include <QTimer>
 #include <QScrollBar>
@@ -24,6 +25,7 @@ NotificationsHandler::NotificationsHandler(QSharedPointer<DatabaseHandler> datab
     , m_current_filter("Все уведомления")
 {
     ui->setupUi(this);
+    ApplyThemeStyle(this, "MainShell");
 
     connect(ui->btn_sort_by_data, &QPushButton::clicked, this, &NotificationsHandler::onSortButtonClicked);
     connect(ui->filterCombo, QOverload<int>::of(&QComboBox::currentIndexChanged), this, &NotificationsHandler::onFilterChanged);
@@ -133,8 +135,8 @@ void NotificationsHandler::loadAndShowNotifications(const int user_id) {
         QLabel *messageLabel = new QLabel(message);
         messageLabel->setWordWrap(true);
 
-        titleLabel->setStyleSheet("font-weight: bold; font-size: 14px;");
-        messageLabel->setStyleSheet("font-size: 12px; color: #666;");
+        ApplyThemeStyle(titleLabel, "NotificationTitle");
+        ApplyThemeStyle(messageLabel, "NotificationMessage");
 
         notificationLayout->addWidget(titleLabel);
         notificationLayout->addWidget(messageLabel);
@@ -154,15 +156,7 @@ void NotificationsHandler::loadAndShowNotifications(const int user_id) {
             });
         }
 
-        notificationWidget->setStyleSheet(R"(
-            QWidget {
-                background-color: white;
-                border: 1px solid #e0e0e0;
-                border-radius: 8px;
-                padding: 10px;
-                margin: 5px;
-            }
-        )");
+        ApplyThemeStyle(notificationWidget, "NotificationItem");
         notificationWidget->setProperty("notificationDate", dateInfo);
         m_notifications_layout->addWidget(notificationWidget);
     }
@@ -171,13 +165,7 @@ void NotificationsHandler::loadAndShowNotifications(const int user_id) {
         qDebug() << "No notifications found for user" << user_id;
         QLabel *noNotificationsLabel = new QLabel("Уведомлений нет", this);
         noNotificationsLabel->setAlignment(Qt::AlignCenter);
-        noNotificationsLabel->setStyleSheet(R"(
-            QLabel {
-                font-size: 14px;
-                color: #666;
-                padding: 10px;
-            }
-        )");
+        ApplyThemeStyle(noNotificationsLabel, "NotificationEmpty");
         m_notifications_layout->addWidget(noNotificationsLabel);
     } else {
         qDebug() << "Found notifications for user" << user_id;

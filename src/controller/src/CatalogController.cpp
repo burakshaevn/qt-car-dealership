@@ -1,4 +1,5 @@
 ﻿#include "CatalogController.h"
+#include "ThemeStyleProvider.h"
 
 #include "ProductListModel.h"
 #include "ProductCardDelegate.h"
@@ -47,7 +48,7 @@ void CatalogController::ConfigureListView()
     list_view_->setHorizontalScrollBarPolicy(Qt::ScrollBarAlwaysOff);
     list_view_->setSpacing(22);
     list_view_->setUniformItemSizes(true);
-    list_view_->setStyleSheet("QListView { background: transparent; border: none; }");
+    ApplyThemeStyle(list_view_, "ListViewTransparent");
 
     disconnect(list_view_, &QListView::clicked, this, nullptr);
     connect(list_view_, &QListView::clicked, this, [this](const QModelIndex& index) {

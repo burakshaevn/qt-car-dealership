@@ -11,6 +11,7 @@
 #include <QTime>
 
 #include "AppServices.h"
+#include "ThemeStyleProvider.h"
 #include "ui_PurchaseRequestForm.h"
 #include "ui_RentalRequestForm.h"
 #include "ui_TestDriveRequestForm.h"
@@ -43,57 +44,9 @@ bool EnsureAuthorized(QWidget* parent, AppServices* services)
 
 void ApplySettingsLikeStyle(QDialog& dialog)
 {
-    dialog.setStyleSheet(
-        "QDialog {"
-        "    background-color: #ffffff;"
-        "}"
-        "QLabel {"
-        "    color: #1d1b20;"
-        "    font: 500 12pt 'JetBrains Mono';"
-        "    min-height: 20px;"
-        "    margin: 3px 0px;"
-        "}"
-        "QLabel[type='header'] {"
-        "    font: 700 16pt 'JetBrains Mono';"
-        "    min-height: 30px;"
-        "    margin: 0px 0px 12px 0px;"
-        "}"
-        "QLineEdit, QComboBox, QSpinBox, QDoubleSpinBox, QTimeEdit {"
-        "    padding: 5px 8px;"
-        "    border: 2px solid #e0e0e0;"
-        "    border-radius: 8px;"
-        "    background: #fafafa;"
-        "    font: 11pt 'JetBrains Mono';"
-        "    min-height: 16px;"
-        "    margin-bottom: 10px;"
-        "}"
-        "QLineEdit:focus, QComboBox:focus, QSpinBox:focus, QDoubleSpinBox:focus, QTimeEdit:focus {"
-        "    border: 2px solid #2196F3;"
-        "}"
-        "QPushButton {"
-        "    padding: 8px 16px;"
-        "    border-radius: 8px;"
-        "    font: 600 11pt 'JetBrains Mono';"
-        "    min-width: 90px;"
-        "    min-height: 32px;"
-        "}"
-        "QPushButton[type='primary'] {"
-        "    background-color: #2196F3;"
-        "    color: white;"
-        "    border: none;"
-        "}"
-        "QPushButton[type='primary']:hover {"
-        "    background-color: #1976D2;"
-        "}"
-        "QPushButton[type='secondary'] {"
-        "    background-color: #fafafa;"
-        "    color: #1d1b20;"
-        "    border: 2px solid #e0e0e0;"
-        "}"
-        "QPushButton[type='secondary']:hover {"
-        "    background-color: #e0e0e0;"
-        "}");
+    ApplyThemeStyle(&dialog, "DialogForm");
 }
+
 
 template <typename UiType>
 void InitDialogButtons(UiType& ui)

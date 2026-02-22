@@ -1,5 +1,6 @@
 #include "../include/AdminTableWidget.h"
 #include "edit_dialog.h"
+#include "ThemeStyleProvider.h"
 #include <QWidget>
 #include <QString>
 
@@ -35,24 +36,9 @@ void AdminTableWidget::BuildAdminTables(){
     }
     
     m_table_selector->setCurrentIndex(-1);
-    m_table_selector->setStyleSheet(R"(
-        QComboBox{
-            background-color: #fafafa;
-            border: 0px;
-            color: #1d1b20;
-            padding-left: 27px;
-        }
-
-        QComboBox::drop-down {
-            subcontrol-origin: padding;
-            subcontrol-position: top right;
-            width: 20px;
-            border: 1px solid #cccccc;
-            background-color: #e0e0e0;
-        }
-    )");
+    ApplyThemeStyle(m_table_selector, "AdminTableSelector");
     layout->addWidget(m_table_selector);
-    m_description_table->setStyleSheet(R"(QLabel{\n	color: #1d1b20; \n	font: 18pt "Open Sans"; \n})");
+    ApplyThemeStyle(m_description_table, "AdminDescription");
     layout->addWidget(m_description_table);
 
     // Таблица для отображения данных
@@ -60,15 +46,11 @@ void AdminTableWidget::BuildAdminTables(){
     m_data_table->setSelectionMode(QAbstractItemView::SingleSelection);
     m_data_table->horizontalHeader()->setStretchLastSection(true);
     m_data_table->horizontalHeader()->setSectionResizeMode(QHeaderView::Stretch);
-    m_data_table->setStyleSheet(R"(
-        QTableView{
-            border: 0px;
-        }
-    )");
+    ApplyThemeStyle(m_data_table, "AdminTableView");
     layout->addWidget(m_data_table);
 
     m_floating_menu.reset(new QWidget(this));
-    m_floating_menu->setStyleSheet("background-color: #fafafa; border-radius: 29px;");
+    ApplyThemeStyle(m_floating_menu.get(), "AdminFloatingMenu");
     m_floating_menu->setFixedSize(335, 74);
 
     // Горизонтальное размещение кнопок в меню
@@ -83,31 +65,37 @@ void AdminTableWidget::BuildAdminTables(){
     QPushButton* approve_button; // Кнопка подтверждения заявки
     QPushButton* reject_button;  // Кнопка отклонения заявки
 
-    add_button = new QPushButton(QIcon(":/add.svg"), "", m_floating_menu.get());
+    add_button = new QPushButton("", m_floating_menu.get());
+    ApplyThemeIcon(add_button, "add.svg");
     add_button->setIconSize(QSize(35, 35));
-    add_button->setStyleSheet("QPushButton { border: none; outline: none; }");
+    ApplyThemeStyle(add_button, "IconButton");
 
-    edit_button = new QPushButton(QIcon(":/edit.svg"), "", m_floating_menu.get());
+    edit_button = new QPushButton("", m_floating_menu.get());
+    ApplyThemeIcon(edit_button, "edit.svg");
     edit_button->setIconSize(QSize(35, 35));
-    edit_button->setStyleSheet("QPushButton { border: none; outline: none; }");
+    ApplyThemeStyle(edit_button, "IconButton");
 
-    delete_button = new QPushButton(QIcon(":/delete.svg"), "", m_floating_menu.get());
+    delete_button = new QPushButton("", m_floating_menu.get());
+    ApplyThemeIcon(delete_button, "delete.svg");
     delete_button->setIconSize(QSize(35, 35));
-    delete_button->setStyleSheet("QPushButton { border: none; outline: none; }");
+    ApplyThemeStyle(delete_button, "IconButton");
 
-    logout_button = new QPushButton(QIcon(":/navigate_next.svg"), "", m_floating_menu.get());
+    logout_button = new QPushButton("", m_floating_menu.get());
+    ApplyThemeIcon(logout_button, "navigate_next.svg");
     logout_button->setIconSize(QSize(35, 35));
-    logout_button->setStyleSheet("QPushButton { border: none; outline: none; }");
+    ApplyThemeStyle(logout_button, "IconButton");
 
     // Создаем кнопки для обработки заявок
-    approve_button = new QPushButton(QIcon(":/check.svg"), "", m_floating_menu.get());
+    approve_button = new QPushButton("", m_floating_menu.get());
+    ApplyThemeIcon(approve_button, "check.svg");
     approve_button->setIconSize(QSize(35, 35));
-    approve_button->setStyleSheet("QPushButton { border: none; outline: none; }");
+    ApplyThemeStyle(approve_button, "IconButton");
     approve_button->setToolTip("Подтвердить заявку");
 
-    reject_button = new QPushButton(QIcon(":/close.svg"), "", m_floating_menu.get());
+    reject_button = new QPushButton("", m_floating_menu.get());
+    ApplyThemeIcon(reject_button, "close.svg");
     reject_button->setIconSize(QSize(35, 35));
-    reject_button->setStyleSheet("QPushButton { border: none; outline: none; }");
+    ApplyThemeStyle(reject_button, "IconButton");
     reject_button->setToolTip("Отклонить заявку");
 
     menuLayout->addWidget(approve_button);

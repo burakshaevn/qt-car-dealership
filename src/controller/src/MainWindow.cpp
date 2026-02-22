@@ -16,6 +16,9 @@
 #include <QScrollArea>
 #include <QComboBox>
 #include <QInputDialog>
+#include <QApplication>
+#include <QIcon>
+#include "ThemeStyleProvider.h"
 
 MainWindow::MainWindow(QWidget* parent)
     : QMainWindow(parent)
@@ -23,6 +26,8 @@ MainWindow::MainWindow(QWidget* parent)
     , m_services(new AppServices) {
 
     ui->setupUi(this);
+    ApplyThemeStyle(this, "MainShell");
+    ApplyThemeIcons();
 
     connect(ui->pushButton_login, &QPushButton::clicked, this, &MainWindow::OnLoginClicked);
     connect(ui->pushButton_registration, &QPushButton::clicked, this, &MainWindow::OnRegistrationClicked);
@@ -46,6 +51,49 @@ MainWindow::MainWindow(QWidget* parent)
 MainWindow::~MainWindow()
 {
     delete ui;
+}
+
+void MainWindow::ApplyThemeIcons()
+{
+    setWindowIcon(LoadThemeIcon("logo.svg"));
+    if (ui->label_2) {
+        ui->label_2->setPixmap(LoadThemeIcon("logo.svg").pixmap(273, 31));
+    }
+    if (ui->pushButton_settings) {
+        ApplyThemeIcon(ui->pushButton_settings, "settings.svg");
+    }
+    if (ui->pushButton_notifications) {
+        ApplyThemeIcon(ui->pushButton_notifications, "inbox.svg");
+    }
+    if (ui->pushButton_logout) {
+        ApplyThemeIcon(ui->pushButton_logout, "navigate_next.svg");
+    }
+    if (ui->pushButton_next_left) {
+        ApplyThemeIcon(ui->pushButton_next_left, "navigate_before.svg");
+    }
+    if (ui->pushButton_next_right) {
+        ApplyThemeIcon(ui->pushButton_next_right, "navigate_next.svg");
+    }
+}
+
+void MainWindow::SetDarkThemeEnabled(bool enabled)
+{
+    qApp->setProperty("app_theme", enabled ? "dark" : "light");
+    const auto topLevels = qApp->topLevelWidgets();
+    for (QWidget* widget : topLevels) {
+        ReapplyThemeStyles(widget);
+        ReapplyThemeIcons(widget);
+    }
+    ApplyThemeIcons();
+    if (ui->catalogListView) {
+        ui->catalogListView->viewport()->update();
+    }
+    if (ui->purchasedListView) {
+        ui->purchasedListView->viewport()->update();
+    }
+    if (ui->purchaseMethodListView) {
+        ui->purchaseMethodListView->viewport()->update();
+    }
 }
 
 void MainWindow::UpdateUser(const UserInfo& user, QWidget* parent)
@@ -311,6 +359,9 @@ void MainWindow::OnSettingsClicked()
             if (ui->label_clientname) {
                 ui->label_clientname->setText(fullName + " — профиль");
             }
+        });
+        connect(m_settings_form.get(), &SettingsForm::ThemeChanged, this, [this](bool darkEnabled) {
+            SetDarkThemeEnabled(darkEnabled);
         });
 
         connect(m_settings_form.get(), &QDialog::finished, this, [this]() {

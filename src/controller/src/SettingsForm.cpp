@@ -6,10 +6,12 @@
 #include <QLineEdit>
 #include <QMessageBox>
 #include <QPushButton>
+#include <QComboBox>
 #include <QSqlQuery>
 #include <QVBoxLayout>
 
 #include "AppServices.h"
+#include "ThemeStyleProvider.h"
 
 SettingsForm::SettingsForm(AppServices* services, QWidget* parent)
     : QDialog(parent)
@@ -23,56 +25,7 @@ void SettingsForm::BuildUi()
 {
     setWindowTitle("Настройки профиля");
     setFixedSize(450, 600);
-    setStyleSheet(
-        "QDialog {"
-        "    background-color: #ffffff;"
-        "}"
-        "QLabel {"
-        "    color: #1d1b20;"
-        "    font: 500 12pt 'JetBrains Mono';"
-        "    min-height: 20px;"
-        "    margin: 3px 0px;"
-        "}"
-        "QLabel[type='header'] {"
-        "    font: 700 16pt 'JetBrains Mono';"
-        "    min-height: 30px;"
-        "    margin: 0px 0px 15px 0px;"
-        "}"
-        "QLineEdit {"
-        "    padding: 5px 8px;"
-        "    border: 2px solid #e0e0e0;"
-        "    border-radius: 8px;"
-        "    background: #fafafa;"
-        "    font: 11pt 'JetBrains Mono';"
-        "    min-height: 16px;"
-        "    margin-bottom: 10px;"
-        "}"
-        "QLineEdit:focus {"
-        "    border: 2px solid #2196F3;"
-        "}"
-        "QPushButton {"
-        "    padding: 8px 16px;"
-        "    border-radius: 8px;"
-        "    font: 600 11pt 'JetBrains Mono';"
-        "    min-width: 90px;"
-        "    min-height: 32px;"
-        "}"
-        "QPushButton[type='primary'] {"
-        "    background-color: #2196F3;"
-        "    color: white;"
-        "    border: none;"
-        "}"
-        "QPushButton[type='primary']:hover {"
-        "    background-color: #1976D2;"
-        "}"
-        "QPushButton[type='secondary'] {"
-        "    background-color: #fafafa;"
-        "    color: #1d1b20;"
-        "    border: 2px solid #e0e0e0;"
-        "}"
-        "QPushButton[type='secondary']:hover {"
-        "    background-color: #e0e0e0;"
-        "}");
+    ApplyThemeStyle(this, "DialogForm");
 
     auto* dialogLayout = new QVBoxLayout(this);
     dialogLayout->setSpacing(10);
@@ -96,6 +49,11 @@ void SettingsForm::BuildUi()
     addLabeledField("Пароль:", password_edit_);
     password_edit_->setEchoMode(QLineEdit::Password);
     password_edit_->setPlaceholderText("Введите новый пароль или оставьте пустым");
+    dialogLayout->addWidget(new QLabel("Тема:", this));
+    theme_combo_ = new QComboBox(this);
+    theme_combo_->addItem("Светлая", "light");
+    theme_combo_->addItem("Тёмная", "dark");
+    dialogLayout->addWidget(theme_combo_);
 
     dialogLayout->addStretch();
 
@@ -136,6 +94,10 @@ bool SettingsForm::LoadData()
     email_edit_->setText(query.value("email").toString());
     phone_edit_->setText(query.value("phone").toString());
     password_edit_->clear();
+    if (theme_combo_) {
+        const bool dark = (GetCurrentThemeMode() == ThemeMode::Dark);
+        theme_combo_->setCurrentIndex(dark ? 1 : 0);
+    }
     return true;
 }
 
@@ -188,6 +150,10 @@ void SettingsForm::OnSaveClicked()
     const QString fullName = firstName + " " + lastName;
     services_->GetUserSession()->SetName(fullName);
     services_->GetUserSession()->SetEmail(email);
+    if (theme_combo_) {
+        const bool darkEnabled = theme_combo_->currentData().toString() == "dark";
+        emit ThemeChanged(darkEnabled);
+    }
 
     emit ProfileSaved(fullName, email);
     QMessageBox::information(this, "Успех", "Данные профиля обновлены.");

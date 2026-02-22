@@ -5,6 +5,32 @@
 #include <QGraphicsBlurEffect>
 #include <QSqlRecord>
 #include <QFile>
+#include <QStringList>
+
+namespace {
+
+QString ResolveImagePath(const QString& imageUrlRaw)
+{
+    const QString imageUrl = imageUrlRaw;
+    const QString appDir = QCoreApplication::applicationDirPath();
+    const QStringList candidates = {
+        QDir::cleanPath(appDir + "/resources/cars/" + imageUrl),
+        QDir::cleanPath(appDir + "/resources/" + imageUrl),
+        QDir::cleanPath(appDir + "/../../resources/cars/" + imageUrl),
+        QDir::cleanPath(appDir + "/../../resources/" + imageUrl)
+    };
+
+    for (const QString& path : candidates) {
+        if (QFile::exists(path)) {
+            return path;
+        }
+    }
+
+    qWarning() << "Image not found:" << imageUrl << "- tried" << candidates;
+    return candidates.first();
+}
+
+} // namespace
 
 ProductRepository::ProductRepository(QSharedPointer<DatabaseHandler> db_manager)
     : m_database_manager(std::move(db_manager))
@@ -97,28 +123,8 @@ void ProductRepository::PullProducts()
                 product.stock_qty_ = query.value("stock_qty").toInt();
             }
 
-            // Получаем путь к изображению из БД
-            QString imageUrl = query.value("image_url").toString().replace("\\", "/");
-            
-            // Пробуем найти ресурсы в нескольких местах:
-            // 1. Рядом с exe (для развернутого приложения)
-            QString deployedPath = QDir::cleanPath(QCoreApplication::applicationDirPath() + "/resources/" + imageUrl);
-            // 2. В папке проекта (для debug из build)
-            QString debugPath = QDir::cleanPath(QCoreApplication::applicationDirPath() + "/../../resources/" + imageUrl);
-            
-            // Выбираем существующий путь
-            QString image_path;
-            if (QFile::exists(deployedPath)) {
-                image_path = deployedPath;
-            } else if (QFile::exists(debugPath)) {
-                image_path = debugPath;
-            } else {
-                // Если ничего не найдено, используем первый путь и выведем предупреждение
-                image_path = deployedPath;
-                qWarning() << "Image not found:" << imageUrl << "- tried both" << deployedPath << "and" << debugPath;
-            }
-
-            product.image_path_ = image_path;
+            const QString imageUrl = query.value("image_url").toString().replace("\\", "/");
+            product.image_path_ = ResolveImagePath(imageUrl);
 
             PushProduct(product);
         }
@@ -135,19 +141,7 @@ QList<ProductInfo> ProductRepository::GetAllProductsWithName(const ProductInfo& 
 
     if (query.exec()) {
         while (query.next()) {
-            // Формируем путь к изображению (поддержка debug и deployed версий)
-            QString imageUrl = query.value("image_url").toString().replace("\\", "/");
-            QString deployedPath = QDir::cleanPath(QCoreApplication::applicationDirPath() + "/resources/" + imageUrl);
-            QString debugPath = QDir::cleanPath(QCoreApplication::applicationDirPath() + "/../../resources/" + imageUrl);
-            QString image_path;
-            if (QFile::exists(deployedPath)) {
-                image_path = deployedPath;
-            } else if (QFile::exists(debugPath)) {
-                image_path = debugPath;
-            } else {
-                image_path = deployedPath;
-                qWarning() << "Image not found in GetAllProductRepositoryWithName:" << imageUrl << "- tried both" << deployedPath << "and" << debugPath;
-            }
+            const QString imageUrl = query.value("image_url").toString().replace("\\", "/");
             
             temp.append(ProductInfo{
                 query.value("id").toInt(),
@@ -155,7 +149,7 @@ QList<ProductInfo> ProductRepository::GetAllProductsWithName(const ProductInfo& 
                 query.value("color").toString(),
                 query.value("price").toInt(),
                 query.value("description").toString(),
-                image_path,
+                ResolveImagePath(imageUrl),
                 query.value("type_id").toInt(),
                 query.record().indexOf("trim") != -1 ? query.value("trim").toString() : QString(),
                 query.record().indexOf("stock_qty") != -1 ? query.value("stock_qty").toInt() : 0

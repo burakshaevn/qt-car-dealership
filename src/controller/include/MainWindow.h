@@ -25,6 +25,7 @@ class MainWindow : public QMainWindow
 public:
     MainWindow(QWidget *parent = nullptr);
     ~MainWindow();
+    void SetDarkThemeEnabled(bool enabled);
 
     /*!
      * \brief Обновляет информацию о пользователе
@@ -70,6 +71,8 @@ protected:
     void resizeEvent(QResizeEvent *event) override;
 
 private:
+    void ApplyThemeIcons();
+
     Ui::MainWindow *ui;
 
     ProductInfo m_current_product;                      ///< Информация о текущем товаре, который выбрал пользователь

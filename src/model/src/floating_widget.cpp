@@ -1,4 +1,5 @@
 #include "floating_widget.h"
+#include "ThemeStyleProvider.h"
 #include <QVBoxLayout>
 #include <QPushButton>
 
@@ -21,7 +22,7 @@ void FloatingWidget::BuildFloatingMenu(
     // Создаём виджет для фона с эффектом блюра
     QWidget* background_widget = new QWidget(this);
     background_widget->setFixedSize(88, 485);
-    background_widget->setStyleSheet("background-color: #ffffff; border-radius: 39px;");
+    ApplyThemeStyle(background_widget, "FloatingWidget");
 
     // Создаём layout для кнопок
     QVBoxLayout* menu_layout = new QVBoxLayout(this);
@@ -30,42 +31,42 @@ void FloatingWidget::BuildFloatingMenu(
 
     // Логотип
     QPushButton* logo = new QPushButton(this);
-    logo->setIcon(QIcon(":/logo.svg"));
+    ApplyThemeIcon(logo, "logo.svg");
     logo->setIconSize(QSize(41, 41));
-    logo->setStyleSheet("border: none; outline: none; background: transparent;");
+    ApplyThemeStyle(logo, "IconButton");
 
     // Модели
     QPushButton* models = new QPushButton(this);
-    models->setIcon(QIcon(":/directions_car.svg"));
+    ApplyThemeIcon(models, "directions_car.svg");
     models->setIconSize(QSize(41, 41));
-    models->setStyleSheet("border: none; outline: none; background: transparent;");
+    ApplyThemeStyle(models, "IconButton");
     connect(models, &QPushButton::clicked, this, [onMoreClicked]() {
         if (onMoreClicked) onMoreClicked();
     });
 
     // Поиск
     QPushButton* search_button = new QPushButton(this);
-    search_button->setIcon(QIcon(":/search.svg"));
+    ApplyThemeIcon(search_button, "search.svg");
     search_button->setIconSize(QSize(41, 41));
-    search_button->setStyleSheet("border: none; outline: none; background: transparent;");
+    ApplyThemeStyle(search_button, "IconButton");
     connect(search_button, &QPushButton::clicked, this, [onSearchClicked]() {
         if (onSearchClicked) onSearchClicked();
     });
 
     // Сортировка по цветам
     QPushButton* sort_by_color = new QPushButton(this);
-    sort_by_color->setIcon(QIcon(":/Color Swatch 02.svg"));
+    ApplyThemeIcon(sort_by_color, "color_swatch_02.svg");
     sort_by_color->setIconSize(QSize(41, 41));
-    sort_by_color->setStyleSheet("border: none; outline: none; background: transparent;");
+    ApplyThemeStyle(sort_by_color, "IconButton");
     connect(sort_by_color, &QPushButton::clicked, this, [onColorFilterClicked]() {
         if (onColorFilterClicked) onColorFilterClicked();
     });
 
     // Кнопка User Profile
     QPushButton* user_button = new QPushButton(this);
-    user_button->setIcon(QIcon(":/person.svg"));
+    ApplyThemeIcon(user_button, "person.svg");
     user_button->setIconSize(QSize(41, 41));
-    user_button->setStyleSheet("border: none; outline: none; background: transparent;");
+    ApplyThemeStyle(user_button, "IconButton");
     connect(user_button, &QPushButton::clicked, this, [onUserProfileClicked]() {
         if (onUserProfileClicked) onUserProfileClicked();
     });

@@ -1,23 +1,49 @@
 <RCC>
     <qresource prefix="/">
-        <file>more_horiz.svg</file>
-        <file>navigate_next.svg</file>
-        <file>person.svg</file>
-        <file>logo.svg</file>
-        <file>mercedez-benz.svg</file>
-        <file>directions_car.svg</file>
-        <file>search.svg</file>
-        <file>navigate_before.svg</file>
-        <file>add.svg</file>
-        <file>delete.svg</file>
-        <file>edit.svg</file>
-        <file>Color Swatch 02.svg</file>
-        <file>Information Circle Contained.svg</file>
-        <file>check.svg</file>
-        <file>close.svg</file>
-        <file>done_all.svg</file>
-        <file>settings.svg</file>
-        <file>File text.svg</file>
-        <file>Inbox.svg</file>
+        <file alias="more_horiz.svg">icons/light/more_horiz.svg</file>
+        <file alias="navigate_next.svg">icons/light/navigate_next.svg</file>
+        <file alias="person.svg">icons/light/person.svg</file>
+        <file alias="logo.svg">icons/light/logo.svg</file>
+        <file alias="mercedez_benz.svg">icons/light/mercedez_benz.svg</file>
+        <file alias="directions_car.svg">icons/light/directions_car.svg</file>
+        <file alias="search.svg">icons/light/search.svg</file>
+        <file alias="navigate_before.svg">icons/light/navigate_before.svg</file>
+        <file alias="add.svg">icons/light/add.svg</file>
+        <file alias="delete.svg">icons/light/delete.svg</file>
+        <file alias="edit.svg">icons/light/edit.svg</file>
+        <file alias="color_swatch_02.svg">icons/light/color_swatch_02.svg</file>
+        <file alias="information_circle_contained.svg">icons/light/information_circle_contained.svg</file>
+        <file alias="check.svg">icons/light/check.svg</file>
+        <file alias="close.svg">icons/light/close.svg</file>
+        <file alias="done_all.svg">icons/light/done_all.svg</file>
+        <file alias="settings.svg">icons/light/settings.svg</file>
+        <file alias="file_text.svg">icons/light/file_text.svg</file>
+        <file alias="inbox.svg">icons/light/inbox.svg</file>
+        <file>styles/light/DialogForm.qss</file>
+        <file>styles/dark/DialogForm.qss</file>
+        <file>styles/light/ListViewTransparent.qss</file>
+        <file>styles/dark/ListViewTransparent.qss</file>
+        <file>styles/light/FloatingWidget.qss</file>
+        <file>styles/dark/FloatingWidget.qss</file>
+        <file>styles/light/IconButton.qss</file>
+        <file>styles/dark/IconButton.qss</file>
+        <file>styles/light/AdminTableSelector.qss</file>
+        <file>styles/dark/AdminTableSelector.qss</file>
+        <file>styles/light/AdminDescription.qss</file>
+        <file>styles/dark/AdminDescription.qss</file>
+        <file>styles/light/AdminTableView.qss</file>
+        <file>styles/dark/AdminTableView.qss</file>
+        <file>styles/light/AdminFloatingMenu.qss</file>
+        <file>styles/dark/AdminFloatingMenu.qss</file>
+        <file>styles/light/NotificationTitle.qss</file>
+        <file>styles/dark/NotificationTitle.qss</file>
+        <file>styles/light/NotificationMessage.qss</file>
+        <file>styles/dark/NotificationMessage.qss</file>
+        <file>styles/light/NotificationItem.qss</file>
+        <file>styles/dark/NotificationItem.qss</file>
+        <file>styles/light/NotificationEmpty.qss</file>
+        <file>styles/dark/NotificationEmpty.qss</file>
+        <file>styles/light/MainShell.qss</file>
+        <file>styles/dark/MainShell.qss</file>
     </qresource>
 </RCC>

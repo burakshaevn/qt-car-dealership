@@ -5,12 +5,30 @@
 
 #include <QPainter>
 #include <QPixmap>
+#include <QApplication>
 #include <QtGlobal>
 
 ProductCardDelegate::ProductCardDelegate(QObject* parent)
     : QStyledItemDelegate(parent)
 {
 }
+
+namespace {
+bool IsDarkTheme()
+{
+    const QString appTheme = qEnvironmentVariable("APP_THEME").trimmed().toLower();
+    if (appTheme == "dark") {
+        return true;
+    }
+    if (qApp) {
+        const QVariant prop = qApp->property("app_theme");
+        if (prop.isValid() && prop.toString().trimmed().toLower() == "dark") {
+            return true;
+        }
+    }
+    return false;
+}
+} // namespace
 
 QSize ProductCardDelegate::sizeHint(const QStyleOptionViewItem& option, const QModelIndex& index) const
 {
@@ -27,10 +45,11 @@ void ProductCardDelegate::paint(QPainter* painter, const QStyleOptionViewItem& o
 
     painter->save();
     painter->setRenderHint(QPainter::Antialiasing, true);
+    const bool darkTheme = IsDarkTheme();
 
     const QRect rect = option.rect.adjusted(0, 0, -1, -1);
     painter->setPen(Qt::NoPen);
-    painter->setBrush(QColor("#ffffff"));
+    painter->setBrush(darkTheme ? QColor("#1f2631") : QColor("#ffffff"));
     painter->drawRoundedRect(rect, 39, 39);
 
     const QString name = index.data(ProductListModel::NameRole).toString();
@@ -64,19 +83,19 @@ void ProductCardDelegate::paint(QPainter* painter, const QStyleOptionViewItem& o
 
     QFont nameFont("Open Sans", 20, QFont::Bold);
     painter->setFont(nameFont);
-    painter->setPen(QColor("#1d1b20"));
+    painter->setPen(darkTheme ? QColor("#e7edf5") : QColor("#1d1b20"));
     painter->drawText(QRect(rect.x() + 367, rect.y() + 15, 410, 32),
                       Qt::AlignLeft | Qt::AlignVCenter, name);
 
     QFont descFont("JetBrains Mono", 15);
     painter->setFont(descFont);
-    painter->setPen(QColor("#555555"));
+    painter->setPen(darkTheme ? QColor("#b8c6d8") : QColor("#555555"));
     painter->drawText(QRect(rect.x() + 367, rect.y() + 64, 411, 24),
                       Qt::AlignLeft | Qt::AlignVCenter, description);
 
     QFont priceFont("Open Sans", 20, QFont::Bold);
     painter->setFont(priceFont);
-    painter->setPen(QColor("#1d1b20"));
+    painter->setPen(darkTheme ? QColor("#e7edf5") : QColor("#1d1b20"));
     painter->drawText(QRect(rect.x() + 400, rect.y() + 106, 405, 32),
                       Qt::AlignRight | Qt::AlignVCenter, FormatPrice(price) + " руб.");
 

@@ -33,6 +33,7 @@ set(MODEL_SOURCES
     ${MODEL_DIR}/src/ProductRepository.cpp
     ${MODEL_DIR}/src/AdminTableWidget.cpp
     ${MODEL_DIR}/src/user.cpp
+    ${MODEL_DIR}/src/ThemeStyleProvider.cpp
 )
 set(MODEL_HEADERS
     ${MODEL_DIR}/include/contract_templates.h
@@ -47,6 +48,7 @@ set(MODEL_HEADERS
     ${MODEL_DIR}/include/ProductRepository.h
     ${MODEL_DIR}/include/AdminTableWidget.h
     ${MODEL_DIR}/include/user.h
+    ${MODEL_DIR}/include/ThemeStyleProvider.h
 )
 add_library(model ${MODEL_SOURCES} ${MODEL_HEADERS})
 target_include_directories(model PUBLIC

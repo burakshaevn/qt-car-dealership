@@ -1,6 +1,7 @@
 #include "AuthController.h"
 
 #include "DatabaseHandler.h"
+#include "ThemeStyleProvider.h"
 
 #include <QCalendarWidget>
 #include <QCryptographicHash>
@@ -93,57 +94,14 @@ bool AuthController::RunRegistrationDialog(QWidget* parent)
     QDialog dialog(parent);
     dialog.setWindowTitle("Регистрация");
     dialog.setFixedSize(500, 800);
-    dialog.setStyleSheet(
-        "QDialog {"
-        "    background-color: #ffffff;"
-        "}"
-        "QLabel {"
-        "    color: #1d1b20;"
-        "    font: 500 12pt 'JetBrains Mono';"
-        "    margin-top: 10px;"
-        "}"
-        "QLineEdit {"
-        "    padding: 8px;"
-        "    border: 2px solid #e0e0e0;"
-        "    border-radius: 8px;"
-        "    background: #fafafa;"
-        "    font: 11pt 'JetBrains Mono';"
-        "    min-height: 30px;"
-        "    margin-bottom: 10px;"
-        "}"
-        "QLineEdit:focus {"
-        "    border: 2px solid #2196F3;"
-        "}"
-        "QPushButton {"
-        "    padding: 10px 20px;"
-        "    border-radius: 8px;"
-        "    font: 600 11pt 'JetBrains Mono';"
-        "    min-width: 100px;"
-        "}"
-        "QPushButton[type='primary'] {"
-        "    background-color: #2196F3;"
-        "    color: white;"
-        "    border: none;"
-        "}"
-        "QPushButton[type='primary']:hover {"
-        "    background-color: #1976D2;"
-        "}"
-        "QPushButton[type='secondary'] {"
-        "    background-color: #fafafa;"
-        "    color: #1d1b20;"
-        "    border: 2px solid #e0e0e0;"
-        "}"
-        "QPushButton[type='secondary']:hover {"
-        "    background-color: #e0e0e0;"
-        "}"
-    );
+    ApplyThemeStyle(&dialog, "DialogForm");
 
     QVBoxLayout* layout = new QVBoxLayout(&dialog);
     layout->setSpacing(10);
     layout->setContentsMargins(30, 30, 30, 30);
 
     QLabel* titleLabel = new QLabel("Создание учетной записи", &dialog);
-    titleLabel->setStyleSheet("font: 700 16pt 'JetBrains Mono'; margin-bottom: 20px;");
+    titleLabel->setProperty("type", "header");
     layout->addWidget(titleLabel);
 
     QLabel* firstNameLabel = new QLabel("Имя:", &dialog);

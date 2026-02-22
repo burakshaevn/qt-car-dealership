@@ -1,4 +1,4 @@
-<?xml version="1.0" encoding="UTF-8"?>
+<?xml version='1.0' encoding='utf-8'?>
 <ui version="4.0">
  <class>MainWindow</class>
  <widget class="QMainWindow" name="MainWindow">
@@ -42,18 +42,10 @@
         <height>16777215</height>
        </size>
       </property>
-      <property name="styleSheet">
-       <string notr="true"/>
-      </property>
       <property name="currentIndex">
        <number>0</number>
       </property>
       <widget class="QWidget" name="user_page">
-       <property name="styleSheet">
-        <string notr="true">QWidget {
-	background-color: #fafafa;
-}</string>
-       </property>
        <layout class="QGridLayout" name="gridLayout_7">
         <property name="leftMargin">
          <number>0</number>
@@ -88,14 +80,8 @@
         </item>
         <item row="6" column="2" colspan="3">
          <widget class="QGroupBox" name="groupBox_7">
-          <property name="styleSheet">
-           <string notr="true">QGroupBox
-{
-	border: none;
-}</string>
-          </property>
           <property name="title">
-           <string/>
+           <string />
           </property>
           <layout class="QGridLayout" name="gridLayout_8">
            <property name="leftMargin">
@@ -139,12 +125,6 @@
                <width>875</width>
                <height>16777215</height>
               </size>
-             </property>
-             <property name="styleSheet">
-              <string notr="true">QListView {
-	background-color: transparent;
-    border: none;
-}</string>
              </property>
              <property name="verticalScrollBarPolicy">
               <enum>Qt::ScrollBarPolicy::ScrollBarAlwaysOff</enum>
@@ -191,14 +171,8 @@
         </item>
         <item row="1" column="2">
          <widget class="QGroupBox" name="groupBox_5">
-          <property name="styleSheet">
-           <string notr="true">QGroupBox
-{
-	border: none;
-}</string>
-          </property>
           <property name="title">
-           <string/>
+           <string />
           </property>
           <layout class="QGridLayout" name="gridLayout_6">
            <property name="leftMargin">
@@ -215,15 +189,8 @@
            </property>
            <item row="1" column="0">
             <widget class="QLabel" name="label_clientname">
-             <property name="styleSheet">
-              <string notr="true">QLabel {
-	color: #1d1b20;
-	background-color: transparent;
-	font: 700 21pt &quot;JetBrains Mono&quot;;
-}</string>
-             </property>
              <property name="text">
-              <string/>
+              <string />
              </property>
              <property name="alignment">
               <set>Qt::AlignmentFlag::AlignLeading|Qt::AlignmentFlag::AlignLeft|Qt::AlignmentFlag::AlignVCenter</set>
@@ -244,14 +211,8 @@
                <height>16777215</height>
               </size>
              </property>
-             <property name="styleSheet">
-              <string notr="true">QGroupBox 
-{
-	border: none;
-}</string>
-             </property>
              <property name="title">
-              <string/>
+              <string />
              </property>
              <property name="flat">
               <bool>false</bool>
@@ -292,15 +253,8 @@
                   <height>41</height>
                  </size>
                 </property>
-                <property name="styleSheet">
-                 <string notr="true">QPushButton {
-	background-color: #fafafa;
-	border: 0px;
-	border-radius: 17px; 
-}</string>
-                </property>
                 <property name="text">
-                 <string/>
+                 <string />
                 </property>
                 <property name="icon">
                  <iconset>
@@ -328,19 +282,12 @@
                   <height>41</height>
                  </size>
                 </property>
-                <property name="styleSheet">
-                 <string notr="true">QPushButton {
-	background-color: #fafafa;
-	border: 0px;
-	border-radius: 17px; 
-}</string>
-                </property>
                 <property name="text">
-                 <string/>
+                 <string />
                 </property>
                 <property name="icon">
                  <iconset>
-                  <normaloff>:/Inbox.svg</normaloff>:/Inbox.svg</iconset>
+                  <normaloff>:/inbox.svg</normaloff>:/inbox.svg</iconset>
                 </property>
                 <property name="iconSize">
                  <size>
@@ -370,15 +317,8 @@
                   <height>41</height>
                  </size>
                 </property>
-                <property name="styleSheet">
-                 <string notr="true">QPushButton {
-	background-color: #fafafa;
-	border: 0px;
-	border-radius: 17px; 
-}</string>
-                </property>
                 <property name="text">
-                 <string/>
+                 <string />
                 </property>
                 <property name="icon">
                  <iconset>
@@ -429,14 +369,8 @@
         </item>
         <item row="3" column="2">
          <widget class="QGroupBox" name="groupBox_8">
-          <property name="styleSheet">
-           <string notr="true">QGroupBox
-{
-	border: none;
-}</string>
-          </property>
           <property name="title">
-           <string/>
+           <string />
           </property>
           <layout class="QGridLayout" name="gridLayout_9">
            <property name="leftMargin">
@@ -477,16 +411,6 @@
                <width>875</width>
                <height>191</height>
               </size>
-             </property>
-             <property name="styleSheet">
-              <string notr="true">QListView {
-	background-color: transparent;
-    border-radius: 39px;
-    border: none;
-}
-QListView::item {
-	background: transparent;
-}</string>
              </property>
              <property name="frameShape">
               <enum>QFrame::Shape::NoFrame</enum>
@@ -573,25 +497,12 @@ QListView::item {
         </item>
         <item row="4" column="2">
          <widget class="QGroupBox" name="groupBox_6">
-          <property name="styleSheet">
-           <string notr="true">QGroupBox
-{
-	border: none;
-}</string>
-          </property>
           <property name="title">
-           <string/>
+           <string />
           </property>
           <layout class="QHBoxLayout" name="horizontalLayout_4">
            <item>
             <widget class="QLabel" name="label">
-             <property name="styleSheet">
-              <string notr="true">QLabel {
-	color: #1d1b20;
-	background-color: transparent;
-	font: 700 21pt &quot;JetBrains Mono&quot;;
-}</string>
-             </property>
              <property name="text">
               <string>Приобретено ранее</string>
              </property>
@@ -606,14 +517,8 @@ QListView::item {
        <layout class="QGridLayout" name="gridLayout_2">
         <item row="5" column="1" colspan="3">
          <widget class="QGroupBox" name="groupBox">
-          <property name="styleSheet">
-           <string notr="true">QGroupBox 
-{
-	border: none;
-}</string>
-          </property>
           <property name="title">
-           <string/>
+           <string />
           </property>
           <layout class="QHBoxLayout" name="horizontalLayout">
            <item>
@@ -643,14 +548,6 @@ QListView::item {
                <height>38</height>
               </size>
              </property>
-             <property name="styleSheet">
-              <string notr="true">QPushButton {
-	background-color: #fafafa;
-	color: #140f10;
-	font: 16pt &quot;JetBrains Mono&quot;;
-	border-radius: 12px;
-}</string>
-             </property>
              <property name="text">
               <string>Вход</string>
              </property>
@@ -669,14 +566,6 @@ QListView::item {
                <width>167</width>
                <height>38</height>
               </size>
-             </property>
-             <property name="styleSheet">
-              <string notr="true">QPushButton {
-	background-color: #fafafa;
-	color: #140f10;
-	font: 16pt &quot;JetBrains Mono&quot;;
-	border-radius: 12px;
-}</string>
              </property>
              <property name="text">
               <string>Регистрация</string>
@@ -713,18 +602,6 @@ QListView::item {
             <height>0</height>
            </size>
           </property>
-          <property name="styleSheet">
-           <string notr="true">QLineEdit{
-	color: #1d1b20;
-	background-color: #fafafa;
-	border-radius: 13px; 
-	font: 16pt &quot;JetBrains Mono&quot;;
-	padding-left: 27px;
-}
-QLineEdit:focus {
-    border: 2px solid #140f10;  
-}</string>
-          </property>
           <property name="inputMethodHints">
            <set>Qt::InputMethodHint::ImhHiddenText|Qt::InputMethodHint::ImhNoAutoUppercase|Qt::InputMethodHint::ImhNoPredictiveText|Qt::InputMethodHint::ImhSensitiveData</set>
           </property>
@@ -753,18 +630,6 @@ QLineEdit:focus {
             <height>0</height>
            </size>
           </property>
-          <property name="styleSheet">
-           <string notr="true">QLineEdit{
-	color: #1d1b20;
-	background-color: #fafafa;
-	border-radius: 13px; 
-	font: 16pt &quot;JetBrains Mono&quot;;
-	padding-left: 27px;
-}
-QLineEdit:focus {
-    border: 2px solid #140f10;  
-}</string>
-          </property>
           <property name="text">
            <string>nb@example.com</string>
           </property>
@@ -790,13 +655,8 @@ QLineEdit:focus {
           <property name="autoFillBackground">
            <bool>false</bool>
           </property>
-          <property name="styleSheet">
-           <string notr="true">QLabel {
-	image: url(:/mercedez-benz.svg);
-}</string>
-          </property>
           <property name="text">
-           <string/>
+           <string />
           </property>
           <property name="scaledContents">
            <bool>true</bool>
@@ -873,11 +733,6 @@ QLineEdit:focus {
        </layout>
       </widget>
       <widget class="QWidget" name="main">
-       <property name="styleSheet">
-        <string notr="true">QWidget {
-	background-color: #fafafa;
-}</string>
-       </property>
        <layout class="QGridLayout" name="gridLayout_3">
         <item row="1" column="0">
          <spacer name="horizontalSpacer_10">
@@ -960,16 +815,11 @@ QLineEdit:focus {
          </spacer>
         </item>
         <item row="1" column="2">
-         <widget class="QListView" name="catalogListView"/>
+         <widget class="QListView" name="catalogListView" />
         </item>
        </layout>
       </widget>
       <widget class="QWidget" name="personal">
-       <property name="styleSheet">
-        <string notr="true">QWidget {
-	background-color: #fafafa;
-}</string>
-       </property>
        <layout class="QGridLayout" name="gridLayout_4">
         <item row="2" column="4">
          <spacer name="horizontalSpacer_8">
@@ -1002,14 +852,8 @@ QLineEdit:focus {
         </item>
         <item row="3" column="2">
          <widget class="QGroupBox" name="groupBox_3">
-          <property name="styleSheet">
-           <string notr="true">QGroupBox 
-{
-	border: none;
-}</string>
-          </property>
           <property name="title">
-           <string/>
+           <string />
           </property>
           <layout class="QHBoxLayout" name="horizontalLayout_2">
            <property name="spacing">
@@ -1017,14 +861,6 @@ QLineEdit:focus {
            </property>
            <item>
             <widget class="QPushButton" name="pushButton_back">
-             <property name="styleSheet">
-              <string notr="true">QPushButton {
-	background-color: transparent;
-	color: #1d1b20; 
-	border-radius: 18px;
-	font: 14pt &quot;JetBrains Mono&quot;;
-}</string>
-             </property>
              <property name="text">
               <string>← Назад</string>
              </property>
@@ -1032,14 +868,6 @@ QLineEdit:focus {
            </item>
            <item>
             <widget class="QPushButton" name="pushButton_info">
-             <property name="styleSheet">
-              <string notr="true">QPushButton {
-	background-color: transparent;
-	color: #1d1b20; 
-	border-radius: 18px;
-	font: 14pt &quot;JetBrains Mono&quot;;
-}</string>
-             </property>
              <property name="text">
               <string>Подробнее</string>
              </property>
@@ -1047,14 +875,6 @@ QLineEdit:focus {
            </item>
            <item>
             <widget class="QPushButton" name="pushButton_test_drive">
-             <property name="styleSheet">
-              <string notr="true">QPushButton {
-	background-color: transparent;
-	color: #1d1b20; 
-	border-radius: 18px;
-	font: 14pt &quot;JetBrains Mono&quot;;
-}</string>
-             </property>
              <property name="text">
               <string>Тест-драйв</string>
              </property>
@@ -1062,14 +882,6 @@ QLineEdit:focus {
            </item>
            <item>
             <widget class="QPushButton" name="pushButton_to_pay">
-             <property name="styleSheet">
-              <string notr="true">QPushButton {
-	background-color: transparent;
-	color: #1d1b20;
-	border-radius: 18px; 
-	font: 14pt &quot;JetBrains Mono&quot;;
-}</string>
-             </property>
              <property name="text">
               <string>К заявке →</string>
              </property>
@@ -1077,17 +889,6 @@ QLineEdit:focus {
            </item>
            <item>
             <widget class="QPushButton" name="pushButton_order">
-             <property name="styleSheet">
-              <string notr="true">QPushButton {
-	background-color: #FF6B35;
-	color: white;
-	border-radius: 11px; 
-	font: 14pt &quot;JetBrains Mono&quot;;
-}
-QPushButton:hover {
-	background-color: #E55A2B;
-}</string>
-             </property>
              <property name="text">
               <string>Заказать</string>
              </property>
@@ -1110,28 +911,14 @@ QPushButton:hover {
             <height>325</height>
            </size>
           </property>
-          <property name="styleSheet">
-           <string notr="true">QGroupBox 
-{
-	border: none;
-	background-color: transparent;
-}</string>
-          </property>
           <property name="title">
-           <string/>
+           <string />
           </property>
           <layout class="QGridLayout" name="gridLayout_5">
            <item row="2" column="0">
             <widget class="QLabel" name="label_name">
-             <property name="styleSheet">
-              <string notr="true">QLabel {
-	color: #1d1b20;
-	background-color: transparent;
-	font: 700 22pt &quot;JetBrains Mono&quot;;
-}</string>
-             </property>
              <property name="text">
-              <string/>
+              <string />
              </property>
              <property name="alignment">
               <set>Qt::AlignmentFlag::AlignCenter</set>
@@ -1146,28 +933,15 @@ QPushButton:hover {
                <verstretch>0</verstretch>
               </sizepolicy>
              </property>
-             <property name="styleSheet">
-              <string notr="true">QLabel {
-	background-color: transparent;
-	border: 0px;
-}</string>
-             </property>
              <property name="text">
-              <string/>
+              <string />
              </property>
             </widget>
            </item>
            <item row="1" column="0">
             <widget class="QLabel" name="label_price">
-             <property name="styleSheet">
-              <string notr="true">QLabel {
-	color: #1d1b20;
-	background-color: transparent;
-	font: 500 16pt &quot;JetBrains Mono&quot;;
-}</string>
-             </property>
              <property name="text">
-              <string/>
+              <string />
              </property>
              <property name="alignment">
               <set>Qt::AlignmentFlag::AlignCenter</set>
@@ -1184,23 +958,8 @@ QPushButton:hover {
              <height>54</height>
             </rect>
            </property>
-           <property name="styleSheet">
-            <string notr="true">QPushButton {
-	background-color: transparent;  
-	border-radius: 25px; 
-	color: #1d1b20;
-	font: 28pt &quot;JetBrains Mono&quot;;
-}
-QPushButton::pressed {
-	background-color: transparent;  
-	border-radius: 25px; 
-	border: 2px solid #1d1b20;
-	color: #1d1b20;
-	font: 28pt &quot;JetBrains Mono&quot;;
-}</string>
-           </property>
            <property name="text">
-            <string/>
+            <string />
            </property>
            <property name="icon">
             <iconset>
@@ -1222,23 +981,8 @@ QPushButton::pressed {
              <height>54</height>
             </rect>
            </property>
-           <property name="styleSheet">
-            <string notr="true">QPushButton {
-	background-color: transparent;  
-	border-radius: 25px; 
-	color: #1d1b20;
-	font: 28pt &quot;JetBrains Mono&quot;;
-}
-QPushButton::pressed {
-	background-color: transparent;  
-	border-radius: 25px; 
-	border: 2px solid #1d1b20;
-	color: #1d1b20;
-	font: 28pt &quot;JetBrains Mono&quot;;
-}</string>
-           </property>
            <property name="text">
-            <string/>
+            <string />
            </property>
            <property name="icon">
             <iconset>
@@ -1286,6 +1030,6 @@ QPushButton::pressed {
    </layout>
   </widget>
  </widget>
- <resources/>
- <connections/>
+ <resources />
+ <connections />
 </ui>

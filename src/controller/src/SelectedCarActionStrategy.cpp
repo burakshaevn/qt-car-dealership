@@ -13,6 +13,7 @@
 #include <QVBoxLayout>
 
 #include "AppServices.h"
+#include "ThemeStyleProvider.h"
 #include "domain.h"
 
 namespace {
@@ -36,27 +37,7 @@ public:
         dialog.setWindowTitle("Оформление заявки на покупку");
         dialog.setMinimumSize(500, 400);
         dialog.resize(500, 500);
-        dialog.setStyleSheet(
-            "QDialog { background: #ffffff; }"
-            "QLabel { color: #1d1b20; font: 11pt 'JetBrains Mono'; }"
-            "QLabel#carInfo {"
-            "  background: #f6f8fb; border: 1px solid #d9e1ea; border-radius: 10px;"
-            "  padding: 12px; font: 700 11pt 'JetBrains Mono';"
-            "}"
-            "QLabel#sectionTitle { font: 700 12pt 'JetBrains Mono'; margin-top: 4px; }"
-            "QCheckBox { font: 10.5pt 'JetBrains Mono'; spacing: 8px; }"
-            "QComboBox {"
-            "  padding: 7px 10px; border: 1px solid #d9e1ea; border-radius: 8px;"
-            "  background: #fafbfd; min-height: 28px; font: 10.5pt 'JetBrains Mono';"
-            "}"
-            "QComboBox:focus { border: 1px solid #2196F3; }"
-            "QPushButton {"
-            "  padding: 9px 14px; border-radius: 8px; font: 600 10.5pt 'JetBrains Mono'; min-width: 120px;"
-            "}"
-            "QPushButton[type='primary'] { background: #2196F3; color: white; border: none; }"
-            "QPushButton[type='primary']:hover { background: #1976D2; }"
-            "QPushButton[type='secondary'] { background: #fafbfd; color: #1d1b20; border: 1px solid #d9e1ea; }"
-            "QPushButton[type='secondary']:hover { background: #eef3f8; }");
+        ApplyThemeStyle(&dialog, "DialogForm");
 
         QVBoxLayout* layout = new QVBoxLayout(&dialog);
         layout->setSpacing(15);
@@ -155,6 +136,8 @@ public:
         buttonLayout->setSpacing(15);
         QPushButton* okButton = new QPushButton("Подтвердить", &dialog);
         QPushButton* cancelButton = new QPushButton("Отмена", &dialog);
+        okButton->setProperty("type", "primary");
+        cancelButton->setProperty("type", "secondary");
         buttonLayout->addWidget(cancelButton);
         buttonLayout->addWidget(okButton);
         layout->addLayout(buttonLayout);
@@ -305,6 +288,7 @@ public:
         QDialog dialog(parent);
         dialog.setWindowTitle("Заказ автомобиля");
         dialog.setFixedSize(500, 400);
+        ApplyThemeStyle(&dialog, "DialogForm");
 
         QVBoxLayout* layout = new QVBoxLayout(&dialog);
         layout->setSpacing(15);
@@ -315,9 +299,11 @@ public:
                                               .arg(product.color_)
                                               .arg(FormatPrice(product.price_)),
                                           &dialog);
+        carInfoLabel->setObjectName("carInfo");
         layout->addWidget(carInfoLabel);
 
         QLabel* trimLabel = new QLabel("Выберите комплектацию:", &dialog);
+        trimLabel->setObjectName("sectionTitle");
         layout->addWidget(trimLabel);
 
         QComboBox* trimCombo = new QComboBox(&dialog);
@@ -362,6 +348,8 @@ public:
         QHBoxLayout* buttonLayout = new QHBoxLayout();
         QPushButton* okButton = new QPushButton("Заказать", &dialog);
         QPushButton* cancelButton = new QPushButton("Отмена", &dialog);
+        okButton->setProperty("type", "primary");
+        cancelButton->setProperty("type", "secondary");
         buttonLayout->addWidget(cancelButton);
         buttonLayout->addWidget(okButton);
         layout->addLayout(buttonLayout);

@@ -7,6 +7,7 @@
 
 class AppServices;
 class QLineEdit;
+class QComboBox;
 
 class SettingsForm : public QDialog
 {
@@ -16,6 +17,7 @@ public:
 
 signals:
     void ProfileSaved(const QString& fullName, const QString& email);
+    void ThemeChanged(bool dark_enabled);
 
 private slots:
     void OnSaveClicked();
@@ -30,6 +32,7 @@ private:
     QLineEdit* email_edit_ = nullptr;
     QLineEdit* phone_edit_ = nullptr;
     QLineEdit* password_edit_ = nullptr;
+    QComboBox* theme_combo_ = nullptr;
 };
 
 #endif // SETTINGS_FORM_H
