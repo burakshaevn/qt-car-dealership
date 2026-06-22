@@ -12,7 +12,7 @@
 #include "NotificationsController.h"
 #include "ProfileController.h"
 #include "DatabaseHandler.h"
-#include "floating_widget.h"
+#include "FloatingNavigationWidget.h"
 #include "ProductRepository.h"
 #include "UserSession.h"
 
@@ -63,10 +63,10 @@ public:
     QSharedPointer<ProductRepository> GetProducts() const;
 
     /*!
-     * \brief Возвращает указатель на объект FloatingWidget
-     * \returns Указатель на объект FloatingWidget
+     * \brief Возвращает указатель на плавающую навигацию
+     * \returns Указатель на FloatingNavigationWidget
      */
-    QSharedPointer<FloatingWidget> GetFloatingWidget() const;
+    QSharedPointer<FloatingNavigationWidget> GetFloatingWidget() const;
 
     /*!
      * \brief Возвращает указатель на объект CatalogController
@@ -108,7 +108,7 @@ public:
 private:
     QSharedPointer<DatabaseHandler> database_;
     QSharedPointer<ProductRepository> products_;
-    QSharedPointer<FloatingWidget> floating_widget_;
+    QSharedPointer<FloatingNavigationWidget> floating_widget_;
 
     QScopedPointer<CatalogController> catalog_controller_;
     QScopedPointer<ProfileController> profile_controller_;

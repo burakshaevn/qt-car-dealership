@@ -1,9 +1,9 @@
-#include "notifications_handler.h"
+#include "NotificationsHandler.h"
 #include "ui_notifications.h"
 
 #include "ProductRepository.h"
-#include "domain.h"
-#include "contract_templates.h"
+#include "PriceFormatter.h"
+#include "ContractTemplates.h"
 #include "ThemeStyleProvider.h"
 
 #include <QTimer>
@@ -14,6 +14,33 @@
 #include <QSqlQuery>
 #include <QHBoxLayout>
 #include <QPushButton>
+#include <array>
+
+namespace {
+struct NotificationSource final {
+    const char* type;
+    const char* table;
+    const char* additionalInfoExpr;
+    const char* dateColumn;
+    const char* carIdExpr;
+};
+
+const std::array<NotificationSource, 7> kNotificationSources{{
+    {"service", "service_requests", "service_type", "scheduled_date", "car_id"},
+    {"insurance", "insurance_requests", "insurance_type", "created_at", "car_id"},
+    {"loan", "loan_requests", "CAST(loan_amount AS TEXT)", "created_at", "car_id"},
+    {"test_drive", "test_drives", "''", "scheduled_date", "car_id"},
+    {"rental", "rental_requests", "CAST(rental_days AS TEXT)", "start_date", "car_id"},
+    {"purchase", "purchase_requests", "''", "created_at", "car_id"},
+    {"order", "order_requests", "car_name", "created_at", "0"},
+}};
+
+QString buildNotificationSelect(const NotificationSource& source, const QString& whereClause)
+{
+    return QString("SELECT '%1' as type, id, status, %2 as additional_info, %3 as date_info, %4 as car_id FROM %5 WHERE %6")
+        .arg(source.type, source.additionalInfoExpr, source.dateColumn, source.carIdExpr, source.table, whereClause);
+}
+} // namespace
 
 NotificationsHandler::NotificationsHandler(QSharedPointer<DatabaseHandler> database_handler, QWidget *parent)
     : QDialog(parent)
@@ -25,7 +52,11 @@ NotificationsHandler::NotificationsHandler(QSharedPointer<DatabaseHandler> datab
     , m_current_filter("Все уведомления")
 {
     ui->setupUi(this);
-    ApplyThemeStyle(this, "MainShell");
+    ApplyThemeStyle(this, "NotificationsDialog");
+    ui->btn_sort_by_data->setProperty("type", "secondary");
+    ui->btn_mark_all_read->setProperty("type", "primary");
+    setWindowTitle(QStringLiteral("Уведомления"));
+    setWindowIcon(LoadThemeIcon("inbox.svg"));
 
     connect(ui->btn_sort_by_data, &QPushButton::clicked, this, &NotificationsHandler::onSortButtonClicked);
     connect(ui->filterCombo, QOverload<int>::of(&QComboBox::currentIndexChanged), this, &NotificationsHandler::onFilterChanged);
@@ -64,13 +95,6 @@ void NotificationsHandler::loadAndShowNotifications(const int user_id) {
 
     QSqlQuery query = notifications.value<QSqlQuery>();
     qDebug() << "Processing notifications query...";
-    
-    // Сначала подсчитаем количество уведомлений
-    int totalCount = 0;
-    while (query.next()) {
-        totalCount++;
-    }
-    qDebug() << "Total notifications found:" << totalCount;
     
     query.first();
     query.previous();
@@ -128,6 +152,7 @@ void NotificationsHandler::loadAndShowNotifications(const int user_id) {
 
         // Создаем виджет уведомления
         QWidget *notificationWidget = new QWidget();
+        notificationWidget->setObjectName("notificationCard");
         QVBoxLayout *notificationLayout = new QVBoxLayout(notificationWidget);
 
         // Добавляем заголовок и текст
@@ -178,145 +203,51 @@ void NotificationsHandler::loadAndShowNotifications(const int user_id) {
 
 QVariant NotificationsHandler::getNewNotifications(const int user_id) {
     qDebug() << "getNewNotifications: user_id =" << user_id << "filter =" << m_current_filter;
-    
-    QString baseQuery = QString("SELECT 'service' as type, id, status, service_type as additional_info, scheduled_date as date_info, car_id FROM service_requests "
-                "WHERE client_id = %1 AND (notification_shown = false OR notification_shown IS NULL) "
-                "UNION ALL "
-                "SELECT 'insurance' as type, id, status, insurance_type as additional_info, created_at as date_info, car_id FROM insurance_requests "
-                "WHERE client_id = %1 AND (notification_shown = false OR notification_shown IS NULL) "
-                "UNION ALL "
-                "SELECT 'loan' as type, id, status, CAST(loan_amount AS TEXT) as additional_info, created_at as date_info, car_id FROM loan_requests "
-                "WHERE client_id = %1 AND (notification_shown = false OR notification_shown IS NULL) "
-                "UNION ALL "
-                "SELECT 'test_drive' as type, id, status, 'Тест-драйв' as additional_info, scheduled_date as date_info, car_id FROM test_drives "
-                "WHERE client_id = %1 AND (notification_shown = false OR notification_shown IS NULL) "
-                "UNION ALL "
-                "SELECT 'rental' as type, id, status, CAST(rental_days AS TEXT) as additional_info, start_date as date_info, car_id FROM rental_requests "
-                "WHERE client_id = %1 AND (notification_shown = false OR notification_shown IS NULL) "
-                "UNION ALL "
-                "SELECT 'purchase' as type, id, status, 'Покупка автомобиля' as additional_info, created_at as date_info, car_id FROM purchase_requests "
-                "WHERE client_id = %1 AND (notification_shown = false OR notification_shown IS NULL) "
-                "UNION ALL "
-                "SELECT 'order' as type, id, status, car_name as additional_info, created_at as date_info, 0 as car_id FROM order_requests "
-                "WHERE client_id = %1 AND (notification_shown = false OR notification_shown IS NULL)").arg(user_id);
 
-    // Добавляем фильтры
-    QString filteredQuery = baseQuery;
-    
-    if (m_current_filter == "Только новые") {
-        // Для фильтра "только новые" применяем к каждой таблице
-        filteredQuery = QString("SELECT 'service' as type, id, status, service_type as additional_info, scheduled_date as date_info, car_id FROM service_requests "
-                    "WHERE client_id = %1 AND notification_shown = false "
-                    "UNION ALL "
-                    "SELECT 'insurance' as type, id, status, insurance_type as additional_info, created_at as date_info, car_id FROM insurance_requests "
-                    "WHERE client_id = %1 AND notification_shown = false "
-                    "UNION ALL "
-                    "SELECT 'loan' as type, id, status, CAST(loan_amount AS TEXT) as additional_info, created_at as date_info, car_id FROM loan_requests "
-                    "WHERE client_id = %1 AND notification_shown = false "
-                    "UNION ALL "
-                    "SELECT 'test_drive' as type, id, status, 'Тест-драйв' as additional_info, scheduled_date as date_info, car_id FROM test_drives "
-                    "WHERE client_id = %1 AND notification_shown = false "
-                    "UNION ALL "
-                    "SELECT 'rental' as type, id, status, CAST(rental_days AS TEXT) as additional_info, start_date as date_info, car_id FROM rental_requests "
-                    "WHERE client_id = %1 AND notification_shown = false "
-                    "UNION ALL "
-                    "SELECT 'purchase' as type, id, status, 'Покупка автомобиля' as additional_info, created_at as date_info, car_id FROM purchase_requests "
-                    "WHERE client_id = %1 AND notification_shown = false "
-                    "UNION ALL "
-                    "SELECT 'order' as type, id, status, car_name as additional_info, created_at as date_info, 0 as car_id FROM order_requests "
-                    "WHERE client_id = %1 AND notification_shown = false").arg(user_id);
-    } else if (m_current_filter == "Только одобренные") {
-        // Для фильтра "только одобренные" применяем к каждой таблице
-        filteredQuery = QString("SELECT 'service' as type, id, status, service_type as additional_info, scheduled_date as date_info, car_id FROM service_requests "
-                    "WHERE client_id = %1 AND status IN ('одобрено', 'подтверждено') "
-                    "UNION ALL "
-                    "SELECT 'insurance' as type, id, status, insurance_type as additional_info, created_at as date_info, car_id FROM insurance_requests "
-                    "WHERE client_id = %1 AND status IN ('одобрено', 'подтверждено') "
-                    "UNION ALL "
-                    "SELECT 'loan' as type, id, status, CAST(loan_amount AS TEXT) as additional_info, created_at as date_info, car_id FROM loan_requests "
-                    "WHERE client_id = %1 AND status IN ('одобрено', 'подтверждено') "
-                    "UNION ALL "
-                    "SELECT 'test_drive' as type, id, status, 'Тест-драйв' as additional_info, scheduled_date as date_info, car_id FROM test_drives "
-                    "WHERE client_id = %1 AND status IN ('одобрено', 'подтверждено') "
-                    "UNION ALL "
-                    "SELECT 'rental' as type, id, status, CAST(rental_days AS TEXT) as additional_info, start_date as date_info, car_id FROM rental_requests "
-                    "WHERE client_id = %1 AND status IN ('одобрено', 'подтверждено') "
-                    "UNION ALL "
-                    "SELECT 'purchase' as type, id, status, 'Покупка автомобиля' as additional_info, created_at as date_info, car_id FROM purchase_requests "
-                    "WHERE client_id = %1 AND status IN ('одобрено', 'подтверждено') "
-                    "UNION ALL "
-                    "SELECT 'order' as type, id, status, car_name as additional_info, created_at as date_info, 0 as car_id FROM order_requests "
-                    "WHERE client_id = %1 AND status IN ('одобрено', 'подтверждено')").arg(user_id);
-    } else if (m_current_filter == "Последние 7 дней") {
-        // Для фильтра "последние 7 дней" применяем к правильным колонкам дат
-        filteredQuery = QString("SELECT 'service' as type, id, status, service_type as additional_info, scheduled_date as date_info, car_id FROM service_requests "
-                    "WHERE client_id = %1 AND scheduled_date >= NOW() - INTERVAL '7 days' "
-                    "UNION ALL "
-                    "SELECT 'insurance' as type, id, status, insurance_type as additional_info, created_at as date_info, car_id FROM insurance_requests "
-                    "WHERE client_id = %1 AND created_at >= NOW() - INTERVAL '7 days' "
-                    "UNION ALL "
-                    "SELECT 'loan' as type, id, status, CAST(loan_amount AS TEXT) as additional_info, created_at as date_info, car_id FROM loan_requests "
-                    "WHERE client_id = %1 AND created_at >= NOW() - INTERVAL '7 days' "
-                    "UNION ALL "
-                    "SELECT 'test_drive' as type, id, status, 'Тест-драйв' as additional_info, scheduled_date as date_info, car_id FROM test_drives "
-                    "WHERE client_id = %1 AND scheduled_date >= NOW() - INTERVAL '7 days' "
-                    "UNION ALL "
-                    "SELECT 'rental' as type, id, status, CAST(rental_days AS TEXT) as additional_info, start_date as date_info, car_id FROM rental_requests "
-                    "WHERE client_id = %1 AND start_date >= NOW() - INTERVAL '7 days' "
-                    "UNION ALL "
-                    "SELECT 'purchase' as type, id, status, 'Покупка автомобиля' as additional_info, created_at as date_info, car_id FROM purchase_requests "
-                    "WHERE client_id = %1 AND created_at >= NOW() - INTERVAL '7 days' "
-                    "UNION ALL "
-                    "SELECT 'order' as type, id, status, car_name as additional_info, created_at as date_info, 0 as car_id FROM order_requests "
-                    "WHERE client_id = %1 AND created_at >= NOW() - INTERVAL '7 days'").arg(user_id);
-    } else if (m_current_filter == "Последние 30 дней") {
-        // Для фильтра "последние 30 дней" применяем к правильным колонкам дат
-        filteredQuery = QString("SELECT 'service' as type, id, status, service_type as additional_info, scheduled_date as date_info, car_id FROM service_requests "
-                    "WHERE client_id = %1 AND scheduled_date >= NOW() - INTERVAL '30 days' "
-                    "UNION ALL "
-                    "SELECT 'insurance' as type, id, status, insurance_type as additional_info, created_at as date_info, car_id FROM insurance_requests "
-                    "WHERE client_id = %1 AND created_at >= NOW() - INTERVAL '30 days' "
-                    "UNION ALL "
-                    "SELECT 'loan' as type, id, status, CAST(loan_amount AS TEXT) as additional_info, created_at as date_info, car_id FROM loan_requests "
-                    "WHERE client_id = %1 AND created_at >= NOW() - INTERVAL '30 days' "
-                    "UNION ALL "
-                    "SELECT 'test_drive' as type, id, status, 'Тест-драйв' as additional_info, scheduled_date as date_info, car_id FROM test_drives "
-                    "WHERE client_id = %1 AND scheduled_date >= NOW() - INTERVAL '30 days' "
-                    "UNION ALL "
-                    "SELECT 'rental' as type, id, status, CAST(rental_days AS TEXT) as additional_info, start_date as date_info, car_id FROM rental_requests "
-                    "WHERE client_id = %1 AND start_date >= NOW() - INTERVAL '30 days' "
-                    "UNION ALL "
-                    "SELECT 'purchase' as type, id, status, 'Покупка автомобиля' as additional_info, created_at as date_info, car_id FROM purchase_requests "
-                    "WHERE client_id = %1 AND created_at >= NOW() - INTERVAL '30 days' "
-                    "UNION ALL "
-                    "SELECT 'order' as type, id, status, car_name as additional_info, created_at as date_info, 0 as car_id FROM order_requests "
-                    "WHERE client_id = %1 AND created_at >= NOW() - INTERVAL '30 days'").arg(user_id);
+    QStringList queryParts;
+    queryParts.reserve(static_cast<int>(kNotificationSources.size()));
+
+    const int filterIndex = ui->filterCombo->currentIndex();
+    for (const auto& source : kNotificationSources) {
+        QString whereClause = QString("client_id = %1").arg(user_id);
+
+        if (filterIndex == 1) {
+            whereClause += " AND notification_shown = false";
+        } else if (filterIndex == 2) {
+            whereClause += " AND status IN ('одобрено', 'подтверждено')";
+        } else if (filterIndex == 3) {
+            whereClause += QString(" AND %1 >= NOW() - INTERVAL '7 days'").arg(source.dateColumn);
+        } else if (filterIndex == 4) {
+            whereClause += QString(" AND %1 >= NOW() - INTERVAL '30 days'").arg(source.dateColumn);
+        } else {
+            whereClause += " AND (notification_shown = false OR notification_shown IS NULL)";
+        }
+
+        queryParts.append(buildNotificationSelect(source, whereClause));
     }
 
+    QString filteredQuery = queryParts.join(" UNION ALL ");
     filteredQuery += " ORDER BY date_info DESC";
 
     qDebug() << "Executing query:" << filteredQuery;
     QVariant result = m_database_handler.lock()->ExecuteSelectQuery(filteredQuery);
-    
+
     return result;
 }
 
 void NotificationsHandler::markNotificationsAsReaded(const int user_id) {
     qDebug() << "markNotificationsAsReaded: user_id =" << user_id;
-    
+
     // Помечаем как прочитанные только те уведомления, которые были показаны
     // (т.е. те, которые имеют notification_shown = false или NULL)
-    QStringList tables = {"service_requests", "insurance_requests", "loan_requests", 
-                         "test_drives", "rental_requests", "purchase_requests", "order_requests"};
-    
-    for (const QString& table : tables) {
+    for (const auto& source : kNotificationSources) {
         QString updateQuery = QString("UPDATE %1 SET notification_shown = true WHERE client_id = %2 AND (notification_shown = false OR notification_shown IS NULL)")
-            .arg(table)
+            .arg(source.table)
             .arg(user_id);
-        
+
         qDebug() << "Executing:" << updateQuery;
         QVariant result = m_database_handler.lock()->ExecuteQuery(updateQuery);
-        qDebug() << "Result for" << table << ":" << result.toBool();
+        qDebug() << "Result for" << source.table << ":" << result.toBool();
     }
 }
 
@@ -523,3 +454,4 @@ void NotificationsHandler::onMarkAllReadClicked()
     QMessageBox::information(this, "Успех", "Все уведомления помечены как прочитанные");
     loadAndShowNotifications(m_current_user_id);
 }
+

@@ -6,7 +6,7 @@
 #include <QObject>
 #include <QSharedPointer>
 
-#include "user.h"
+#include "UserInfo.h"
 
 class DatabaseHandler;
 class QWidget;

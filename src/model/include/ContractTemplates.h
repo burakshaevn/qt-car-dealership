@@ -4,10 +4,7 @@
 #define CONTRACT_TEMPLATES_H
 
 #include <QtCore/QString>
-#include <QtCore/QDateTime>
-#include <QtCore/QObject>
-
-#include "ProductRepository.h"
+struct ProductInfo;
 
 namespace ContractTemplates {
 

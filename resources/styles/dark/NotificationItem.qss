@@ -1,5 +1,5 @@
-QWidget {
+QWidget#notificationCard {
     background-color: #252b34;
-    border: 1px solid #3b4654;
-    border-radius: 8px;
+    border: none;
+    border-radius: 12px;
 }

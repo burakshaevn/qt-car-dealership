@@ -1,13 +1,13 @@
-#include "floating_widget.h"
+#include "FloatingNavigationWidget.h"
 #include "ThemeStyleProvider.h"
 #include <QVBoxLayout>
 #include <QPushButton>
 
-FloatingWidget::FloatingWidget(QWidget* parent)
+FloatingNavigationWidget::FloatingNavigationWidget(QWidget* parent)
     : QWidget{parent}
 {}
 
-void FloatingWidget::BuildFloatingMenu(
+void FloatingNavigationWidget::BuildFloatingMenu(
     const size_t x,
     const size_t parent_height,
     const std::function<void()>& onMoreClicked,

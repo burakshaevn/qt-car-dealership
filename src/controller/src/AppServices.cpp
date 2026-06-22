@@ -20,7 +20,7 @@ void AppServices::EnsureCore()
 void AppServices::EnsureFloatingWidget(QWidget* owner)
 {
     if (!floating_widget_) {
-        floating_widget_.reset(new ::FloatingWidget(owner));
+        floating_widget_.reset(new ::FloatingNavigationWidget(owner));
     }
 }
 
@@ -77,7 +77,7 @@ QSharedPointer<ProductRepository> AppServices::GetProducts() const
     return products_;
 }
 
-QSharedPointer<FloatingWidget> AppServices::GetFloatingWidget() const
+QSharedPointer<FloatingNavigationWidget> AppServices::GetFloatingWidget() const
 {
     return floating_widget_;
 }

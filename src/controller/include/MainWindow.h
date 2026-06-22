@@ -10,7 +10,7 @@
 #include "AppServices.h"
 #include "PurchaseMethodsController.h"
 #include "SettingsForm.h"
-#include "user.h"
+#include "UserInfo.h"
 
 QT_BEGIN_NAMESPACE
 namespace Ui {
@@ -97,6 +97,11 @@ private:
      * \brief Обновление позиции плавающего меню при изменении размера окна
      */
     void UpdateFloatingMenuPosition();
+
+    /*!
+     * \brief Обновляет размеры изображения и положение стрелок на странице автомобиля
+     */
+    void UpdatePersonalPageLayout();
 
     /*!
      * \brief Обработка выбора услуги

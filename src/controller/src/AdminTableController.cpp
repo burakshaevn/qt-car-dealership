@@ -15,7 +15,7 @@ void AdminTableController::SetDependencies(const QSharedPointer<DatabaseHandler>
 void AdminTableController::EnsureView(QWidget* owner)
 {
     if (!table_view_) {
-        table_view_.reset(new AdminTableWidget(database_, nullptr, owner));
+        table_view_.reset(new AdminTableWidget(database_, owner));
         connect(table_view_.get(), &AdminTableWidget::Logout, this, &AdminTableController::LogoutRequested);
     }
 

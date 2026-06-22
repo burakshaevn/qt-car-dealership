@@ -8,6 +8,7 @@
 #include <QDialog>
 #include <QDoubleSpinBox>
 #include <QHBoxLayout>
+#include <QLabel>
 #include <QLineEdit>
 #include <QMessageBox>
 #include <QPushButton>

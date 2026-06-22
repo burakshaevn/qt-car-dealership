@@ -21,8 +21,7 @@
 
 #include "AdminTableModel.h"
 #include "DatabaseHandler.h"
-#include "domain.h"
-#include "user.h"
+#include "PriceFormatter.h"
 
 /*!
  * \class AdminTableWidget
@@ -37,10 +36,9 @@ public:
     /*!
      * \brief Конструктор класса AdminTableWidget
      * \param db_manager Умный указатель на обработчик базы данных
-     * \param user Указатель на объект пользователя для проверки прав доступа
      * \param parent Родительский виджет (опционально)
      */
-    explicit AdminTableWidget(QSharedPointer<DatabaseHandler> db_manager, const User* user, QWidget* parent = nullptr);
+    explicit AdminTableWidget(QSharedPointer<DatabaseHandler> db_manager, QWidget* parent = nullptr);
 
     /*!
      * \brief Строит административный интерфейс таблиц
@@ -122,7 +120,6 @@ protected:
     QSharedPointer<DatabaseHandler> m_database_handler;    ///< Умный указатель на обработчик БД
     QScopedPointer<AdminTableModel> m_table_model;         ///< Модель данных админской таблицы
 
-    Tables m_current_table;                                ///< Текущая выбранная таблица из enum Tables
     QTableView* m_data_table;                              ///< Виджет для отображения данных таблицы
     QLabel* m_description_table;                           ///< Метка для описания текущей таблицы
 

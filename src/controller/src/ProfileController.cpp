@@ -62,8 +62,10 @@ void ProfileController::ConfigurePurchasedListView()
     purchased_list_view_->setSelectionMode(QAbstractItemView::NoSelection);
     purchased_list_view_->setVerticalScrollMode(QAbstractItemView::ScrollPerPixel);
     purchased_list_view_->setHorizontalScrollBarPolicy(Qt::ScrollBarAlwaysOff);
+    purchased_list_view_->setResizeMode(QListView::Adjust);
+    purchased_list_view_->setWrapping(false);
     purchased_list_view_->setSpacing(22);
-    purchased_list_view_->setUniformItemSizes(true);
+    purchased_list_view_->setUniformItemSizes(false);
     ApplyThemeStyle(purchased_list_view_, "ListViewTransparent");
 }
 

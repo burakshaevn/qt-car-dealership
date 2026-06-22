@@ -42,19 +42,18 @@ QString ResolveIconPath(const QString& iconName, ThemeMode mode)
 
 ThemeMode GetCurrentThemeMode()
 {
-    const QString appTheme = qEnvironmentVariable("APP_THEME").trimmed().toLower();
-    if (appTheme == "dark") {
-        return ThemeMode::Dark;
-    }
-
     if (qApp) {
         const QVariant prop = qApp->property("app_theme");
-        if (prop.isValid() && prop.toString().trimmed().toLower() == "dark") {
-            return ThemeMode::Dark;
+        if (prop.isValid()) {
+            return prop.toString().trimmed().compare("dark", Qt::CaseInsensitive) == 0
+                ? ThemeMode::Dark
+                : ThemeMode::Light;
         }
     }
 
-    return ThemeMode::Light;
+    return qEnvironmentVariable("APP_THEME").trimmed().compare("dark", Qt::CaseInsensitive) == 0
+        ? ThemeMode::Dark
+        : ThemeMode::Light;
 }
 
 QString LoadThemeStyle(const QString& token, ThemeMode mode)

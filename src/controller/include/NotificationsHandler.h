@@ -1,5 +1,5 @@
-#ifndef NOTIFICATIONS_HANDLER_H
-#define NOTIFICATIONS_HANDLER_H
+#ifndef NOTIFICATIONSHANDLER_H
+#define NOTIFICATIONSHANDLER_H
 
 #include <QDialog>
 #include <QVBoxLayout>
@@ -98,4 +98,4 @@ private:
     void sortNotifications(const bool ascending);
 };
 
-#endif // NOTIFICATIONS_HANDLER_H
+#endif // NOTIFICATIONSHANDLER_H

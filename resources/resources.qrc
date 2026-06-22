@@ -43,7 +43,30 @@
         <file>styles/dark/NotificationItem.qss</file>
         <file>styles/light/NotificationEmpty.qss</file>
         <file>styles/dark/NotificationEmpty.qss</file>
+        <file>styles/light/NotificationsDialog.qss</file>
+        <file>styles/dark/NotificationsDialog.qss</file>
         <file>styles/light/MainShell.qss</file>
         <file>styles/dark/MainShell.qss</file>
+        <file>icons/light/combo_down.svg</file>
+        <file>icons/dark/combo_down.svg</file>
+        <file>icons/dark/add.svg</file>
+        <file>icons/dark/check.svg</file>
+        <file>icons/dark/close.svg</file>
+        <file>icons/dark/color_swatch_02.svg</file>
+        <file>icons/dark/delete.svg</file>
+        <file>icons/dark/directions_car.svg</file>
+        <file>icons/dark/done_all.svg</file>
+        <file>icons/dark/edit.svg</file>
+        <file>icons/dark/file_text.svg</file>
+        <file>icons/dark/inbox.svg</file>
+        <file>icons/dark/information_circle_contained.svg</file>
+        <file>icons/dark/logo.svg</file>
+        <file>icons/dark/mercedez_benz.svg</file>
+        <file>icons/dark/more_horiz.svg</file>
+        <file>icons/dark/navigate_before.svg</file>
+        <file>icons/dark/navigate_next.svg</file>
+        <file>icons/dark/person.svg</file>
+        <file>icons/dark/search.svg</file>
+        <file>icons/dark/settings.svg</file>
     </qresource>
 </RCC>

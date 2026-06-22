@@ -1,7 +1,6 @@
 #include "../include/ProductRepository.h"
 
 #include "../include/DatabaseHandler.h"
-#include "../include/domain.h"
 #include <QGraphicsBlurEffect>
 #include <QSqlRecord>
 #include <QFile>

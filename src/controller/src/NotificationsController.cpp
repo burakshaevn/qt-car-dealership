@@ -1,6 +1,6 @@
 #include "NotificationsController.h"
 
-#include "notifications_handler.h"
+#include "NotificationsHandler.h"
 #include "DatabaseHandler.h"
 
 NotificationsController::NotificationsController(QObject* parent)

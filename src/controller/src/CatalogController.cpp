@@ -46,8 +46,10 @@ void CatalogController::ConfigureListView()
     list_view_->setSelectionMode(QAbstractItemView::NoSelection);
     list_view_->setVerticalScrollMode(QAbstractItemView::ScrollPerPixel);
     list_view_->setHorizontalScrollBarPolicy(Qt::ScrollBarAlwaysOff);
+    list_view_->setResizeMode(QListView::Adjust);
+    list_view_->setWrapping(false);
     list_view_->setSpacing(22);
-    list_view_->setUniformItemSizes(true);
+    list_view_->setUniformItemSizes(false);
     ApplyThemeStyle(list_view_, "ListViewTransparent");
 
     disconnect(list_view_, &QListView::clicked, this, nullptr);

@@ -1,9 +1,9 @@
 ﻿#include "../include/DatabaseHandler.h"
-#include "domain.h"
 #include <QSqlDatabase>
 #include <QSqlQuery>
 #include <QSqlError>
 #include <QDebug>
+#include <QFile>
 
 DatabaseHandler::DatabaseHandler() = default;
 
@@ -29,7 +29,7 @@ void DatabaseHandler::LoadDefault(){
     int port = 5432;
     QString dbname = "car_dealership";
     QString username = "postgres";
-    
+
     // РџРѕРїС‹С‚РєР° РїРѕР»СѓС‡РёС‚СЊ РїР°СЂРѕР»СЊ РёР· РїРµСЂРµРјРµРЅРЅРѕР№ РѕРєСЂСѓР¶РµРЅРёСЏ, РёРЅР°С‡Рµ - РґРµС„РѕР»С‚РЅС‹Р№
     QString password = qEnvironmentVariable("PGPASSWORD", "89274800234Nn");
     
@@ -313,6 +313,15 @@ QList<QString> DatabaseHandler::GetDistinctColors() {
 
 
 void DatabaseHandler::EnsureInventorySchema() {
+    QFile contractSchema(":/sql/contract_templates.sql");
+    if (contractSchema.open(QIODevice::ReadOnly | QIODevice::Text)) {
+        QSqlQuery contractSchemaQuery;
+        if (!contractSchemaQuery.exec(QString::fromUtf8(contractSchema.readAll()))) {
+            qWarning() << "Failed to initialize contract templates:"
+                       << contractSchemaQuery.lastError().text();
+        }
+    }
+
     auto columnExists = [](const QString& table, const QString& column) -> bool {
         QSqlQuery query;
         query.prepare(

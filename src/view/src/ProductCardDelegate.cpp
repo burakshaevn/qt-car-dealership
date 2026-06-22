@@ -1,11 +1,12 @@
 #include "../include/ProductCardDelegate.h"
 
 #include "ProductListModel.h"
-#include "domain.h"
+#include "PriceFormatter.h"
 
 #include <QPainter>
 #include <QPixmap>
 #include <QApplication>
+#include <QWidget>
 #include <QtGlobal>
 
 ProductCardDelegate::ProductCardDelegate(QObject* parent)
@@ -16,25 +17,21 @@ ProductCardDelegate::ProductCardDelegate(QObject* parent)
 namespace {
 bool IsDarkTheme()
 {
-    const QString appTheme = qEnvironmentVariable("APP_THEME").trimmed().toLower();
-    if (appTheme == "dark") {
-        return true;
-    }
     if (qApp) {
         const QVariant prop = qApp->property("app_theme");
-        if (prop.isValid() && prop.toString().trimmed().toLower() == "dark") {
-            return true;
+        if (prop.isValid()) {
+            return prop.toString().trimmed().compare("dark", Qt::CaseInsensitive) == 0;
         }
     }
-    return false;
+    return qEnvironmentVariable("APP_THEME").trimmed().compare("dark", Qt::CaseInsensitive) == 0;
 }
 } // namespace
 
 QSize ProductCardDelegate::sizeHint(const QStyleOptionViewItem& option, const QModelIndex& index) const
 {
-    Q_UNUSED(option);
     Q_UNUSED(index);
-    return QSize(833, 149);
+    const int width = option.widget ? qMax(320, option.widget->width() - 4) : 833;
+    return QSize(width, 149);
 }
 
 void ProductCardDelegate::paint(QPainter* painter, const QStyleOptionViewItem& option, const QModelIndex& index) const
@@ -67,14 +64,19 @@ void ProductCardDelegate::paint(QPainter* painter, const QStyleOptionViewItem& o
         description += " • Нет в наличии";
     }
 
-    const int imageAreaWidth = 367;
+    const int imageAreaWidth = qBound(180, rect.width() * 44 / 100, 367);
+    const int textLeft = rect.x() + imageAreaWidth;
+    const int textWidth = qMax(80, rect.right() - textLeft - 28);
     const int imageX = rect.x();
     const int imageY = rect.y() + 11;
 
     if (!imagePath.isEmpty()) {
         QPixmap originalPixmap(imagePath);
         if (!originalPixmap.isNull()) {
-            QPixmap scaledPixmap = originalPixmap.scaledToHeight(130, Qt::SmoothTransformation);
+            QPixmap scaledPixmap = originalPixmap.scaled(
+                QSize(qMax(1, imageAreaWidth - 24), 130),
+                Qt::KeepAspectRatio,
+                Qt::SmoothTransformation);
             const int imageWidth = scaledPixmap.width();
             const int x = imageX + qMax(0, (imageAreaWidth - imageWidth) / 2);
             painter->drawPixmap(x, imageY, scaledPixmap);
@@ -84,19 +86,19 @@ void ProductCardDelegate::paint(QPainter* painter, const QStyleOptionViewItem& o
     QFont nameFont("Open Sans", 20, QFont::Bold);
     painter->setFont(nameFont);
     painter->setPen(darkTheme ? QColor("#e7edf5") : QColor("#1d1b20"));
-    painter->drawText(QRect(rect.x() + 367, rect.y() + 15, 410, 32),
+    painter->drawText(QRect(textLeft, rect.y() + 15, textWidth, 32),
                       Qt::AlignLeft | Qt::AlignVCenter, name);
 
     QFont descFont("JetBrains Mono", 15);
     painter->setFont(descFont);
     painter->setPen(darkTheme ? QColor("#b8c6d8") : QColor("#555555"));
-    painter->drawText(QRect(rect.x() + 367, rect.y() + 64, 411, 24),
+    painter->drawText(QRect(textLeft, rect.y() + 64, textWidth, 24),
                       Qt::AlignLeft | Qt::AlignVCenter, description);
 
     QFont priceFont("Open Sans", 20, QFont::Bold);
     painter->setFont(priceFont);
     painter->setPen(darkTheme ? QColor("#e7edf5") : QColor("#1d1b20"));
-    painter->drawText(QRect(rect.x() + 400, rect.y() + 106, 405, 32),
+    painter->drawText(QRect(textLeft, rect.y() + 106, textWidth, 32),
                       Qt::AlignRight | Qt::AlignVCenter, FormatPrice(price) + " руб.");
 
     painter->restore();

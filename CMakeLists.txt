@@ -23,31 +23,31 @@ find_package(PostgreSQL REQUIRED)
 # Model
 set(MODEL_DIR ${CMAKE_CURRENT_SOURCE_DIR}/src/model)
 set(MODEL_SOURCES
-    ${MODEL_DIR}/src/contract_templates.cpp
+    ${MODEL_DIR}/src/ContractTemplates.cpp
     ${MODEL_DIR}/src/AdminTableModel.cpp
     ${MODEL_DIR}/src/DatabaseHandler.cpp
-    ${MODEL_DIR}/src/edit_dialog.cpp
-    ${MODEL_DIR}/src/floating_widget.cpp
+    ${MODEL_DIR}/src/AdminRecordEditDialog.cpp
+    ${MODEL_DIR}/src/FloatingNavigationWidget.cpp
     ${MODEL_DIR}/src/ProductListModel.cpp
     ${MODEL_DIR}/src/PurchaseMethodListModel.cpp
     ${MODEL_DIR}/src/ProductRepository.cpp
     ${MODEL_DIR}/src/AdminTableWidget.cpp
-    ${MODEL_DIR}/src/user.cpp
     ${MODEL_DIR}/src/ThemeStyleProvider.cpp
 )
 set(MODEL_HEADERS
-    ${MODEL_DIR}/include/contract_templates.h
+    ${MODEL_DIR}/include/ContractTemplates.h
     ${MODEL_DIR}/include/AdminTableModel.h
     ${MODEL_DIR}/include/DatabaseHandler.h
-    ${MODEL_DIR}/include/domain.h
-    ${MODEL_DIR}/include/edit_dialog.h
-    ${MODEL_DIR}/include/floating_widget.h
+    ${MODEL_DIR}/include/UserRole.h
+    ${MODEL_DIR}/include/UserInfo.h
+    ${MODEL_DIR}/include/PriceFormatter.h
+    ${MODEL_DIR}/include/AdminRecordEditDialog.h
+    ${MODEL_DIR}/include/FloatingNavigationWidget.h
     ${MODEL_DIR}/include/ProductListModel.h
     ${MODEL_DIR}/include/PurchaseMethod.h
     ${MODEL_DIR}/include/PurchaseMethodListModel.h
     ${MODEL_DIR}/include/ProductRepository.h
     ${MODEL_DIR}/include/AdminTableWidget.h
-    ${MODEL_DIR}/include/user.h
     ${MODEL_DIR}/include/ThemeStyleProvider.h
 )
 add_library(model ${MODEL_SOURCES} ${MODEL_HEADERS})
@@ -78,7 +78,7 @@ set(CONTROLLER_SOURCES
     ${CONTROLLER_DIR}/src/PurchaseRequestStrategy.cpp
     ${CONTROLLER_DIR}/src/SelectedCarActionStrategy.cpp
     ${CONTROLLER_DIR}/src/SettingsForm.cpp
-    ${CONTROLLER_DIR}/src/notifications_handler.cpp
+    ${CONTROLLER_DIR}/src/NotificationsHandler.cpp
     ${CONTROLLER_DIR}/include/AppServices.h
     ${CONTROLLER_DIR}/include/UserSession.h
     ${CONTROLLER_DIR}/include/MainWindow.h
@@ -91,7 +91,7 @@ set(CONTROLLER_SOURCES
     ${CONTROLLER_DIR}/include/PurchaseRequestStrategy.h
     ${CONTROLLER_DIR}/include/SelectedCarActionStrategy.h
     ${CONTROLLER_DIR}/include/SettingsForm.h
-    ${CONTROLLER_DIR}/include/notifications_handler.h
+    ${CONTROLLER_DIR}/include/NotificationsHandler.h
 )
 add_library(controller STATIC ${CONTROLLER_SOURCES})
 target_include_directories(controller PUBLIC

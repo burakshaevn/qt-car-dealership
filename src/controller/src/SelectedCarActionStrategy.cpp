@@ -14,7 +14,7 @@
 
 #include "AppServices.h"
 #include "ThemeStyleProvider.h"
-#include "domain.h"
+#include "PriceFormatter.h"
 
 namespace {
 

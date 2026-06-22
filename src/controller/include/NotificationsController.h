@@ -7,7 +7,7 @@
 #include <QScopedPointer>
 #include <QSharedPointer>
 
-#include "notifications_handler.h"
+#include "NotificationsHandler.h"
 
 class DatabaseHandler;
 class QWidget;

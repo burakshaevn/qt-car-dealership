@@ -1,9 +1,22 @@
-#include "../include/edit_dialog.h"
+#include "AdminRecordEditDialog.h"
+#include "ThemeStyleProvider.h"
 
-EditDialog::EditDialog(const QSqlRecord& record, QWidget* parent)
+#include <QGuiApplication>
+#include <QHBoxLayout>
+#include <QLabel>
+#include <QLineEdit>
+#include <QPushButton>
+#include <QRegularExpression>
+#include <QScreen>
+#include <QVBoxLayout>
+
+AdminRecordEditDialog::AdminRecordEditDialog(const QSqlRecord& record, QWidget* parent)
     : QDialog(parent)
     , record_(record)
 {
+    setWindowTitle(QStringLiteral("Редактирование записи"));
+    ApplyThemeStyle(this, "DialogForm");
+
     // Основной макет
     auto* layout = new QVBoxLayout(this);
 
@@ -24,6 +37,8 @@ EditDialog::EditDialog(const QSqlRecord& record, QWidget* parent)
     auto* buttonLayout = new QHBoxLayout();
     auto* saveButton = new QPushButton("Сохранить", this);
     auto* cancelButton = new QPushButton("Отмена", this);
+    saveButton->setProperty("type", "primary");
+    cancelButton->setProperty("type", "secondary");
 
     connect(saveButton, &QPushButton::clicked, this, &QDialog::accept);
     connect(cancelButton, &QPushButton::clicked, this, &QDialog::reject);
@@ -41,7 +56,7 @@ EditDialog::EditDialog(const QSqlRecord& record, QWidget* parent)
     move(screenGeometry.center() - rect().center());
 }
 
-QSqlRecord EditDialog::GetUpdatedRecord() const {
+QSqlRecord AdminRecordEditDialog::GetUpdatedRecord() const {
     QSqlRecord updatedRecord = record_;
 
     for (int i = 0; i < fields_.size(); ++i) {

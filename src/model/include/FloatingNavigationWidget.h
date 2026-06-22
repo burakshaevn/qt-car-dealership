@@ -1,20 +1,23 @@
 #pragma once
 
-#ifndef FLOATING_WIDGET_H
-#define FLOATING_WIDGET_H
+#ifndef FLOATING_NAVIGATION_WIDGET_H
+#define FLOATING_NAVIGATION_WIDGET_H
 
 #include <QWidget>
 
-class FloatingWidget : public QWidget
+#include <cstddef>
+#include <functional>
+
+class FloatingNavigationWidget final : public QWidget
 {
     Q_OBJECT
 public:
 
     /*!
-     * \brief FloatingWidget - Конструктор плавающего виджета
+     * \brief Конструктор плавающей навигации
      * \param parent Родительский виджет (необязательный параметр)
      */
-    explicit FloatingWidget(QWidget* parent = nullptr);
+    explicit FloatingNavigationWidget(QWidget* parent = nullptr);
 
     /*!
      * \brief BuildFloatingMenu - Создает и настраивает плавающее боковое меню
@@ -42,4 +45,4 @@ public:
     );
 };
 
-#endif // FLOATING_WIDGET_H
+#endif // FLOATING_NAVIGATION_WIDGET_H

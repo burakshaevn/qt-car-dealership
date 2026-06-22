@@ -1,5 +1,6 @@
 QLabel {
-    font-weight: bold;
-    font-size: 14px;
+    background: transparent;
+    border: none;
+    font: 700 11pt "JetBrains Mono";
     color: #1d1b20;
 }

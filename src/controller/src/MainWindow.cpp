@@ -2,6 +2,7 @@
 #include "ui_MainWindow.h"
 #include "PurchaseRequestStrategy.h"
 #include "SelectedCarActionStrategy.h"
+#include "PriceFormatter.h"
 #include <QSpinBox>
 #include <QCalendarWidget>
 #include <QSqlQuery>
@@ -16,9 +17,70 @@
 #include <QScrollArea>
 #include <QComboBox>
 #include <QInputDialog>
+#include <QDialogButtonBox>
 #include <QApplication>
 #include <QIcon>
+#include <QStyle>
 #include "ThemeStyleProvider.h"
+
+namespace {
+
+void PrepareInputDialog(QInputDialog& dialog)
+{
+    if (auto* buttons = dialog.findChild<QDialogButtonBox*>()) {
+        if (auto* okButton = buttons->button(QDialogButtonBox::Ok)) {
+            okButton->setProperty("type", "primary");
+            okButton->style()->unpolish(okButton);
+            okButton->style()->polish(okButton);
+        }
+        if (auto* cancelButton = buttons->button(QDialogButtonBox::Cancel)) {
+            cancelButton->setProperty("type", "secondary");
+            cancelButton->style()->unpolish(cancelButton);
+            cancelButton->style()->polish(cancelButton);
+        }
+    }
+    ApplyThemeStyle(&dialog, "DialogForm");
+}
+
+QString GetTextFromThemedDialog(QWidget* parent,
+                                const QString& title,
+                                const QString& label,
+                                bool* accepted)
+{
+    QInputDialog dialog(parent);
+    dialog.setWindowTitle(title);
+    dialog.setLabelText(label);
+    dialog.setInputMode(QInputDialog::TextInput);
+    PrepareInputDialog(dialog);
+
+    const bool isAccepted = dialog.exec() == QDialog::Accepted;
+    if (accepted) {
+        *accepted = isAccepted;
+    }
+    return isAccepted ? dialog.textValue() : QString();
+}
+
+QString GetItemFromThemedDialog(QWidget* parent,
+                                const QString& title,
+                                const QString& label,
+                                const QStringList& items,
+                                bool* accepted)
+{
+    QInputDialog dialog(parent);
+    dialog.setWindowTitle(title);
+    dialog.setLabelText(label);
+    dialog.setComboBoxItems(items);
+    dialog.setComboBoxEditable(false);
+    PrepareInputDialog(dialog);
+
+    const bool isAccepted = dialog.exec() == QDialog::Accepted;
+    if (accepted) {
+        *accepted = isAccepted;
+    }
+    return isAccepted ? dialog.textValue() : QString();
+}
+
+} // namespace
 
 MainWindow::MainWindow(QWidget* parent)
     : QMainWindow(parent)
@@ -57,7 +119,8 @@ void MainWindow::ApplyThemeIcons()
 {
     setWindowIcon(LoadThemeIcon("logo.svg"));
     if (ui->label_2) {
-        ui->label_2->setPixmap(LoadThemeIcon("logo.svg").pixmap(273, 31));
+        ui->label_2->setScaledContents(false);
+        ui->label_2->setPixmap(LoadThemeIcon("mercedez_benz.svg").pixmap(273, 31));
     }
     if (ui->pushButton_settings) {
         ApplyThemeIcon(ui->pushButton_settings, "settings.svg");
@@ -78,11 +141,12 @@ void MainWindow::ApplyThemeIcons()
 
 void MainWindow::SetDarkThemeEnabled(bool enabled)
 {
+    const ThemeMode mode = enabled ? ThemeMode::Dark : ThemeMode::Light;
     qApp->setProperty("app_theme", enabled ? "dark" : "light");
     const auto topLevels = qApp->topLevelWidgets();
     for (QWidget* widget : topLevels) {
-        ReapplyThemeStyles(widget);
-        ReapplyThemeIcons(widget);
+        ReapplyThemeStyles(widget, mode);
+        ReapplyThemeIcons(widget, mode);
     }
     ApplyThemeIcons();
     if (ui->catalogListView) {
@@ -134,11 +198,6 @@ void MainWindow::OnLoginClicked()
 
     if (user.role_ == Role::User) {
         BuildDependencies();
-        if (m_services->GetProfile()) {
-            user.products_ = m_services->GetProfile()->GetPurchasedProductKeys(user.id_);
-        } else {
-            user.products_.clear();
-        }
         UpdateUser(user, this);
 
         m_services->GetProducts()->PullProducts();
@@ -234,12 +293,19 @@ void MainWindow::ShowProductOnPersonalPage(const ProductInfo& product, QList<Pro
     QPixmap originalPixmap(imagePath);
 
     if (!originalPixmap.isNull()) {
-        int fixedWidth = 394;
-        QPixmap scaledPixmap = originalPixmap.scaled(fixedWidth, originalPixmap.height(), Qt::KeepAspectRatio, Qt::SmoothTransformation);
-        int imageHeight = scaledPixmap.height();
+        const int availableWidth = ui->groupBox_2
+            ? qMax(ui->groupBox_2->width(), ui->groupBox_2->minimumWidth())
+            : 900;
+        const int imageWidth = qBound(520, availableWidth - 180, 700);
+        const QPixmap scaledPixmap = originalPixmap.scaled(
+            QSize(imageWidth, 285),
+            Qt::KeepAspectRatio,
+            Qt::SmoothTransformation);
 
         ui->label_car_image->setPixmap(scaledPixmap);
-        ui->label_car_image->setFixedSize(fixedWidth, imageHeight);
+        ui->label_car_image->setMinimumSize(imageWidth, 250);
+        ui->label_car_image->setMaximumSize(imageWidth, 285);
+        ui->label_car_image->setAlignment(Qt::AlignCenter);
         ui->label_car_image->show();
     }
 
@@ -247,6 +313,7 @@ void MainWindow::ShowProductOnPersonalPage(const ProductInfo& product, QList<Pro
     ui->pushButton_to_pay->setVisible(product.stock_qty_ > 0); // If product is in stock, show to pay button
 
     ui->stackedWidget->setCurrentWidget(ui->personal);
+    UpdatePersonalPageLayout();
 }
 
 void MainWindow::OnNextLeftClicked()
@@ -408,15 +475,12 @@ void MainWindow::OnSortByColorClicked()
         if (m_services->GetUserSession()->IsUser())
         {
             bool ok;
-            QString selectedColor = QInputDialog::getItem(
-                this,                   // Show color selection dialog
-                "Поиск по цветам",      // Search by colors title
-                "Выберите цвет:",       // Select color label
-                m_services->GetProducts()->GetAvailableColors(), // Get available colors
-                0,                      // Default color index
-                false,                  // Allow multiple selection
-                &ok                     // Get selected color index
-                );
+            const QString selectedColor = GetItemFromThemedDialog(
+                this,
+                "Поиск по цветам",
+                "Выберите цвет:",
+                m_services->GetProducts()->GetAvailableColors(),
+                &ok);
 
             SelectionProcessing(ok, QStringView(), selectedColor);
             return;
@@ -428,14 +492,11 @@ void MainWindow::OnSortByColorClicked()
 void MainWindow::OnSearchClicked()
 {
     bool ok;
-    QString term = QInputDialog::getText(
+    const QString term = GetTextFromThemedDialog(
         this,
         "Поиск",
         "Укажите поисковый запрос:",
-        QLineEdit::Normal,
-        "",
-        &ok
-        );
+        &ok);
 
     if (ok && !term.isEmpty())
     {
@@ -471,15 +532,12 @@ void MainWindow::OnSortByTypeClicked()
             types << QString::fromUtf8("Все");
 
             bool ok;
-            QString selected_type = QInputDialog::getItem(
-                this,                 // Show type selection dialog
-                "Поиск по типу авто", // Search by type title
-                "Тип:",               // Select type label
-                types,                // Get available types
-                0,                    // Default type index
-                false,                // Allow multiple selection
-                &ok                   // Get selected type index
-                );
+            const QString selected_type = GetItemFromThemedDialog(
+                this,
+                "Поиск по типу авто",
+                "Тип:",
+                types,
+                &ok);
 
             QString defaultColor;
             if (m_services->GetDatabase()) {
@@ -526,10 +584,31 @@ void MainWindow::UpdateFloatingMenuPosition()
     }
 }
 
+void MainWindow::UpdatePersonalPageLayout()
+{
+    if (!ui || !ui->groupBox_2 || !ui->pushButton_next_left || !ui->pushButton_next_right) {
+        return;
+    }
+
+    constexpr int arrowSize = 68;
+    constexpr int sideMargin = 16;
+    const int y = qMax(0, (ui->groupBox_2->height() - arrowSize) / 2);
+
+    ui->pushButton_next_left->setGeometry(sideMargin, y, arrowSize, arrowSize);
+    ui->pushButton_next_right->setGeometry(
+        qMax(sideMargin, ui->groupBox_2->width() - arrowSize - sideMargin),
+        y,
+        arrowSize,
+        arrowSize);
+    ui->pushButton_next_left->raise();
+    ui->pushButton_next_right->raise();
+}
+
 void MainWindow::resizeEvent(QResizeEvent *event)
 {
     QMainWindow::resizeEvent(event);  // Resize event
 
     // Update floating menu position
     UpdateFloatingMenuPosition();
+    UpdatePersonalPageLayout();
 }

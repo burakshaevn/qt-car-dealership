@@ -7,7 +7,7 @@
 #include <QObject>
 #include <QSharedPointer>
 #include "../include/DatabaseHandler.h"
-#include "../../controller/include/notifications_handler.h"
+#include "../../controller/include/NotificationsHandler.h"
 
 class SimpleTests : public QObject
 {

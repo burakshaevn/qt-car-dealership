@@ -47,11 +47,6 @@ Role UserSession::GetRole() const
     return user_.role_;
 }
 
-const QList<ProductRepository::ProductKey>& UserSession::GetProducts() const
-{
-    return user_.products_;
-}
-
 void UserSession::SetName(const QString& name)
 {
     user_.full_name_ = name;
@@ -60,9 +55,4 @@ void UserSession::SetName(const QString& name)
 void UserSession::SetEmail(const QString& email)
 {
     user_.email_ = email;
-}
-
-void UserSession::SetProducts(const QList<ProductRepository::ProductKey>& products)
-{
-    user_.products_ = products;
 }

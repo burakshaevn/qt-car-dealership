@@ -14,17 +14,13 @@ PurchaseMethodCardDelegate::PurchaseMethodCardDelegate(QObject* parent)
 namespace {
 bool IsDarkTheme()
 {
-    const QString appTheme = qEnvironmentVariable("APP_THEME").trimmed().toLower();
-    if (appTheme == "dark") {
-        return true;
-    }
     if (qApp) {
         const QVariant prop = qApp->property("app_theme");
-        if (prop.isValid() && prop.toString().trimmed().toLower() == "dark") {
-            return true;
+        if (prop.isValid()) {
+            return prop.toString().trimmed().compare("dark", Qt::CaseInsensitive) == 0;
         }
     }
-    return false;
+    return qEnvironmentVariable("APP_THEME").trimmed().compare("dark", Qt::CaseInsensitive) == 0;
 }
 } // namespace
 

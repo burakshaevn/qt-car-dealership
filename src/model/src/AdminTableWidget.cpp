@@ -1,10 +1,10 @@
 #include "../include/AdminTableWidget.h"
-#include "edit_dialog.h"
+#include "AdminRecordEditDialog.h"
 #include "ThemeStyleProvider.h"
 #include <QWidget>
 #include <QString>
 
-AdminTableWidget::AdminTableWidget(QSharedPointer<DatabaseHandler> db_manager, const User* user, QWidget* parent)
+AdminTableWidget::AdminTableWidget(QSharedPointer<DatabaseHandler> db_manager, QWidget* parent)
     : QWidget(parent)
     , m_database_handler(std::move(db_manager))
     , m_data_table(new QTableView(this))
@@ -23,8 +23,6 @@ AdminTableWidget::AdminTableWidget(QSharedPointer<DatabaseHandler> db_manager, c
 
 void AdminTableWidget::BuildAdminTables(){
     m_table_selector = new QComboBox(this);
-    m_current_table = Tables::unknown;
-
     auto* layout = new QVBoxLayout(this);
     
     QSqlQuery tables_query;
@@ -210,7 +208,6 @@ void AdminTableWidget::LoadTable() {
     m_data_table->setSortingEnabled(true);
     m_data_table->horizontalHeader()->setSectionResizeMode(QHeaderView::Stretch);
 
-    m_current_table = StringToTables(table_name);
 }
 
 void AdminTableWidget::AddRecord() {
@@ -250,8 +247,8 @@ void AdminTableWidget::AddRecord() {
     }
 
     try {
-        // Открываем диалог EditDialog для ввода данных
-        EditDialog dialog(newRecord, this);
+        // Открываем диалог редактирования для ввода данных
+        AdminRecordEditDialog dialog(newRecord, this);
         if (dialog.exec() == QDialog::Accepted) {
             QSqlRecord updatedRecord;
             updatedRecord = dialog.GetUpdatedRecord();
@@ -430,7 +427,7 @@ void AdminTableWidget::EditRecord() {
     }
 
     try {
-        EditDialog dialog(record, this);
+        AdminRecordEditDialog dialog(record, this);
         if (dialog.exec() == QDialog::Accepted) {
             QSqlRecord updatedRecord = dialog.GetUpdatedRecord();
 

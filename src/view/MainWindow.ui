@@ -659,7 +659,7 @@
            <string />
           </property>
           <property name="scaledContents">
-           <bool>true</bool>
+           <bool>false</bool>
           </property>
           <property name="alignment">
            <set>Qt::AlignmentFlag::AlignCenter</set>
@@ -907,8 +907,8 @@
           </property>
           <property name="minimumSize">
            <size>
-            <width>659</width>
-            <height>325</height>
+            <width>900</width>
+            <height>440</height>
            </size>
           </property>
           <property name="title">
@@ -954,8 +954,8 @@
             <rect>
              <x>3</x>
              <y>200</y>
-             <width>58</width>
-             <height>54</height>
+             <width>68</width>
+             <height>68</height>
             </rect>
            </property>
            <property name="text">
@@ -967,18 +967,18 @@
            </property>
            <property name="iconSize">
             <size>
-             <width>54</width>
-             <height>54</height>
+             <width>64</width>
+             <height>64</height>
             </size>
            </property>
           </widget>
           <widget class="QPushButton" name="pushButton_next_right">
            <property name="geometry">
             <rect>
-             <x>590</x>
-             <y>200</y>
-             <width>58</width>
-             <height>54</height>
+             <x>816</x>
+             <y>186</y>
+             <width>68</width>
+             <height>68</height>
             </rect>
            </property>
            <property name="text">
@@ -990,8 +990,8 @@
            </property>
            <property name="iconSize">
             <size>
-             <width>54</width>
-             <height>54</height>
+             <width>64</width>
+             <height>64</height>
             </size>
            </property>
           </widget>

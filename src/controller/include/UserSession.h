@@ -3,7 +3,7 @@
 #ifndef USER_SESSION_H
 #define USER_SESSION_H
 
-#include "user.h"
+#include "UserInfo.h"
 
 class UserSession
 {
@@ -19,11 +19,8 @@ public:
     const QString& GetName() const;
     const QString& GetEmail() const;
     Role GetRole() const;
-    const QList<ProductRepository::ProductKey>& GetProducts() const;
-
     void SetName(const QString& name);
     void SetEmail(const QString& email);
-    void SetProducts(const QList<ProductRepository::ProductKey>& products);
 
 private:
     UserInfo user_;
