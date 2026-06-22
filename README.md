@@ -2,13 +2,13 @@
 
 Основная задача — демонстрация навыков работы с **С++17**, СУБД **PostgreSQL** и фреймворком **Qt 6**.
 
-![C++](https://img.shields.io/badge/C++-00599C?logo=cplusplus&logoColor=white) 
-![Qt](https://img.shields.io/badge/Qt-41CD52?logo=qt&logoColor=white) 
+![C++17](https://img.shields.io/badge/C++17-00599C?logo=cplusplus&logoColor=white)
+![Qt6](https://img.shields.io/badge/Qt6-41CD52?logo=qt&logoColor=white)
 ![PostgreSQL](https://img.shields.io/badge/PostgreSQL-336791?logo=postgresql&logoColor=white)
 ![CMake](https://img.shields.io/badge/CMake-064F8C?logo=cmake&logoColor=white)
 
 ## Описание
-Разработано с помощью C++17 с использованием фреймворка Qt 6 и системой управления базами данных PostgreSQL. Приложение предоставляет полный функционал для управления автосалоном Mercedes-Benz, включая работу с клиентами, администрирование, управление автопарком и сервисными услугами.
+Разработано с помощью C++17 с использованием фреймворка Qt 6 и системой управления базами данных PostgreSQL. Приложение предоставляет функционал для управления автосалоном Mercedes-Benz, включая работу с клиентами, администрирование, управление автопарком и сервисными услугами.
 
 В программе предусмотрено два типа пользователей:
 * **Администратор** - полный доступ к управлению данными
@@ -60,20 +60,18 @@ make
 
 ### Авторизация
 <div align="center">
-  <img src="https://github.com/user-attachments/assets/0e73e6c6-0bde-4749-bf2b-aff373475eaa" style="display: block; margin: 0 auto; width: 90%;"/>
+  <img src="https://github.com/user-attachments/assets/42b8c4f5-e47c-4a23-8fea-66c9da736f02" style="display: block; margin: 0 auto; width: 90%;"/>
 </div>
 
 **Описание:** Система аутентификации с поддержкой двух типов пользователей - клиентов и администраторов.
 
 **Алгоритм безопасности:**
 - Хеширование паролей с использованием SHA-256
-- Валидация входных данных на стороне клиента и сервера
-- Защита от SQL-инъекций через параметризованные запросы
 - Разграничение прав доступа на основе ролей пользователей
 
 ### Каталог автомобилей
 <div align="center">
-  <img src="https://github.com/user-attachments/assets/d6311a89-b8c0-443c-a21a-c741307d63db" style="display: block; margin: 0 auto; width: 90%;"/>
+  <img src="https://github.com/user-attachments/assets/d52fc11f-4e10-44b2-b358-0e62bd7328c5" style="display: block; margin: 0 auto; width: 90%;"/>
 </div>
 
 **Описание:** Основной каталог с полным ассортиментом автомобилей Mercedes-Benz.
@@ -86,7 +84,7 @@ make
 
 ### Сортировка каталога по цветам автомобилей
 <div align="center">
-  <img src="https://github.com/user-attachments/assets/8c0c7186-27e1-455f-b377-a95e57661567" style="display: block; margin: 0 auto; width: 90%;"/>
+  <img src="https://github.com/user-attachments/assets/74289760-7421-44aa-8fa5-5cf22f901376" style="display: block; margin: 0 auto; width: 90%;"/>
 </div>
 
 **Описание:** Система фильтрации автомобилей по цветам.
@@ -99,7 +97,7 @@ make
 
 ### Сортировка каталога по типам автомобилей
 <div align="center">
-  <img src="https://github.com/user-attachments/assets/02e8d7c1-705f-4cd7-be13-2c8a1d2d2433" style="display: block; margin: 0 auto; width: 90%;"/>
+  <img src="https://github.com/user-attachments/assets/ed729ad5-f7f2-495c-9032-9df36cd7c6bc" style="display: block; margin: 0 auto; width: 90%;"/>
 </div>
 
 **Описание:** Фильтрация по типам автомобилей (седан, внедорожник, купе, кабриолет).
@@ -112,7 +110,7 @@ make
 
 ### Поиск автомобилей по поисковому запросу
 <div align="center">
-  <img src="https://github.com/user-attachments/assets/e970f798-a0cc-44ad-a6d7-438b4f72db4b" style="display: block; margin: 0 auto; width: 90%;"/>
+  <img src="https://github.com/user-attachments/assets/39473d47-5612-498b-8f5f-4fc48b76f941" style="display: block; margin: 0 auto; width: 90%;"/>
 </div>
 
 **Описание:** Система поиска с поддержкой нечеткого поиска и автодополнения.
@@ -126,7 +124,7 @@ make
 
 ### Карточка автомобиля
 <div align="center">
-  <img src="https://github.com/user-attachments/assets/a810a80d-d7ff-4511-9fd4-6b8a775a7618" style="display: block; margin: 0 auto; width: 90%;"/>
+  <img src="https://github.com/user-attachments/assets/05b21671-5933-4d3b-b2c4-d8473e30370d" style="display: block; margin: 0 auto; width: 90%;"/>
 </div>
 
 **Описание:** Детальная страница автомобиля с полной информацией и возможностями взаимодействия.
@@ -141,6 +139,11 @@ make
 - **Загрузка изображений:** Загрузка и масштабирование изображений при создании карточек
 - **Управление состоянием:** Отслеживание выбранного цвета и конфигурации
 - **Валидация данных:** Проверка доступности автомобиля перед оформлением заявки
+
+### Смена цветовой темы
+<div align="center">
+  <img src="https://github.com/user-attachments/assets/85fbd580-4402-4f6d-b484-284a94247bc9" style="display: block; margin: 0 auto; width: 90%;"/>
+</div>
 
 ### Личный кабинет
 <div align="center">
