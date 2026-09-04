@@ -173,7 +173,7 @@ void AdminTableWidget::LoadTable() {
     }
 
     if (!m_table_model->Load(table_name)) {
-        QMessageBox::critical(this, "Error", "Query execution failed: " + m_table_model->lastError().text());
+        QMessageBox::critical(this, "Error", "Query execution failed.");
         return;
     }
 
@@ -271,7 +271,7 @@ void AdminTableWidget::AddRecord() {
             // Выполняем запрос
             QSqlQuery query;
             if (!query.exec(insertQuery)) {
-                throw std::runtime_error(query.lastError().text().toStdString());
+                throw std::runtime_error("");
             }
 
             // Перезагружаем таблицу
@@ -355,7 +355,7 @@ void AdminTableWidget::DeleteRecord() {
         query.bindValue(":id", id);
 
         if (!query.exec()) {
-            QMessageBox::critical(this, "Error", "Failed to delete record: " + query.lastError().text());
+            QMessageBox::critical(this, "Error", "Failed to delete record.");
             return;
         }
 
@@ -479,7 +479,7 @@ bool AdminTableWidget::GetConfirmation(const QString& table_name, const QString&
     query.bindValue(":id", id);
 
     if (!query.exec() || !query.next()) {
-        QMessageBox::critical(nullptr, "Error", "Failed to fetch record for confirmation: " + query.lastError().text());
+        QMessageBox::critical(nullptr, "Error", "Failed to fetch record for confirmation. ");
         return false;
     }
 

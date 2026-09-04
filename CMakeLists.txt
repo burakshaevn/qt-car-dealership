@@ -15,10 +15,6 @@ set(CMAKE_CXX_STANDARD_REQUIRED ON)
 # Find packages
 find_package(QT NAMES Qt6 Qt5 REQUIRED COMPONENTS Widgets Sql)
 find_package(Qt${QT_VERSION_MAJOR} REQUIRED COMPONENTS Widgets Sql)
-# Если не находит PostgreSQL, можно явно указать путь:
-set(PostgreSQL_ADDITIONAL_VERSIONS "18")
-set(PostgreSQL_ROOT "C:/.dev/PostgreSQL/18")
-find_package(PostgreSQL REQUIRED)
 
 # Model
 set(MODEL_DIR ${CMAKE_CURRENT_SOURCE_DIR}/src/model)
@@ -50,11 +46,18 @@ set(MODEL_HEADERS
     ${MODEL_DIR}/include/AdminTableWidget.h
     ${MODEL_DIR}/include/ThemeStyleProvider.h
 )
+
 add_library(model ${MODEL_SOURCES} ${MODEL_HEADERS})
+
+target_compile_definitions(model PUBLIC
+    PROJECT_ROOT_DIR="${CMAKE_SOURCE_DIR}"
+)
+
 target_include_directories(model PUBLIC
     ${MODEL_DIR}/include
     ${PostgreSQL_INCLUDE_DIR}
 )
+
 target_link_libraries(model PUBLIC
     Qt${QT_VERSION_MAJOR}::Core
     Qt${QT_VERSION_MAJOR}::Widgets
@@ -179,10 +182,6 @@ target_link_libraries(qt-car-dealership PRIVATE
     view
 )
 
-# PostgreSQL
-target_include_directories(qt-car-dealership PRIVATE ${PostgreSQL_INCLUDE_DIR})
-target_link_libraries(qt-car-dealership PRIVATE ${PostgreSQL_LIBRARY})
-
 # Qt for iOS sets MACOSX_BUNDLE_GUI_IDENTIFIER automatically since Qt 6.1.
 # If you are developing for iOS or macOS you should consider setting an
 # explicit, fixed bundle identifier manually though.
@@ -207,3 +206,5 @@ install(TARGETS qt-car-dealership
 if(QT_VERSION_MAJOR EQUAL 6)
     qt_finalize_executable(qt-car-dealership)
 endif()
+
+add_subdirectory(system_data)

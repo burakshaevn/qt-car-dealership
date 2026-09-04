@@ -26,7 +26,7 @@ QString LoadTemplate(const QString& code)
     QSqlQuery query;
     query.prepare(
         "SELECT title, body_template "
-        "FROM public.contract_templates "
+        "FROM contract_templates "
         "WHERE code = :code AND is_active = true "
         "ORDER BY version DESC LIMIT 1");
     query.bindValue(":code", code);

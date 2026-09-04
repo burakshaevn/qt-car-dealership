@@ -1,532 +1,429 @@
 ﻿#include "../include/DatabaseHandler.h"
-#include <QSqlDatabase>
-#include <QSqlQuery>
 #include <QSqlError>
+#include <QStandardPaths>
+#include <QDir>
 #include <QDebug>
-#include <QFile>
 
 DatabaseHandler::DatabaseHandler() = default;
 
 bool DatabaseHandler::Open() {
-    return db_.open();
+    if (!m_database.open())
+        return false;
+    // Обязательно для SQLite: включаем внешние ключи
+    QSqlQuery(m_database).exec("PRAGMA foreign_keys = ON;");
+    return true;
 }
 
 void DatabaseHandler::Close() {
-    db_.close();
+    m_database.close();
 }
 
-void DatabaseHandler::UpdateConnection(const QString& host, int port, const QString& db_name, const QString& username, const QString& password) {
-    db_ = QSqlDatabase::addDatabase("QPSQL");
-    db_.setHostName(host);
-    db_.setPort(port);
-    db_.setDatabaseName(db_name);
-    db_.setUserName(username);
-    db_.setPassword(password);
+void DatabaseHandler::UpdateConnection(const QString& database_path) {
+    m_database = QSqlDatabase::addDatabase("QSQLITE");
+    m_database.setDatabaseName(database_path);
 }
 
-void DatabaseHandler::LoadDefault(){
-    QString hostname = "localhost";
-    int port = 5432;
-    QString dbname = "car_dealership";
-    QString username = "postgres";
+void DatabaseHandler::LoadDefault() {
+    // Путь к БД: переменная окружения или каталог данных приложения
+    QString defaultDir = QStandardPaths::writableLocation(QStandardPaths::AppDataLocation);
+    QDir().mkpath(defaultDir);
+    // QString dbPath = qEnvironmentVariable("CAR_DEALERSHIP_DB", defaultDir + "/system_data.sqlite");
+    QString dbPath = "/Users/nikita/dev/repos/qt-car-dealership/system_data/sysdb/system_data.sqlite";
 
-    // РџРѕРїС‹С‚РєР° РїРѕР»СѓС‡РёС‚СЊ РїР°СЂРѕР»СЊ РёР· РїРµСЂРµРјРµРЅРЅРѕР№ РѕРєСЂСѓР¶РµРЅРёСЏ, РёРЅР°С‡Рµ - РґРµС„РѕР»С‚РЅС‹Р№
-    QString password = qEnvironmentVariable("PGPASSWORD", "89274800234Nn");
-    
-    UpdateConnection(hostname, port, dbname, username, password);
-    
+
+    UpdateConnection(dbPath);
+
     if (!Open()) {
-        qCritical() << "РќРµ СѓРґР°Р»РѕСЃСЊ РїРѕРґРєР»СЋС‡РёС‚СЊСЃСЏ Рє Р±Р°Р·Рµ РґР°РЅРЅС‹С…!";
-        qCritical() << "РџСЂРѕРІРµСЂСЊС‚Рµ, С‡С‚Рѕ PostgreSQL Р·Р°РїСѓС‰РµРЅ Рё РґРѕСЃС‚СѓРїРµРЅ РЅР°" << hostname << ":" << port;
-        qCritical() << "РћС€РёР±РєР°:" << GetLastError();
+        qCritical() << "Не удалось открыть базу данных:" << dbPath;
+        qCritical() << "Ошибка:" << GetLastError();
         return;
     }
-    
-    // qDebug() << "РЈСЃРїРµС€РЅРѕРµ РїРѕРґРєР»СЋС‡РµРЅРёРµ Рє Р±Р°Р·Рµ РґР°РЅРЅС‹С…:" << dbname;
+
+    EnsureSystemSchema();
     EnsureInventorySchema();
 }
 
-QString DatabaseHandler::GetLastError() const{
-    return db_.lastError().text();
+QString DatabaseHandler::GetLastError() const {
+    return m_database.lastError().text();
 }
 
-QString DatabaseHandler::GetTableDescription(const QStringView table_name){
-    QSqlQuery query;
-    query.prepare("SELECT obj_description(oid) AS description FROM pg_class WHERE relname = :table_name;");
-    query.bindValue(":table_name", table_name.toString());
-    if (query.exec() && query.next()) {
-        return query.value(0).toString();
-    }
-    return QString();
+// ---------------------------------------------------------------------------
+// Системные таблицы: весь бывший хардкод
+// ---------------------------------------------------------------------------
+void DatabaseHandler::EnsureSystemSchema() {
+    QSqlQuery q(m_database);
+
+    q.exec("CREATE TABLE IF NOT EXISTS sys_strings ("
+           " category TEXT NOT NULL,"
+           " key      TEXT NOT NULL,"
+           " value    TEXT NOT NULL,"
+           " PRIMARY KEY (category, key)"
+           ");");
+
+    q.exec("CREATE TABLE IF NOT EXISTS sys_settings ("
+           " key   TEXT PRIMARY KEY,"
+           " value TEXT NOT NULL"
+           ");");
+
+    auto putString = [&](const QString& cat, const QString& key, const QString& val) {
+        QSqlQuery ins(m_database);
+        ins.prepare("INSERT OR IGNORE INTO sys_strings(category, key, value) VALUES(?,?,?);");
+        ins.addBindValue(cat);
+        ins.addBindValue(key);
+        ins.addBindValue(val);
+        ins.exec();
+    };
+
+    // --- Отображаемые названия таблиц (раньше — цепочка if/else) ---
+    const QString kTableNames = "table_display_name";
+    putString(kTableNames, "admins",             "Администраторы");
+    putString(kTableNames, "cars",               "Автомобили");
+    putString(kTableNames, "car_types",          "Типы автомобилей");
+    putString(kTableNames, "clients",            "Клиенты");
+    putString(kTableNames, "purchases",          "Продажи");
+    putString(kTableNames, "service_requests",   "Заявки на обслуживание");
+    putString(kTableNames, "insurance_requests", "Заявки на страхование");
+    putString(kTableNames, "loan_requests",      "Заявки на кредитование");
+    putString(kTableNames, "purchase_requests",  "Заявки на покупку");
+    putString(kTableNames, "order_requests",     "Заявки на заказ");
+    putString(kTableNames, "test_drives",        "Заявки на тест-драйв");
+    putString(kTableNames, "rental_requests",    "Заявки на аренду");
+
+    // --- Сообщения об ошибках для пользователя ---
+    const QString kErrors = "error_message";
+    putString(kErrors, "unique",   "❌ Данная запись уже существует. Пожалуйста, проверьте введённые данные.");
+    putString(kErrors, "fk",       "❌ Ошибка связи данных. Пожалуйста, обновите страницу и попробуйте снова.");
+    putString(kErrors, "notnull",  "❌ Не все обязательные поля заполнены. Пожалуйста, проверьте форму.");
+    putString(kErrors, "check",    "❌ Введённые данные не соответствуют требованиям. Пожалуйста, проверьте формат.");
+    putString(kErrors, "default",  "❌ Произошла ошибка при сохранении данных. Пожалуйста, попробуйте снова.");
+    putString(kErrors, "no_stock", "❌ Нельзя одобрить заявку: автомобиля нет на складе.");
+
+    // --- Прочие значения по умолчанию ---
+    const QString kDefaults = "defaults";
+    putString(kDefaults, "trim",           "Стандартная");
+    putString(kDefaults, "catalog_color",  "Белый");
+    putString(kDefaults, "payment_type",   "наличные");
+    putString(kDefaults, "status_new",     "не обработано");
+    putString(kDefaults, "status_ok",      "одобрено");
+    putString(kDefaults, "status_reject",  "отклонено");
+    putString(kDefaults, "status_done",    "завершено");
+}
+
+QString DatabaseHandler::GetString(const QString& category, const QString& key,
+                                   const QString& fallback) const {
+    QSqlQuery q(m_database);
+    q.prepare("SELECT value FROM sys_strings WHERE category = ? AND key = ?;");
+    q.addBindValue(category);
+    q.addBindValue(key);
+    if (q.exec() && q.next())
+        return q.value(0).toString();
+    return fallback;
+}
+
+QString DatabaseHandler::GetSetting(const QString& key, const QString& fallback) const {
+    QSqlQuery q(m_database);
+    q.prepare("SELECT value FROM sys_settings WHERE key = ?;");
+    q.addBindValue(key);
+    if (q.exec() && q.next())
+        return q.value(0).toString();
+    return fallback;
+}
+
+// ---------------------------------------------------------------------------
+// Метаданные (замена information_schema / pg_class)
+// ---------------------------------------------------------------------------
+bool DatabaseHandler::TableExists(const QString& table) const {
+    QSqlQuery q(m_database);
+    q.prepare("SELECT 1 FROM sqlite_master WHERE type='table' AND name = ? LIMIT 1;");
+    q.addBindValue(table);
+    return q.exec() && q.next();
+}
+
+bool DatabaseHandler::ColumnExists(const QString& table, const QString& column) const {
+    QSqlQuery q(m_database);
+    q.prepare("SELECT 1 FROM pragma_table_info(?) WHERE name = ? LIMIT 1;");
+    q.addBindValue(table);
+    q.addBindValue(column);
+    return q.exec() && q.next();
+}
+
+QString DatabaseHandler::GetTableDescription(QStringView table_name) const {
+    // В SQLite нет obj_description — описания храним в sys_strings
+    return GetString("table_description", table_name.toString());
 }
 
 QStringList DatabaseHandler::GetTables() const {
-    QVariant result = ExecuteSelectQuery(QString("SELECT table_name FROM information_schema.tables WHERE table_schema = 'public' ORDER BY table_name;"));
     QStringList tables;
-    
-    if (result.isValid() && result.canConvert<QSqlQuery>()) {
-        QSqlQuery query = result.value<QSqlQuery>();
-        
-        if (query.isActive()) {
-            while (query.next()) {
-                QString tableName = query.value(0).toString();
-                
-                QString displayName;
-                if (tableName == "admins") displayName = "РђРґРјРёРЅРёСЃС‚СЂР°С‚РѕСЂС‹";
-                else if (tableName == "cars") displayName = "РђРІС‚РѕРјРѕР±РёР»Рё";
-                else if (tableName == "car_types") displayName = "РўРёРїС‹ Р°РІС‚РѕРјРѕР±РёР»РµР№";
-                else if (tableName == "clients") displayName = "РљР»РёРµРЅС‚С‹";
-                else if (tableName == "purchases") displayName = "РџСЂРѕРґР°Р¶Рё";
-                else if (tableName == "service_requests") displayName = "Р—Р°СЏРІРєРё РЅР° РѕР±СЃР»СѓР¶РёРІР°РЅРёРµ";
-                else if (tableName == "insurance_requests") displayName = "Р—Р°СЏРІРєРё РЅР° СЃС‚СЂР°С…РѕРІР°РЅРёРµ";
-                else if (tableName == "loan_requests") displayName = "Р—Р°СЏРІРєРё РЅР° РєСЂРµРґРёС‚РѕРІР°РЅРёРµ";
-                else if (tableName == "purchase_requests") displayName = "Р—Р°СЏРІРєРё РЅР° РїРѕРєСѓРїРєСѓ";
-                else if (tableName == "order_requests") displayName = "Р—Р°СЏРІРєРё РЅР° Р·Р°РєР°Р·";
-                else if (tableName == "test_drives") displayName = "Р—Р°СЏРІРєРё РЅР° С‚РµСЃС‚-РґСЂР°Р№РІ";
-                else if (tableName == "rental_requests") displayName = "Р—Р°СЏРІРєРё РЅР° Р°СЂРµРЅРґСѓ";
-                else displayName = "unknown";
-                
-                if (displayName != "unknown") {
-                    tables << displayName;
-                }
-            }
-        }
+    QSqlQuery q(m_database);
+    // Системные таблицы (sys_*, sqlite_*) не показываем
+    if (!q.exec("SELECT name FROM sqlite_master WHERE type='table' "
+                "AND name NOT LIKE 'sqlite_%' AND name NOT LIKE 'sys_%' "
+                "ORDER BY name;")) {
+        qDebug() << "GetTables failed:" << q.lastError().text();
+        return tables;
     }
-    
+    while (q.next()) {
+        const QString displayName = GetString("table_display_name", q.value(0).toString());
+        if (!displayName.isEmpty())
+            tables << displayName;
+    }
     return tables;
 }
 
-bool DatabaseHandler::ExecuteQuery(const QStringView string_query) {
-    QSqlQuery query;
-    bool success = query.exec(string_query.toString());
-    if (!success) {
-        qDebug() << "Query execution failed:" << query.lastError().text();
-    }
-    return success;
+int DatabaseHandler::GetColumnsCount(QStringView table_name) const {
+    QSqlQuery q(m_database);
+    q.prepare("SELECT COUNT(*) FROM pragma_table_info(?);");
+    q.addBindValue(table_name.toString());
+    if (q.exec() && q.next())
+        return q.value(0).toInt();
+    return 0;
 }
 
-bool DatabaseHandler::ExecuteQueryWithUserMessage(const QStringView string_query, QString& error_message) {
-    QSqlQuery query;
-    bool success = query.exec(string_query.toString());
-    
-    if (!success) {
-        QString dbError = query.lastError().text();
-        qDebug() << "Query execution failed:" << dbError;
-        
-        // РџСЂРµРѕР±СЂР°Р·СѓРµРј С‚РµС…РЅРёС‡РµСЃРєРёРµ РѕС€РёР±РєРё РІ РїРѕРЅСЏС‚РЅС‹Рµ СЃРѕРѕР±С‰РµРЅРёСЏ РґР»СЏ РїРѕР»СЊР·РѕРІР°С‚РµР»СЏ
-        if (dbError.contains("РЅРµРґРѕСЃС‚СѓРїРµРЅ РґР»СЏ Р°СЂРµРЅРґС‹")) {
-            error_message = "вќЊ РђРІС‚РѕРјРѕР±РёР»СЊ РЅРµРґРѕСЃС‚СѓРїРµРЅ РґР»СЏ Р°СЂРµРЅРґС‹. РџРѕР¶Р°Р»СѓР№СЃС‚Р°, РІС‹Р±РµСЂРёС‚Рµ РґСЂСѓРіРѕР№ Р°РІС‚РѕРјРѕР±РёР»СЊ.";
-        } else if (dbError.contains("РЅРµРґРѕСЃС‚СѓРїРµРЅ РґР»СЏ РїРѕРєСѓРїРєРё")) {
-            error_message = "вќЊ РђРІС‚РѕРјРѕР±РёР»СЊ РЅРµРґРѕСЃС‚СѓРїРµРЅ РґР»СЏ РїРѕРєСѓРїРєРё. РџРѕР¶Р°Р»СѓР№СЃС‚Р°, РІС‹Р±РµСЂРёС‚Рµ РґСЂСѓРіРѕР№ Р°РІС‚РѕРјРѕР±РёР»СЊ.";
-        } else if (dbError.contains("РЅРµРґРѕСЃС‚СѓРїРµРЅ РґР»СЏ С‚РµСЃС‚-РґСЂР°Р№РІР°")) {
-            error_message = "вќЊ РђРІС‚РѕРјРѕР±РёР»СЊ РЅРµРґРѕСЃС‚СѓРїРµРЅ РґР»СЏ С‚РµСЃС‚-РґСЂР°Р№РІР°. РџРѕР¶Р°Р»СѓР№СЃС‚Р°, РІС‹Р±РµСЂРёС‚Рµ РґСЂСѓРіРѕР№ Р°РІС‚РѕРјРѕР±РёР»СЊ.";
-        } else if (dbError.contains("РЅР°СЂСѓС€Р°РµС‚ РѕРіСЂР°РЅРёС‡РµРЅРёРµ РІРЅРµС€РЅРµРіРѕ РєР»СЋС‡Р°")) {
-            error_message = "вќЊ РћС€РёР±РєР° СЃРІСЏР·Рё РґР°РЅРЅС‹С…. РџРѕР¶Р°Р»СѓР№СЃС‚Р°, РѕР±РЅРѕРІРёС‚Рµ СЃС‚СЂР°РЅРёС†Сѓ Рё РїРѕРїСЂРѕР±СѓР№С‚Рµ СЃРЅРѕРІР°.";
-        } else if (dbError.contains("duplicate key value violates unique constraint")) {
-            error_message = "вќЊ Р”Р°РЅРЅР°СЏ Р·Р°РїРёСЃСЊ СѓР¶Рµ СЃСѓС‰РµСЃС‚РІСѓРµС‚. РџРѕР¶Р°Р»СѓР№СЃС‚Р°, РїСЂРѕРІРµСЂСЊС‚Рµ РІРІРµРґРµРЅРЅС‹Рµ РґР°РЅРЅС‹Рµ.";
-        } else if (dbError.contains("value too long")) {
-            error_message = "вќЊ Р’РІРµРґРµРЅРЅС‹Рµ РґР°РЅРЅС‹Рµ СЃР»РёС€РєРѕРј РґР»РёРЅРЅС‹Рµ. РџРѕР¶Р°Р»СѓР№СЃС‚Р°, СЃРѕРєСЂР°С‚РёС‚Рµ С‚РµРєСЃС‚.";
-        } else if (dbError.contains("not-null constraint")) {
-            error_message = "вќЊ РќРµ РІСЃРµ РѕР±СЏР·Р°С‚РµР»СЊРЅС‹Рµ РїРѕР»СЏ Р·Р°РїРѕР»РЅРµРЅС‹. РџРѕР¶Р°Р»СѓР№СЃС‚Р°, РїСЂРѕРІРµСЂСЊС‚Рµ С„РѕСЂРјСѓ.";
-        } else if (dbError.contains("check constraint")) {
-            error_message = "вќЊ Р’РІРµРґРµРЅРЅС‹Рµ РґР°РЅРЅС‹Рµ РЅРµ СЃРѕРѕС‚РІРµС‚СЃС‚РІСѓСЋС‚ С‚СЂРµР±РѕРІР°РЅРёСЏРј. РџРѕР¶Р°Р»СѓР№СЃС‚Р°, РїСЂРѕРІРµСЂСЊС‚Рµ С„РѕСЂРјР°С‚.";
-        } else {
-            error_message = "вќЊ РџСЂРѕРёР·РѕС€Р»Р° РѕС€РёР±РєР° РїСЂРё СЃРѕС…СЂР°РЅРµРЅРёРё РґР°РЅРЅС‹С…. РџРѕР¶Р°Р»СѓР№СЃС‚Р°, РїРѕРїСЂРѕР±СѓР№С‚Рµ СЃРЅРѕРІР°.";
-        }
-    } else {
-        error_message.clear();
-    }
-    
-    return success;
-}
-
-QVariant DatabaseHandler::ExecuteSelectQuery(const QStringView string_query) const {
-    QSqlQuery query;
-    if (!query.exec(string_query.toString())) {
-        qDebug() << "Query execution failed:" << query.lastError().text();
-        return QVariant(); // Р’РѕР·РІСЂР°С‰Р°РµРј РїСѓСЃС‚РѕР№ QVariant РІРјРµСЃС‚Рѕ СЃС‚СЂРѕРєРё РѕС€РёР±РєРё
-    }
-    return QVariant::fromValue(query);
-}
-
-std::optional<int> DatabaseHandler::TryGetCarTypeId(const QStringView type_name) const
-{
-    if (type_name.isEmpty()) {
-        return std::nullopt;
-    }
-
-    auto result = ExecuteSelectQuery(QString("SELECT id FROM car_types WHERE name = '%1'").arg(type_name));
-    if (result.canConvert<QSqlQuery>()) {
-        QSqlQuery query = result.value<QSqlQuery>();
-        if (query.next()) {
-            return query.value("id").toInt();
-        }
-    }
-    return std::nullopt;
-}
-
-bool DatabaseHandler::IsKnownColor(const QStringView color) const
-{
-    if (color.isEmpty()) {
-        return false;
-    }
-
-    auto result = ExecuteSelectQuery(QString("SELECT 1 FROM cars WHERE color = '%1' LIMIT 1").arg(color));
-    if (result.canConvert<QSqlQuery>()) {
-        QSqlQuery query = result.value<QSqlQuery>();
-        return query.next();
-    }
-    return false;
-}
-
-QStringList DatabaseHandler::GetCarTypeNames() const
-{
-    QStringList types;
-    auto result = ExecuteSelectQuery(QString("SELECT name FROM car_types ORDER BY name"));
-    if (result.canConvert<QSqlQuery>()) {
-        QSqlQuery query = result.value<QSqlQuery>();
-        while (query.next()) {
-            types << query.value("name").toString();
-        }
-    }
-    return types;
-}
-
-QString DatabaseHandler::GetDefaultCatalogColor() const
-{
-    // Prefer "Р‘РµР»С‹Р№" if present; otherwise return first distinct color.
-    {
-        auto result = ExecuteSelectQuery(QString("SELECT color FROM cars WHERE color = 'Р‘РµР»С‹Р№' LIMIT 1"));
-        if (result.canConvert<QSqlQuery>()) {
-            QSqlQuery query = result.value<QSqlQuery>();
-            if (query.next()) {
-                return query.value("color").toString();
+const QStringList DatabaseHandler::GetForeignKeysForColumn(const QString& table_name,
+                                                           const QString& column_name) {
+    QStringList result;
+    // Ищем все таблицы, ссылающиеся на table_name(column_name)
+    QSqlQuery tablesQuery(m_database);
+    tablesQuery.exec("SELECT name FROM sqlite_master WHERE type='table' "
+                     "AND name NOT LIKE 'sqlite_%';");
+    while (tablesQuery.next()) {
+        const QString referencing = tablesQuery.value(0).toString();
+        QSqlQuery fk(m_database);
+        fk.prepare("SELECT \"table\", \"from\", \"to\" FROM pragma_foreign_key_list(?);");
+        fk.addBindValue(referencing);
+        if (!fk.exec()) continue;
+        while (fk.next()) {
+            if (fk.value(0).toString() == table_name &&
+                fk.value(2).toString() == column_name) {
+                result << QString("%1(%2) -> %3(%4)")
+                .arg(referencing, fk.value(1).toString(),
+                     table_name, column_name);
             }
         }
     }
-
-    auto result = ExecuteSelectQuery(QString("SELECT DISTINCT color FROM cars WHERE color IS NOT NULL AND color <> '' ORDER BY color LIMIT 1"));
-    if (result.canConvert<QSqlQuery>()) {
-        QSqlQuery query = result.value<QSqlQuery>();
-        if (query.next()) {
-            return query.value("color").toString();
-        }
-    }
-    return QString();
+    return result;
 }
 
-int DatabaseHandler::GetRowsCount(QStringView table_name) const {
-    QSqlQuery query;
-    query.prepare("SELECT COUNT(*) FROM information_schema.columns WHERE table_name = :table_name;");
-    query.bindValue(":table_name", table_name.toString());
-    if (query.exec() && query.next()) {
-        return query.value(0).toInt();
+// ---------------------------------------------------------------------------
+// Выполнение запросов
+// ---------------------------------------------------------------------------
+bool DatabaseHandler::ExecuteQuery(QStringView string_query) {
+    QSqlQuery q(m_database);
+    if (!q.exec(string_query.toString())) {
+        qDebug() << "Query execution failed:" << q.lastError().text();
+        return false;
     }
+    return true;
+}
+
+bool DatabaseHandler::ExecuteQueryWithUserMessage(QStringView string_query,
+                                                  QString& error_message) {
+    QSqlQuery q(m_database);
+    if (q.exec(string_query.toString())) {
+        error_message.clear();
+        return true;
+    }
+
+    const QString dbError = q.lastError().text();
+    qDebug() << "Query execution failed:" << dbError;
+
+    // Тексты ошибок SQLite + сообщения из sys_strings
+    QString key = "default";
+    if (dbError.contains("UNIQUE constraint failed"))        key = "unique";
+    else if (dbError.contains("FOREIGN KEY constraint"))     key = "fk";
+    else if (dbError.contains("NOT NULL constraint failed")) key = "notnull";
+    else if (dbError.contains("CHECK constraint failed"))    key = "check";
+    else if (dbError.contains("нет автомобиля на складе"))   key = "no_stock"; // RAISE из триггера
+
+    error_message = GetString("error_message", key,
+                              GetString("error_message", "default"));
     return false;
 }
 
-int DatabaseHandler::GetMaxOrMinValueFromTable(const QString& max_or_min, const QString& column_name, const QString& table_name) {
-    QSqlQuery query;
-    query.prepare(QString("SELECT %1(%2) FROM %3").arg(max_or_min.toUpper(), column_name, table_name));
-
-    if (!query.exec()) {
-        return -1;
+QVariant DatabaseHandler::ExecuteSelectQuery(QStringView string_query) const {
+    QSqlQuery q(m_database);
+    if (!q.exec(string_query.toString())) {
+        qDebug() << "Query execution failed:" << q.lastError().text();
+        return QVariant();
     }
-
-    if (query.next()) {
-        return query.value(0).toInt();
-    }
-
-    return -1;
+    return QVariant::fromValue(q);
 }
 
-const QStringList DatabaseHandler::GetForeignKeysForColumn(const QString& table_name, const QString& column_name) {
-    QSqlQuery query;
-    query.prepare(R"(
-        SELECT
-            tc.table_name AS referencing_table,
-            kcu.column_name AS referencing_column,
-            ccu.table_name AS referenced_table,
-            ccu.column_name AS referenced_column
-        FROM
-            information_schema.table_constraints AS tc
-        JOIN
-            information_schema.key_column_usage AS kcu
-        ON
-            tc.constraint_name = kcu.constraint_name
-        AND
-            tc.table_schema = kcu.table_schema
-        JOIN
-            information_schema.constraint_column_usage AS ccu
-        ON
-            ccu.constraint_name = tc.constraint_name
-        AND
-            ccu.table_schema = tc.table_schema
-        WHERE
-            ccu.table_name = :table_name AND
-            ccu.column_name = :column_name AND
-            tc.constraint_type = 'FOREIGN KEY';
-    )");
+// ---------------------------------------------------------------------------
+// Прикладные выборки (теперь с prepared statements — без SQL-инъекций)
+// ---------------------------------------------------------------------------
+std::optional<int> DatabaseHandler::TryGetCarTypeId(QStringView type_name) const {
+    if (type_name.isEmpty()) return std::nullopt;
+    QSqlQuery q(m_database);
+    q.prepare("SELECT id FROM car_types WHERE name = ?;");
+    q.addBindValue(type_name.toString());
+    if (q.exec() && q.next())
+        return q.value(0).toInt();
+    return std::nullopt;
+}
 
-    query.bindValue(":table_name", table_name);
-    query.bindValue(":column_name", column_name);
+bool DatabaseHandler::IsKnownColor(QStringView color) const {
+    if (color.isEmpty()) return false;
+    QSqlQuery q(m_database);
+    q.prepare("SELECT 1 FROM cars WHERE color = ? LIMIT 1;");
+    q.addBindValue(color.toString());
+    return q.exec() && q.next();
+}
 
-    QStringList foreign_keys;
+QStringList DatabaseHandler::GetCarTypeNames() const {
+    QStringList types;
+    QSqlQuery q(m_database);
+    if (q.exec("SELECT name FROM car_types ORDER BY name;"))
+        while (q.next()) types << q.value(0).toString();
+    return types;
+}
 
-    if (!query.exec()) {
-        qDebug() << "Query execution failed:" << query.lastError().text();
-        return foreign_keys;
+QString DatabaseHandler::GetDefaultCatalogColor() const {
+    // Предпочтительный цвет берём из sys_strings, а не из кода
+    const QString preferred = GetString("defaults", "catalog_color");
+    if (!preferred.isEmpty()) {
+        QSqlQuery q(m_database);
+        q.prepare("SELECT color FROM cars WHERE color = ? LIMIT 1;");
+        q.addBindValue(preferred);
+        if (q.exec() && q.next())
+            return q.value(0).toString();
     }
+    QSqlQuery q(m_database);
+    if (q.exec("SELECT DISTINCT color FROM cars WHERE color IS NOT NULL AND color <> '' "
+               "ORDER BY color LIMIT 1;") && q.next())
+        return q.value(0).toString();
+    return QString();
+}
 
-    while (query.next()) {
-        QString referencing_table = query.value("referencing_table").toString();
-        QString referencing_column = query.value("referencing_column").toString();
-        QString referenced_table = query.value("referenced_table").toString();
-        QString referenced_column = query.value("referenced_column").toString();
-        foreign_keys.append(QString("%1(%2) -> %3(%4)").arg(referencing_table,
-                                                         referencing_column,
-                                                         referenced_table,
-                                                         referenced_column));
-    }
-
-    return foreign_keys;
+int DatabaseHandler::GetMaxOrMinValueFromTable(const QString& max_or_min,
+                                               const QString& column_name,
+                                               const QString& table_name) {
+    QSqlQuery q(m_database);
+    if (!q.exec(QString("SELECT %1(%2) FROM %3;")
+                    .arg(max_or_min.toUpper(), column_name, table_name)))
+        return -1;
+    return q.next() ? q.value(0).toInt() : -1;
 }
 
 QList<QString> DatabaseHandler::GetDistinctColors() {
     QList<QString> colors;
-    QSqlQuery query(db_);
-    if (!query.exec("SELECT DISTINCT color FROM cars")) {
-        qDebug() << "Query execution failed:" << query.lastError().text();
-        return colors;
-    }
-
-    while (query.next()) {
-        QString color = query.value(0).toString();
-        colors.append(color);
-    }
-
-    if (colors.isEmpty()) {
-        qDebug() << "No colors retrieved from the database.";
-    }
+    QSqlQuery q(m_database);
+    if (q.exec("SELECT DISTINCT color FROM cars;"))
+        while (q.next()) colors.append(q.value(0).toString());
     return colors;
 }
 
-
+// ---------------------------------------------------------------------------
+// Схема прикладных таблиц (SQLite-синтаксис)
+// ---------------------------------------------------------------------------
 void DatabaseHandler::EnsureInventorySchema() {
-    QFile contractSchema(":/sql/contract_templates.sql");
-    if (contractSchema.open(QIODevice::ReadOnly | QIODevice::Text)) {
-        QSqlQuery contractSchemaQuery;
-        if (!contractSchemaQuery.exec(QString::fromUtf8(contractSchema.readAll()))) {
-            qWarning() << "Failed to initialize contract templates:"
-                       << contractSchemaQuery.lastError().text();
-        }
+    QSqlQuery q(m_database);
+
+    if (!ColumnExists("cars", "trim"))
+        q.exec("ALTER TABLE cars ADD COLUMN trim TEXT;");
+    if (!ColumnExists("cars", "stock_qty"))
+        q.exec("ALTER TABLE cars ADD COLUMN stock_qty INTEGER NOT NULL DEFAULT 0;");
+
+    // Значение по умолчанию — из sys_strings
+    {
+        QSqlQuery upd(m_database);
+        upd.prepare("UPDATE cars SET trim = ? WHERE trim IS NULL OR trim = '';");
+        upd.addBindValue(GetString("defaults", "trim"));
+        upd.exec();
     }
 
-    auto columnExists = [](const QString& table, const QString& column) -> bool {
-        QSqlQuery query;
-        query.prepare(
-            "SELECT 1 FROM information_schema.columns "
-            "WHERE table_schema = 'public' AND table_name = :table AND column_name = :column LIMIT 1;");
-        query.bindValue(":table", table);
-        query.bindValue(":column", column);
-        return query.exec() && query.next();
-    };
+    const QString statusNew = GetString("defaults", "status_new");
 
-    auto tableExists = [](const QString& table) -> bool {
-        QSqlQuery query;
-        query.prepare(
-            "SELECT 1 FROM information_schema.tables "
-            "WHERE table_schema = 'public' AND table_name = :table LIMIT 1;");
-        query.bindValue(":table", table);
-        return query.exec() && query.next();
-    };
-
-    // Add columns if missing (avoid NOTICE by checking existence)
-    if (!columnExists("cars", "trim")) {
-        QSqlQuery alterTrim;
-        alterTrim.exec("ALTER TABLE public.cars ADD COLUMN trim character varying(100);");
-    }
-    if (!columnExists("cars", "stock_qty")) {
-        QSqlQuery alterStock;
-        alterStock.exec("ALTER TABLE public.cars ADD COLUMN stock_qty integer DEFAULT 0 NOT NULL;");
+    if (!TableExists("purchase_requests")) {
+        q.exec(QString(
+                   "CREATE TABLE purchase_requests ("
+                   " id INTEGER PRIMARY KEY AUTOINCREMENT,"
+                   " client_id INTEGER NOT NULL REFERENCES clients(id) ON DELETE CASCADE,"
+                   " car_id INTEGER NOT NULL REFERENCES cars(id) ON DELETE CASCADE,"
+                   " status TEXT NOT NULL DEFAULT '%1',"
+                   " created_at TEXT DEFAULT CURRENT_TIMESTAMP,"
+                   " notification_shown INTEGER DEFAULT 0);").arg(statusNew));
     }
 
-    // Update NULL values with default data (only for trim, not stock_qty)
-    QSqlQuery update;
-    update.exec("UPDATE public.cars SET trim = 'Стандартная' WHERE trim IS NULL OR trim = '';");
-
-    // Create purchase_requests if not exists
-    if (!tableExists("purchase_requests")) {
-        QSqlQuery createPurchase;
-        createPurchase.exec(
-            "CREATE TABLE public.purchase_requests ("
-            " id integer GENERATED ALWAYS AS IDENTITY PRIMARY KEY,"
-            " client_id integer NOT NULL REFERENCES public.clients(id) ON DELETE CASCADE,"
-            " car_id integer NOT NULL REFERENCES public.cars(id) ON DELETE CASCADE,"
-            " status character varying(20) DEFAULT 'не обработано' NOT NULL,"
-            " created_at timestamp without time zone DEFAULT CURRENT_TIMESTAMP,"
-            " notification_shown boolean DEFAULT false,"
-            " CONSTRAINT purchase_requests_status_check CHECK (status IN ('не обработано','одобрено','отклонено','завершено'))"
-            ");");
+    if (!TableExists("order_requests")) {
+        q.exec(QString(
+                   "CREATE TABLE order_requests ("
+                   " id INTEGER PRIMARY KEY AUTOINCREMENT,"
+                   " client_id INTEGER NOT NULL REFERENCES clients(id) ON DELETE CASCADE,"
+                   " car_name TEXT NOT NULL,"
+                   " color TEXT, trim TEXT,"
+                   " status TEXT NOT NULL DEFAULT '%1',"
+                   " created_at TEXT DEFAULT CURRENT_TIMESTAMP,"
+                   " notification_shown INTEGER DEFAULT 0);").arg(statusNew));
     }
 
-    // Create order_requests if not exists
-    if (!tableExists("order_requests")) {
-        QSqlQuery createOrder;
-        createOrder.exec(
-            "CREATE TABLE public.order_requests ("
-            " id integer GENERATED ALWAYS AS IDENTITY PRIMARY KEY,"
-            " client_id integer NOT NULL REFERENCES public.clients(id) ON DELETE CASCADE,"
-            " car_name character varying(255) NOT NULL,"
-            " color character varying(50),"
-            " trim character varying(100),"
-            " status character varying(20) DEFAULT 'не обработано' NOT NULL,"
-            " created_at timestamp without time zone DEFAULT CURRENT_TIMESTAMP,"
-            " notification_shown boolean DEFAULT false"
-            ");");
+    if (!TableExists("test_drives")) {
+        q.exec(QString(
+                   "CREATE TABLE test_drives ("
+                   " id INTEGER PRIMARY KEY AUTOINCREMENT,"
+                   " client_id INTEGER NOT NULL REFERENCES clients(id) ON DELETE CASCADE,"
+                   " car_id INTEGER NOT NULL REFERENCES cars(id) ON DELETE CASCADE,"
+                   " scheduled_date TEXT NOT NULL,"
+                   " status TEXT NOT NULL DEFAULT '%1',"
+                   " created_at TEXT DEFAULT CURRENT_TIMESTAMP,"
+                   " notification_shown INTEGER DEFAULT 0);").arg(statusNew));
     }
 
-    // Create trigger for order_requests approval
-    QSqlQuery createOrderTrigger;
-    createOrderTrigger.exec(
-        "CREATE OR REPLACE FUNCTION public.handle_approved_order_request() "
-        "RETURNS trigger "
-        "LANGUAGE plpgsql "
-        "AS  "
-        "BEGIN "
-        "    IF NEW.status = 'одобрено' AND OLD.status <> 'одобрено' THEN "
-        "        -- Находим car_id по имени автомобиля "
-        "        DECLARE "
-        "            target_car_id integer; "
-        "        BEGIN "
-        "            SELECT id INTO target_car_id FROM public.cars WHERE name = NEW.car_name LIMIT 1; "
-        "            IF target_car_id IS NOT NULL THEN "
-        "                -- Создаем покупку "
-        "                INSERT INTO public.purchases (car_id, client_id, тип_оплаты) "
-        "                VALUES (target_car_id, NEW.client_id, 'наличные'); "
-        "            END IF; "
-        "        END; "
-        "    END IF; "
-        "    RETURN NEW; "
-        "END; "
-        ";" );
-
-    // Create trigger for purchase_requests approval
-    QSqlQuery createPurchaseTrigger;
-    createPurchaseTrigger.exec(
-        "CREATE OR REPLACE FUNCTION public.handle_approved_purchase_request() "
-        "RETURNS trigger "
-        "LANGUAGE plpgsql "
-        "AS  "
-        "BEGIN "
-        "    IF NEW.status = 'одобрено' AND OLD.status <> 'одобрено' THEN "
-        "        -- Проверим доступность на складе "
-        "        PERFORM 1 FROM public.cars WHERE id = NEW.car_id AND stock_qty > 0; "
-        "        IF NOT FOUND THEN "
-        "            RAISE EXCEPTION 'Нельзя одобрить заявку: нет автомобиля на складе (car_id=%).', NEW.car_id; "
-        "        END IF; "
-        "        -- Списываем 1 шт. со склада "
-        "        UPDATE public.cars "
-        "           SET stock_qty = stock_qty - 1 "
-        "         WHERE id = NEW.car_id; "
-        "        -- Создаём покупку "
-        "        INSERT INTO public.purchases (car_id, client_id, тип_оплаты) "
-        "        VALUES (NEW.car_id, NEW.client_id, 'наличные'); "
-        "    END IF; "
-        "    RETURN NEW; "
-        "END; "
-        ";" );
-
-    // Create the triggers - separate queries
-    QSqlQuery dropPurchaseTrigger;
-    if (!dropPurchaseTrigger.exec("DROP TRIGGER IF EXISTS handle_purchase_approval ON public.purchase_requests;")) {
-        qDebug() << "Failed to drop purchase trigger:" << dropPurchaseTrigger.lastError().text();
+    if (!TableExists("rental_requests")) {
+        q.exec(QString(
+                   "CREATE TABLE rental_requests ("
+                   " id INTEGER PRIMARY KEY AUTOINCREMENT,"
+                   " client_id INTEGER NOT NULL REFERENCES clients(id) ON DELETE CASCADE,"
+                   " car_id INTEGER NOT NULL REFERENCES cars(id) ON DELETE CASCADE,"
+                   " rental_days INTEGER NOT NULL,"
+                   " start_date TEXT NOT NULL,"
+                   " status TEXT NOT NULL DEFAULT '%1',"
+                   " created_at TEXT DEFAULT CURRENT_TIMESTAMP,"
+                   " notification_shown INTEGER DEFAULT 0);").arg(statusNew));
     }
 
-    QSqlQuery createPurchaseTrigger2;
-    if (!createPurchaseTrigger2.exec(
-        "CREATE TRIGGER handle_purchase_approval "
-        "AFTER UPDATE ON public.purchase_requests "
-        "FOR EACH ROW "
-        "EXECUTE FUNCTION public.handle_approved_purchase_request();")) {
-        qDebug() << "Failed to create purchase trigger:" << createPurchaseTrigger2.lastError().text();
+    if (!TableExists("loan_requests")) {
+        q.exec(QString(
+                   "CREATE TABLE loan_requests ("
+                   " id INTEGER PRIMARY KEY AUTOINCREMENT,"
+                   " client_id INTEGER NOT NULL REFERENCES clients(id) ON DELETE CASCADE,"
+                   " car_id INTEGER NOT NULL REFERENCES cars(id) ON DELETE CASCADE,"
+                   " loan_amount NUMERIC NOT NULL,"
+                   " loan_term_months INTEGER NOT NULL,"
+                   " status TEXT NOT NULL DEFAULT '%1',"
+                   " created_at TEXT DEFAULT CURRENT_TIMESTAMP,"
+                   " notification_shown INTEGER DEFAULT 0);").arg(statusNew));
     }
 
-    QSqlQuery dropOrderTrigger;
-    if (!dropOrderTrigger.exec("DROP TRIGGER IF EXISTS handle_order_approval ON public.order_requests;")) {
-        qDebug() << "Failed to drop order trigger:" << dropOrderTrigger.lastError().text();
-    }
+    // --- Триггеры (SQLite-синтаксис, без plpgsql) ---
+    const QString statusOk    = GetString("defaults", "status_ok");
+    const QString paymentType = GetString("defaults", "payment_type");
+    const QString noStockMsg  = GetString("error_message", "no_stock");
 
-    QSqlQuery createOrderTrigger2;
-    if (!createOrderTrigger2.exec(
-        "CREATE TRIGGER handle_order_approval "
-        "AFTER UPDATE ON public.order_requests "
-        "FOR EACH ROW "
-        "EXECUTE FUNCTION public.handle_approved_order_request();")) {
-        qDebug() << "Failed to create order trigger:" << createOrderTrigger2.lastError().text();
-    }
+    q.exec("DROP TRIGGER IF EXISTS handle_purchase_approval;");
+    q.exec(QString(
+               "CREATE TRIGGER handle_purchase_approval "
+               "AFTER UPDATE OF status ON purchase_requests "
+               "WHEN NEW.status = '%1' AND OLD.status <> '%1' "
+               "BEGIN "
+               // проверка наличия на складе
+               " SELECT RAISE(ABORT, '%3') "
+               "  WHERE (SELECT stock_qty FROM cars WHERE id = NEW.car_id) IS NULL "
+               "     OR (SELECT stock_qty FROM cars WHERE id = NEW.car_id) <= 0; "
+               " UPDATE cars SET stock_qty = stock_qty - 1 WHERE id = NEW.car_id; "
+               " INSERT INTO purchases (car_id, client_id, тип_оплаты) "
+               "  VALUES (NEW.car_id, NEW.client_id, '%2'); "
+               "END;").arg(statusOk, paymentType, noStockMsg));
 
-    // Ensure test_drives table exists
-    if (!tableExists("test_drives")) {
-        QSqlQuery createTestDrives;
-        createTestDrives.exec(
-            "CREATE TABLE public.test_drives ("
-            " id integer GENERATED ALWAYS AS IDENTITY PRIMARY KEY,"
-            " client_id integer NOT NULL REFERENCES public.clients(id) ON DELETE CASCADE,"
-            " car_id integer NOT NULL REFERENCES public.cars(id) ON DELETE CASCADE,"
-            " scheduled_date timestamp without time zone NOT NULL,"
-            " status character varying(20) DEFAULT 'не обработано' NOT NULL,"
-            " created_at timestamp without time zone DEFAULT CURRENT_TIMESTAMP,"
-            " notification_shown boolean DEFAULT false,"
-            " CONSTRAINT test_drives_status_check CHECK (status IN ('не обработано','одобрено','отклонено'))"
-            ");");
-    }
-
-    // Ensure rental_requests table exists
-    if (!tableExists("rental_requests")) {
-        QSqlQuery createRental;
-        createRental.exec(
-            "CREATE TABLE public.rental_requests ("
-            " id integer GENERATED ALWAYS AS IDENTITY PRIMARY KEY,"
-            " client_id integer NOT NULL REFERENCES public.clients(id) ON DELETE CASCADE,"
-            " car_id integer NOT NULL REFERENCES public.cars(id) ON DELETE CASCADE,"
-            " rental_days integer NOT NULL,"
-            " start_date timestamp without time zone NOT NULL,"
-            " status character varying(20) DEFAULT 'не обработано' NOT NULL,"
-            " created_at timestamp without time zone DEFAULT CURRENT_TIMESTAMP,"
-            " notification_shown boolean DEFAULT false,"
-            " CONSTRAINT rental_requests_status_check CHECK (status IN ('не обработано','одобрено','отклонено'))"
-            ");");
-    }
-
-    // Ensure loan_requests table exists
-    if (!tableExists("loan_requests")) {
-        QSqlQuery createLoan;
-        createLoan.exec(
-            "CREATE TABLE public.loan_requests ("
-            " id integer GENERATED ALWAYS AS IDENTITY PRIMARY KEY,"
-            " client_id integer NOT NULL REFERENCES public.clients(id) ON DELETE CASCADE,"
-            " car_id integer NOT NULL REFERENCES public.cars(id) ON DELETE CASCADE,"
-            " loan_amount numeric(15,0) NOT NULL,"
-            " loan_term_months integer NOT NULL,"
-            " status character varying(20) DEFAULT 'не обработано' NOT NULL,"
-            " created_at timestamp without time zone DEFAULT CURRENT_TIMESTAMP,"
-            " notification_shown boolean DEFAULT false,"
-            " CONSTRAINT loan_requests_status_check CHECK (status IN ('не обработано','одобрено','отклонено'))"
-            ");");
-    } else {
-        // Compatibility for old schemas where credit fields may have different structure.
-        if (!columnExists("loan_requests", "loan_amount")) {
-            QSqlQuery addLoanAmount;
-            addLoanAmount.exec("ALTER TABLE public.loan_requests ADD COLUMN loan_amount numeric(15,0) DEFAULT 0 NOT NULL;");
-        }
-        if (!columnExists("loan_requests", "loan_term_months")) {
-            QSqlQuery addLoanTerm;
-            addLoanTerm.exec("ALTER TABLE public.loan_requests ADD COLUMN loan_term_months integer DEFAULT 12 NOT NULL;");
-        }
-        if (!columnExists("loan_requests", "status")) {
-            QSqlQuery addLoanStatus;
-            addLoanStatus.exec("ALTER TABLE public.loan_requests ADD COLUMN status character varying(20) DEFAULT 'не обработано' NOT NULL;");
-        }
-    }
+    q.exec("DROP TRIGGER IF EXISTS handle_order_approval;");
+    q.exec(QString(
+               "CREATE TRIGGER handle_order_approval "
+               "AFTER UPDATE OF status ON order_requests "
+               "WHEN NEW.status = '%1' AND OLD.status <> '%1' "
+               "  AND EXISTS (SELECT 1 FROM cars WHERE name = NEW.car_name) "
+               "BEGIN "
+               " INSERT INTO purchases (car_id, client_id, тип_оплаты) "
+               "  VALUES ((SELECT id FROM cars WHERE name = NEW.car_name LIMIT 1), "
+               "          NEW.client_id, '%2'); "
+               "END;").arg(statusOk, paymentType));
 }

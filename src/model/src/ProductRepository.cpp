@@ -8,15 +8,29 @@
 
 namespace {
 
-QString ResolveImagePath(const QString& imageUrlRaw)
+QString g_ResolveImagePath(const QString& imageUrlRaw)
 {
-    const QString imageUrl = imageUrlRaw;
-    const QString appDir = QCoreApplication::applicationDirPath();
+    QString imageUrl = imageUrlRaw;
+    imageUrl.replace('\\', '/');
+
     const QStringList candidates = {
-        QDir::cleanPath(appDir + "/resources/cars/" + imageUrl),
-        QDir::cleanPath(appDir + "/resources/" + imageUrl),
-        QDir::cleanPath(appDir + "/../../resources/cars/" + imageUrl),
-        QDir::cleanPath(appDir + "/../../resources/" + imageUrl)
+        QDir::cleanPath(
+            QString(PROJECT_ROOT_DIR) +
+            "/resources/cars/" +
+            imageUrl
+            ),
+
+        QDir::cleanPath(
+            QCoreApplication::applicationDirPath() +
+            "/resources/cars/" +
+            imageUrl
+            ),
+
+        QDir::cleanPath(
+            QCoreApplication::applicationDirPath() +
+            "/resources/" +
+            imageUrl
+            )
     };
 
     for (const QString& path : candidates) {
@@ -25,7 +39,6 @@ QString ResolveImagePath(const QString& imageUrlRaw)
         }
     }
 
-    qWarning() << "Image not found:" << imageUrl << "- tried" << candidates;
     return candidates.first();
 }
 
@@ -99,7 +112,7 @@ QList<ProductInfo> ProductRepository::FindRelevantProducts(const QString& term) 
 void ProductRepository::PullProducts()
 {
     // Выполняем запрос к базе данных
-    auto queryResult = m_database_manager->ExecuteSelectQuery(QString("SELECT * FROM public.cars ORDER BY id ASC"));
+    auto queryResult = m_database_manager->ExecuteSelectQuery(QString("SELECT * FROM cars ORDER BY id ASC"));
     if (queryResult.canConvert<QSqlQuery>())
     {
         QSqlQuery query = queryResult.value<QSqlQuery>();
@@ -123,7 +136,7 @@ void ProductRepository::PullProducts()
             }
 
             const QString imageUrl = query.value("image_url").toString().replace("\\", "/");
-            product.image_path_ = ResolveImagePath(imageUrl);
+            product.image_path_ = g_ResolveImagePath(imageUrl);
 
             PushProduct(product);
         }
@@ -148,7 +161,7 @@ QList<ProductInfo> ProductRepository::GetAllProductsWithName(const ProductInfo& 
                 query.value("color").toString(),
                 query.value("price").toInt(),
                 query.value("description").toString(),
-                ResolveImagePath(imageUrl),
+                g_ResolveImagePath(imageUrl),
                 query.value("type_id").toInt(),
                 query.record().indexOf("trim") != -1 ? query.value("trim").toString() : QString(),
                 query.record().indexOf("stock_qty") != -1 ? query.value("stock_qty").toInt() : 0

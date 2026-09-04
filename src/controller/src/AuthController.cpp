@@ -37,7 +37,7 @@ AuthController::AuthResult AuthController::Login(const QString& login, const QSt
         return result;
     }
 
-    auto adminResult = database_->ExecuteSelectQuery(QString("SELECT * FROM public.admins WHERE username = '%1';").arg(login));
+    auto adminResult = database_->ExecuteSelectQuery(QString("SELECT * FROM admins WHERE username = '%1';").arg(login));
     if (adminResult.canConvert<QSqlQuery>()) {
         QSqlQuery query = adminResult.value<QSqlQuery>();
         if (query.next()) {
@@ -55,7 +55,7 @@ AuthController::AuthResult AuthController::Login(const QString& login, const QSt
         }
     }
 
-    auto clientResult = database_->ExecuteSelectQuery(QString("SELECT * FROM public.clients WHERE email = '%1';").arg(login));
+    auto clientResult = database_->ExecuteSelectQuery(QString("SELECT * FROM clients WHERE email = '%1';").arg(login));
     if (clientResult.canConvert<QSqlQuery>()) {
         QSqlQuery query = clientResult.value<QSqlQuery>();
         if (query.next()) {

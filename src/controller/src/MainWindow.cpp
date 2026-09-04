@@ -3,6 +3,8 @@
 #include "PurchaseRequestStrategy.h"
 #include "SelectedCarActionStrategy.h"
 #include "PriceFormatter.h"
+#include "ThemeStyleProvider.h"
+
 #include <QSpinBox>
 #include <QCalendarWidget>
 #include <QSqlQuery>
@@ -21,7 +23,6 @@
 #include <QApplication>
 #include <QIcon>
 #include <QStyle>
-#include "ThemeStyleProvider.h"
 
 namespace {
 
@@ -217,6 +218,7 @@ void MainWindow::OnLoginClicked()
         ui->stackedWidget->setCurrentWidget(ui->main);
     }
 }
+
 void MainWindow::OnLogoutClicked()
 {
     if (!this->ui->stackedWidget) return;
