@@ -37,9 +37,9 @@ AuthController::AuthResult AuthController::Login(const QString& login, const QSt
         return result;
     }
 
-    auto adminResult = database_->ExecuteSelectQuery(QString("SELECT * FROM admins WHERE username = '%1';").arg(login));
-    if (adminResult.canConvert<QSqlQuery>()) {
-        QSqlQuery query = adminResult.value<QSqlQuery>();
+    QSqlQuery query = database_->ExecuteNamedSelect(
+        SqlQueryId::SelectAdminByUsername, {{"username", login}});
+    if (query.isActive()) {
         if (query.next()) {
             UserInfo user;
             user.id_ = query.value("id").toInt();
@@ -55,9 +55,8 @@ AuthController::AuthResult AuthController::Login(const QString& login, const QSt
         }
     }
 
-    auto clientResult = database_->ExecuteSelectQuery(QString("SELECT * FROM clients WHERE email = '%1';").arg(login));
-    if (clientResult.canConvert<QSqlQuery>()) {
-        QSqlQuery query = clientResult.value<QSqlQuery>();
+    query = database_->ExecuteNamedSelect(SqlQueryId::SelectClientByEmail, {{"email", login}});
+    if (query.isActive()) {
         if (query.next()) {
             UserInfo user;
             user.id_ = query.value("id").toInt();
@@ -193,12 +192,11 @@ bool AuthController::RunRegistrationDialog(QWidget* parent)
             return;
         }
 
-        QSqlQuery checkQuery;
-        checkQuery.prepare("SELECT id FROM clients WHERE email = :email OR phone = :phone");
-        checkQuery.bindValue(":email", emailEdit->text());
-        checkQuery.bindValue(":phone", phone);
+        QSqlQuery checkQuery = database_->ExecuteNamedSelect(
+            SqlQueryId::SelectClientByEmailOrPhone,
+            {{"email", emailEdit->text()}, {"phone", phone}});
 
-        if (checkQuery.exec() && checkQuery.next()) {
+        if (checkQuery.isActive() && checkQuery.next()) {
             QMessageBox::warning(&dialog, "Ошибка", "Пользователь с таким email или телефоном уже существует.");
             return;
         }
@@ -207,23 +205,22 @@ bool AuthController::RunRegistrationDialog(QWidget* parent)
             passwordEdit->text().toUtf8(),
             QCryptographicHash::Sha256).toHex());
 
-        QSqlQuery query;
-        query.prepare("INSERT INTO clients (first_name, last_name, phone, email, password) "
-                     "VALUES (:first_name, :last_name, :phone, :email, :password)");
-        query.bindValue(":first_name", firstNameEdit->text());
-        query.bindValue(":last_name", lastNameEdit->text());
-        query.bindValue(":phone", phone);
-        query.bindValue(":email", emailEdit->text());
-        query.bindValue(":password", hashedPassword);
-
-        if (query.exec()) {
+        QString databaseError;
+        if (database_->ExecuteNamedQuery(
+                SqlQueryId::InsertClient,
+                {{"first_name", firstNameEdit->text()},
+                 {"last_name", lastNameEdit->text()},
+                 {"phone", phone},
+                 {"email", emailEdit->text()},
+                 {"password", hashedPassword}},
+                &databaseError)) {
             QMessageBox::information(&dialog, "Успех",
                                      "Регистрация успешно завершена.\nТеперь вы можете войти в систему, используя email и пароль.");
             accepted = true;
             dialog.accept();
         } else {
             QMessageBox::critical(&dialog, "Ошибка",
-                                  "Не удалось создать учетную запись: " + query.lastError().text());
+                                  "Не удалось создать учетную запись: " + databaseError);
         }
     });
 

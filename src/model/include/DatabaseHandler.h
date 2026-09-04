@@ -5,7 +5,10 @@
 #include <QSqlQuery>
 #include <QString>
 #include <QVariant>
+#include <QVariantMap>
 #include <optional>
+
+#include "SystemData.h"
 
 class DatabaseHandler {
 public:
@@ -19,11 +22,6 @@ public:
 
     /// Подключается к БД по умолчанию (путь берётся из окружения или дефолтный)
     void LoadDefault();
-
-    /// Создаёт системные таблицы (sys_strings, sys_settings) и наполняет их
-    void EnsureSystemSchema();
-    /// Создаёт прикладные таблицы и триггеры
-    void EnsureInventorySchema();
 
     QString GetLastError() const;
 
@@ -39,6 +37,11 @@ public:
     bool ExecuteQuery(QStringView string_query);
     bool ExecuteQueryWithUserMessage(QStringView string_query, QString& error_message);
     QVariant ExecuteSelectQuery(QStringView string_query) const;
+    QSqlQuery ExecuteNamedSelect(SqlQueryId query_id,
+                                 const QVariantMap& bindings = {}) const;
+    bool ExecuteNamedQuery(SqlQueryId query_id,
+                           const QVariantMap& bindings = {},
+                           QString* error_message = nullptr);
 
     std::optional<int> TryGetCarTypeId(QStringView type_name) const;
     bool IsKnownColor(QStringView color) const;
@@ -54,9 +57,6 @@ public:
     QList<QString> GetDistinctColors();
 
 private:
-    bool TableExists(const QString& table) const;
-    bool ColumnExists(const QString& table, const QString& column) const;
-
     QSqlDatabase m_database;
 };
 

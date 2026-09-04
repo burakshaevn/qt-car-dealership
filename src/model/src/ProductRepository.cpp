@@ -60,6 +60,7 @@ void ProductRepository::PushProduct(const ProductInfo& product) {
 
 void ProductRepository::Clear() {
     m_products.clear();
+    m_available_colors.clear();
 }
 
 QHash<ProductRepository::ProductKey, ProductInfo> ProductRepository::GetProducts() const {
@@ -111,11 +112,9 @@ QList<ProductInfo> ProductRepository::FindRelevantProducts(const QString& term) 
 
 void ProductRepository::PullProducts()
 {
-    // Выполняем запрос к базе данных
-    auto queryResult = m_database_manager->ExecuteSelectQuery(QString("SELECT * FROM cars ORDER BY id ASC"));
-    if (queryResult.canConvert<QSqlQuery>())
+    QSqlQuery query = m_database_manager->ExecuteNamedSelect(SqlQueryId::SelectAllProducts);
+    if (query.isActive())
     {
-        QSqlQuery query = queryResult.value<QSqlQuery>();
 
         // Загружаем инструменты в m_products
         Clear();
@@ -147,11 +146,10 @@ void ProductRepository::PullProducts()
 QList<ProductInfo> ProductRepository::GetAllProductsWithName(const ProductInfo& product) const {
     QList<ProductInfo> temp;
 
-    QSqlQuery query;
-    query.prepare("SELECT * FROM cars WHERE name = :name");
-    query.bindValue(":name", product.name_);
+    QSqlQuery query = m_database_manager->ExecuteNamedSelect(
+        SqlQueryId::SelectProductsByName, {{"name", product.name_}});
 
-    if (query.exec()) {
+    if (query.isActive()) {
         while (query.next()) {
             const QString imageUrl = query.value("image_url").toString().replace("\\", "/");
             

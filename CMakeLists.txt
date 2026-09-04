@@ -16,6 +16,10 @@ set(CMAKE_CXX_STANDARD_REQUIRED ON)
 find_package(QT NAMES Qt6 Qt5 REQUIRED COMPONENTS Widgets Sql)
 find_package(Qt${QT_VERSION_MAJOR} REQUIRED COMPONENTS Widgets Sql)
 
+# SQL statements and the bundled initial SQLite database are kept in a
+# dedicated target so application code does not contain database dialect text.
+add_subdirectory(system_data)
+
 # Model
 set(MODEL_DIR ${CMAKE_CURRENT_SOURCE_DIR}/src/model)
 set(MODEL_SOURCES
@@ -62,6 +66,7 @@ target_link_libraries(model PUBLIC
     Qt${QT_VERSION_MAJOR}::Core
     Qt${QT_VERSION_MAJOR}::Widgets
     Qt${QT_VERSION_MAJOR}::Sql
+    system_data
     ${PostgreSQL_LIBRARY}
 )
 
@@ -206,5 +211,3 @@ install(TARGETS qt-car-dealership
 if(QT_VERSION_MAJOR EQUAL 6)
     qt_finalize_executable(qt-car-dealership)
 endif()
-
-add_subdirectory(system_data)

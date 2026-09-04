@@ -13,3 +13,11 @@ add_library(system_data STATIC
 target_include_directories(system_data PUBLIC
     ${CMAKE_CURRENT_SOURCE_DIR}/include
 )
+
+target_link_libraries(system_data PUBLIC
+    Qt${QT_VERSION_MAJOR}::Core
+)
+
+target_compile_definitions(system_data PRIVATE
+    SYSTEM_DATA_DIRECTORY="${CMAKE_CURRENT_SOURCE_DIR}"
+)
