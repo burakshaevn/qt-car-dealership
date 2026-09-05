@@ -26,30 +26,30 @@ public:
      * \brief Set dependencies
      * \param database Database handler
      */
-    void SetDependencies(const QSharedPointer<DatabaseHandler>& database);
+    void setDependencies(const QSharedPointer<DatabaseHandler>& database);
 
     /*!
      * \brief Show admin table
      * \param stacked_widget Stacked widget
      * \param owner Owner widget
      */
-    void Show(QStackedWidget* stacked_widget, QWidget* owner);
+    void show(QStackedWidget* stackedWidget, QWidget* owner);
 
     /*!
      * \brief Reset admin table
      */
-    void Reset();
+    void reset();
 
 signals:
-    void LogoutRequested();
+    void logoutRequested();
 
 private:
-    void EnsureView(QWidget* owner);
+    void ensureView(QWidget* owner);
 
 private:
-    QSharedPointer<DatabaseHandler> database_;
-    QScopedPointer<AdminTableWidget> table_view_;
-    bool is_initialized_ = false; ///< Flag to check if the controller is initialized
+    QSharedPointer<DatabaseHandler> m_database;
+    QScopedPointer<AdminTableWidget> m_tableView;
+    bool m_isInitialized = false; ///< Flag to check if the controller is initialized
 };
 
 #endif // ADMINTABLECONTROLLER_H

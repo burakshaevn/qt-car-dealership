@@ -5,114 +5,114 @@
 AppServices::AppServices() = default;
 AppServices::~AppServices() = default;
 
-void AppServices::EnsureCore()
+void AppServices::ensureCore()
 {
-    if (!database_) {
-        database_.reset(new DatabaseHandler);
-        database_->LoadDefault();
+    if (!m_database) {
+        m_database.reset(new DatabaseHandler);
+        m_database->loadDefault();
     }
 
-    if (!products_) {
-        products_.reset(new ::ProductRepository(database_));
-    }
-}
-
-void AppServices::EnsureFloatingWidget(QWidget* owner)
-{
-    if (!floating_widget_) {
-        floating_widget_.reset(new ::FloatingNavigationWidget(owner));
+    if (!m_products) {
+        m_products.reset(new ::ProductRepository(m_database));
     }
 }
 
-void AppServices::EnsureControllers(QObject* owner)
+void AppServices::ensureFloatingWidget(QWidget* owner)
 {
-    EnsureCore();
-
-    if (!catalog_controller_) {
-        catalog_controller_.reset(new CatalogController(owner));
+    if (!m_floatingWidget) {
+        m_floatingWidget.reset(new ::FloatingNavigationWidget(owner));
     }
-    catalog_controller_->SetDependencies(products_, database_);
+}
 
-    if (!profile_controller_) {
-        profile_controller_.reset(new ProfileController(owner));
+void AppServices::ensureControllers(QObject* owner)
+{
+    ensureCore();
+
+    if (!m_catalogController) {
+        m_catalogController.reset(new CatalogController(owner));
     }
-    profile_controller_->SetDependencies(products_, database_);
+    m_catalogController->setDependencies(m_products, m_database);
 
-    if (!auth_controller_) {
-        auth_controller_.reset(new AuthController(owner));
+    if (!m_profileController) {
+        m_profileController.reset(new ProfileController(owner));
     }
-    auth_controller_->SetDependencies(database_);
+    m_profileController->setDependencies(m_products, m_database);
 
-    if (!notifications_controller_) {
-        notifications_controller_.reset(new NotificationsController(owner));
+    if (!m_authController) {
+        m_authController.reset(new AuthController(owner));
     }
-    notifications_controller_->SetDependencies(database_);
+    m_authController->setDependencies(m_database);
 
-    if (!admin_table_controller_) {
-        admin_table_controller_.reset(new AdminTableController(owner));
+    if (!m_notificationsController) {
+        m_notificationsController.reset(new NotificationsController(owner));
     }
-    admin_table_controller_->SetDependencies(database_);
+    m_notificationsController->setDependencies(m_database);
+
+    if (!m_adminTableController) {
+        m_adminTableController.reset(new AdminTableController(owner));
+    }
+    m_adminTableController->setDependencies(m_database);
 }
 
-void AppServices::ResetSession()
+void AppServices::resetSession()
 {
-    catalog_controller_.reset();
-    profile_controller_.reset();
-    auth_controller_.reset();
-    notifications_controller_.reset();
-    admin_table_controller_.reset();
-    user_session_.Clear();
-    products_.reset();
-    database_.reset();
-    floating_widget_.reset();
+    m_catalogController.reset();
+    m_profileController.reset();
+    m_authController.reset();
+    m_notificationsController.reset();
+    m_adminTableController.reset();
+    m_userSession.clear();
+    m_products.reset();
+    m_database.reset();
+    m_floatingWidget.reset();
 }
 
-QSharedPointer<DatabaseHandler> AppServices::GetDatabase() const
+QSharedPointer<DatabaseHandler> AppServices::getDatabase() const
 {
-    return database_;
+    return m_database;
 }
 
-QSharedPointer<ProductRepository> AppServices::GetProducts() const
+QSharedPointer<ProductRepository> AppServices::getProducts() const
 {
-    return products_;
+    return m_products;
 }
 
-QSharedPointer<FloatingNavigationWidget> AppServices::GetFloatingWidget() const
+QSharedPointer<FloatingNavigationWidget> AppServices::getFloatingWidget() const
 {
-    return floating_widget_;
+    return m_floatingWidget;
 }
 
-CatalogController* AppServices::GetCatalog() const
+CatalogController* AppServices::getCatalog() const
 {
-    return catalog_controller_.data();
+    return m_catalogController.data();
 }
 
-ProfileController* AppServices::GetProfile() const
+ProfileController* AppServices::getProfile() const
 {
-    return profile_controller_.data();
+    return m_profileController.data();
 }
 
-AuthController* AppServices::GetAuth() const
+AuthController* AppServices::getAuth() const
 {
-    return auth_controller_.data();
+    return m_authController.data();
 }
 
-NotificationsController* AppServices::GetNotifications() const
+NotificationsController* AppServices::getNotifications() const
 {
-    return notifications_controller_.data();
+    return m_notificationsController.data();
 }
 
-AdminTableController* AppServices::GetAdminTable() const
+AdminTableController* AppServices::getAdminTable() const
 {
-    return admin_table_controller_.data();
+    return m_adminTableController.data();
 }
 
-UserSession* AppServices::GetUserSession()
+UserSession* AppServices::getUserSession()
 {
-    return &user_session_;
+    return &m_userSession;
 }
 
-const UserSession* AppServices::GetUserSession() const
+const UserSession* AppServices::getUserSession() const
 {
-    return &user_session_;
+    return &m_userSession;
 }

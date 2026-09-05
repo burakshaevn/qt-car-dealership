@@ -1,58 +1,58 @@
 #include "UserSession.h"
 
-void UserSession::SetCurrentUser(const UserInfo& user)
+void UserSession::setCurrentUser(const UserInfo& user)
 {
-    user_ = user;
-    authorized_ = true;
+    m_user = user;
+    m_authorized = true;
 }
 
-void UserSession::Clear()
+void UserSession::clear()
 {
-    user_ = UserInfo();
-    authorized_ = false;
+    m_user = UserInfo();
+    m_authorized = false;
 }
 
-bool UserSession::IsAuthorized() const
+bool UserSession::isAuthorized() const
 {
-    return authorized_;
+    return m_authorized;
 }
 
-bool UserSession::IsAdmin() const
+bool UserSession::isAdmin() const
 {
-    return authorized_ && user_.role_ == Role::Admin;
+    return m_authorized && m_user.Role == Role::Admin;
 }
 
-bool UserSession::IsUser() const
+bool UserSession::isUser() const
 {
-    return authorized_ && user_.role_ == Role::User;
+    return m_authorized && m_user.Role == Role::User;
 }
 
-int UserSession::GetId() const
+int UserSession::getId() const
 {
-    return user_.id_;
+    return m_user.Id;
 }
 
-const QString& UserSession::GetName() const
+const QString& UserSession::getName() const
 {
-    return user_.full_name_;
+    return m_user.FullName;
 }
 
-const QString& UserSession::GetEmail() const
+const QString& UserSession::getEmail() const
 {
-    return user_.email_;
+    return m_user.Email;
 }
 
-Role UserSession::GetRole() const
+Role UserSession::getRole() const
 {
-    return user_.role_;
+    return m_user.Role;
 }
 
-void UserSession::SetName(const QString& name)
+void UserSession::setName(const QString& name)
 {
-    user_.full_name_ = name;
+    m_user.FullName = name;
 }
 
-void UserSession::SetEmail(const QString& email)
+void UserSession::setEmail(const QString& email)
 {
-    user_.email_ = email;
+    m_user.Email = email;
 }

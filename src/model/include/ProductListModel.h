@@ -32,19 +32,19 @@ public:
      * \brief Устанавливает список продуктов
      * \param items — список продуктов
      */
-    void SetProducts(QList<ProductInfo> items);
+    void setProducts(QList<ProductInfo> items);
 
     /*!
      * \brief Очищает список продуктов
      */
-    void Clear();
+    void clear();
  
     /*!
      * \brief Возвращает продукт по индексу
      * \param row — индекс продукта
      * \return продукт
      */
-    ProductInfo ProductAt(int row) const;
+    ProductInfo productAt(int row) const;
 
     // QAbstractListModel overrides
     int rowCount(const QModelIndex& parent = QModelIndex()) const override;
@@ -52,7 +52,7 @@ public:
     QHash<int, QByteArray> roleNames() const override;
 
 private:
-    QList<ProductInfo> items_; ///< Список продуктов
+    QList<ProductInfo> m_items; ///< Список продуктов
 };
 
 #endif // PRODUCT_LIST_MODEL_H

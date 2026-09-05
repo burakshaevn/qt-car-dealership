@@ -16,23 +16,23 @@ public:
     explicit SettingsForm(AppServices* services, QWidget* parent = nullptr);
 
 signals:
-    void ProfileSaved(const QString& fullName, const QString& email);
-    void ThemeChanged(bool dark_enabled);
+    void profileSaved(const QString& fullName, const QString& email);
+    void themeChanged(bool darkEnabled);
 
 private slots:
-    void OnSaveClicked();
+    void onSaveClicked();
 
 private:
-    void BuildUi();
-    bool LoadData();
+    void buildUi();
+    bool loadData();
 
-    AppServices* services_ = nullptr;
-    QLineEdit* first_name_edit_ = nullptr;
-    QLineEdit* last_name_edit_ = nullptr;
-    QLineEdit* email_edit_ = nullptr;
-    QLineEdit* phone_edit_ = nullptr;
-    QLineEdit* password_edit_ = nullptr;
-    QComboBox* theme_combo_ = nullptr;
+    AppServices* m_services = nullptr;
+    QLineEdit* m_firstNameEdit = nullptr;
+    QLineEdit* m_lastNameEdit = nullptr;
+    QLineEdit* m_emailEdit = nullptr;
+    QLineEdit* m_phoneEdit = nullptr;
+    QLineEdit* m_passwordEdit = nullptr;
+    QComboBox* m_themeCombo = nullptr;
 };
 
 #endif // SETTINGS_FORM_H

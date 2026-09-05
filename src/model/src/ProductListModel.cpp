@@ -12,36 +12,36 @@ int ProductListModel::rowCount(const QModelIndex& parent) const
     if (parent.isValid()) {
         return 0;
     }
-    return items_.size();
+    return m_items.size();
 }
 
 QVariant ProductListModel::data(const QModelIndex& index, int role) const
 {
-    if (!index.isValid() || index.row() < 0 || index.row() >= items_.size()) {
+    if (!index.isValid() || index.row() < 0 || index.row() >= m_items.size()) {
         return QVariant();
     }
 
-    const ProductInfo& info = items_.at(index.row());
+    const ProductInfo& info = m_items.at(index.row());
     switch (role) {
     case Qt::DisplayRole:
     case NameRole:
-        return info.name_;
+        return info.Name;
     case ColorRole:
-        return info.color_;
+        return info.Color;
     case PriceRole:
-        return info.price_;
+        return info.Price;
     case DescriptionRole:
-        return info.description_;
+        return info.Description;
     case ImagePathRole:
-        return info.image_path_;
+        return info.ImagePath;
     case TypeIdRole:
-        return info.type_id_;
+        return info.TypeId;
     case TrimRole:
-        return info.trim_;
+        return info.Trim;
     case StockQtyRole:
-        return info.stock_qty_;
+        return info.StockQty;
     case IdRole:
-        return info.id_;
+        return info.Id;
     default:
         return QVariant();
     }
@@ -62,24 +62,24 @@ QHash<int, QByteArray> ProductListModel::roleNames() const
     return roles;
 }
 
-void ProductListModel::SetProducts(QList<ProductInfo> items)
+void ProductListModel::setProducts(QList<ProductInfo> items)
 {
     beginResetModel();
-    items_ = std::move(items);
+    m_items = std::move(items);
     endResetModel();
 }
 
-void ProductListModel::Clear()
+void ProductListModel::clear()
 {
     beginResetModel();
-    items_.clear();
+    m_items.clear();
     endResetModel();
 }
 
-ProductInfo ProductListModel::ProductAt(int row) const
+ProductInfo ProductListModel::productAt(int row) const
 {
-    if (row < 0 || row >= items_.size()) {
+    if (row < 0 || row >= m_items.size()) {
         return ProductInfo();
     }
-    return items_.at(row);
+    return m_items.at(row);
 }

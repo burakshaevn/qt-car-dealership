@@ -1,9 +1,9 @@
 ﻿#include "MainWindow.h"
-#include "ui_MainWindow.h"
+#include "PriceFormatter.h"
 #include "PurchaseRequestStrategy.h"
 #include "SelectedCarActionStrategy.h"
-#include "PriceFormatter.h"
 #include "ThemeStyleProvider.h"
+#include "ui_MainWindow.h"
 
 #include <QSpinBox>
 #include <QCalendarWidget>
@@ -26,7 +26,7 @@
 
 namespace {
 
-void PrepareInputDialog(QInputDialog& dialog)
+void prepareInputDialog(QInputDialog& dialog)
 {
     if (auto* buttons = dialog.findChild<QDialogButtonBox*>()) {
         if (auto* okButton = buttons->button(QDialogButtonBox::Ok)) {
@@ -40,10 +40,10 @@ void PrepareInputDialog(QInputDialog& dialog)
             cancelButton->style()->polish(cancelButton);
         }
     }
-    ApplyThemeStyle(&dialog, "DialogForm");
+    applyThemeStyle(&dialog, "DialogForm");
 }
 
-QString GetTextFromThemedDialog(QWidget* parent,
+QString getTextFromThemedDialog(QWidget* parent,
                                 const QString& title,
                                 const QString& label,
                                 bool* accepted)
@@ -52,16 +52,16 @@ QString GetTextFromThemedDialog(QWidget* parent,
     dialog.setWindowTitle(title);
     dialog.setLabelText(label);
     dialog.setInputMode(QInputDialog::TextInput);
-    PrepareInputDialog(dialog);
+    prepareInputDialog(dialog);
 
-    const bool isAccepted = dialog.exec() == QDialog::Accepted;
+    const bool kIsAccepted = dialog.exec() == QDialog::Accepted;
     if (accepted) {
-        *accepted = isAccepted;
+        *accepted = kIsAccepted;
     }
-    return isAccepted ? dialog.textValue() : QString();
+    return kIsAccepted ? dialog.textValue() : QString();
 }
 
-QString GetItemFromThemedDialog(QWidget* parent,
+QString getItemFromThemedDialog(QWidget* parent,
                                 const QString& title,
                                 const QString& label,
                                 const QStringList& items,
@@ -72,446 +72,480 @@ QString GetItemFromThemedDialog(QWidget* parent,
     dialog.setLabelText(label);
     dialog.setComboBoxItems(items);
     dialog.setComboBoxEditable(false);
-    PrepareInputDialog(dialog);
+    prepareInputDialog(dialog);
 
-    const bool isAccepted = dialog.exec() == QDialog::Accepted;
+    const bool kIsAccepted = dialog.exec() == QDialog::Accepted;
     if (accepted) {
-        *accepted = isAccepted;
+        *accepted = kIsAccepted;
     }
-    return isAccepted ? dialog.textValue() : QString();
+    return kIsAccepted ? dialog.textValue() : QString();
 }
 
 } // namespace
 
 MainWindow::MainWindow(QWidget* parent)
     : QMainWindow(parent)
-    , ui(new Ui::MainWindow)
-    , m_services(new AppServices) {
+    , m_ui(new Ui::MainWindow)
+    , m_services(new AppServices)
+{
+    m_ui->setupUi(this);
+    applyThemeStyle(this, "MainShell");
+    applyThemeIcons();
 
-    ui->setupUi(this);
-    ApplyThemeStyle(this, "MainShell");
-    ApplyThemeIcons();
+    connect(m_ui->pushButton_login, &QPushButton::clicked, this, &MainWindow::onLoginClicked);
+    connect(m_ui->pushButton_registration,
+            &QPushButton::clicked,
+            this,
+            &MainWindow::onRegistrationClicked);
+    connect(m_ui->pushButton_logout, &QPushButton::clicked, this, &MainWindow::onLogoutClicked);
+    connect(m_ui->pushButton_next_left, &QPushButton::clicked, this, &MainWindow::onNextLeftClicked);
+    connect(m_ui->pushButton_next_right,
+            &QPushButton::clicked,
+            this,
+            &MainWindow::onNextRightClicked);
+    connect(m_ui->pushButton_back, &QPushButton::clicked, this, &MainWindow::onBackClicked);
+    connect(m_ui->pushButton_to_pay, &QPushButton::clicked, this, &MainWindow::onToPayClicked);
+    connect(m_ui->pushButton_info, &QPushButton::clicked, this, &MainWindow::onInfoClicked);
+    connect(m_ui->pushButton_test_drive,
+            &QPushButton::clicked,
+            this,
+            &MainWindow::onTestDriveClicked);
+    connect(m_ui->pushButton_order, &QPushButton::clicked, this, &MainWindow::onOrderClicked);
+    connect(m_ui->pushButton_notifications,
+            &QPushButton::clicked,
+            this,
+            &MainWindow::onNotificationsClicked);
+    connect(m_ui->pushButton_settings, &QPushButton::clicked, this, &MainWindow::onSettingsClicked);
 
-    connect(ui->pushButton_login, &QPushButton::clicked, this, &MainWindow::OnLoginClicked);
-    connect(ui->pushButton_registration, &QPushButton::clicked, this, &MainWindow::OnRegistrationClicked);
-    connect(ui->pushButton_logout, &QPushButton::clicked, this, &MainWindow::OnLogoutClicked);
-    connect(ui->pushButton_next_left, &QPushButton::clicked, this, &MainWindow::OnNextLeftClicked);
-    connect(ui->pushButton_next_right, &QPushButton::clicked, this, &MainWindow::OnNextRightClicked);
-    connect(ui->pushButton_back, &QPushButton::clicked, this, &MainWindow::OnBackClicked);
-    connect(ui->pushButton_to_pay, &QPushButton::clicked, this, &MainWindow::OnToPayClicked);
-    connect(ui->pushButton_info, &QPushButton::clicked, this, &MainWindow::OnInfoClicked);
-    connect(ui->pushButton_test_drive, &QPushButton::clicked, this, &MainWindow::OnTestDriveClicked);
-    connect(ui->pushButton_order, &QPushButton::clicked, this, &MainWindow::OnOrderClicked);
-    connect(ui->pushButton_notifications, &QPushButton::clicked, this, &MainWindow::OnNotificationsClicked);
-    connect(ui->pushButton_settings, &QPushButton::clicked, this, &MainWindow::OnSettingsClicked);
-
-    m_services->EnsureCore();
+    m_services->ensureCore();
 
     // By default, show login page
-    ui->stackedWidget->setCurrentWidget(ui->login);
+    m_ui->stackedWidget->setCurrentWidget(m_ui->login);
 }
 
 MainWindow::~MainWindow()
 {
-    delete ui;
+    delete m_ui;
 }
 
-void MainWindow::ApplyThemeIcons()
+void MainWindow::applyThemeIcons()
 {
-    setWindowIcon(LoadThemeIcon("logo.svg"));
-    if (ui->label_2) {
-        ui->label_2->setScaledContents(false);
-        ui->label_2->setPixmap(LoadThemeIcon("mercedez_benz.svg").pixmap(273, 31));
+    setWindowIcon(loadThemeIcon("logo.svg"));
+    if (m_ui->label_2) {
+        m_ui->label_2->setScaledContents(false);
+        m_ui->label_2->setPixmap(loadThemeIcon("mercedez_benz.svg").pixmap(273, 31));
     }
-    if (ui->pushButton_settings) {
-        ApplyThemeIcon(ui->pushButton_settings, "settings.svg");
+    if (m_ui->pushButton_settings) {
+        applyThemeIcon(m_ui->pushButton_settings, "settings.svg");
     }
-    if (ui->pushButton_notifications) {
-        ApplyThemeIcon(ui->pushButton_notifications, "inbox.svg");
+    if (m_ui->pushButton_notifications) {
+        applyThemeIcon(m_ui->pushButton_notifications, "inbox.svg");
     }
-    if (ui->pushButton_logout) {
-        ApplyThemeIcon(ui->pushButton_logout, "navigate_next.svg");
+    if (m_ui->pushButton_logout) {
+        applyThemeIcon(m_ui->pushButton_logout, "navigate_next.svg");
     }
-    if (ui->pushButton_next_left) {
-        ApplyThemeIcon(ui->pushButton_next_left, "navigate_before.svg");
+    if (m_ui->pushButton_next_left) {
+        applyThemeIcon(m_ui->pushButton_next_left, "navigate_before.svg");
     }
-    if (ui->pushButton_next_right) {
-        ApplyThemeIcon(ui->pushButton_next_right, "navigate_next.svg");
+    if (m_ui->pushButton_next_right) {
+        applyThemeIcon(m_ui->pushButton_next_right, "navigate_next.svg");
     }
 }
 
-void MainWindow::SetDarkThemeEnabled(bool enabled)
+void MainWindow::setDarkThemeEnabled(bool enabled)
 {
-    const ThemeMode mode = enabled ? ThemeMode::Dark : ThemeMode::Light;
+    const ThemeMode kMode = enabled ? ThemeMode::Dark : ThemeMode::Light;
     qApp->setProperty("app_theme", enabled ? "dark" : "light");
-    const auto topLevels = qApp->topLevelWidgets();
-    for (QWidget* widget : topLevels) {
-        ReapplyThemeStyles(widget, mode);
-        ReapplyThemeIcons(widget, mode);
+    const auto kTopLevels = qApp->topLevelWidgets();
+    for (QWidget* widget : kTopLevels) {
+        reapplyThemeStyles(widget, kMode);
+        reapplyThemeIcons(widget, kMode);
     }
-    ApplyThemeIcons();
-    if (ui->catalogListView) {
-        ui->catalogListView->viewport()->update();
+    applyThemeIcons();
+    if (m_ui->catalogListView) {
+        m_ui->catalogListView->viewport()->update();
     }
-    if (ui->purchasedListView) {
-        ui->purchasedListView->viewport()->update();
+    if (m_ui->purchasedListView) {
+        m_ui->purchasedListView->viewport()->update();
     }
-    if (ui->purchaseMethodListView) {
-        ui->purchaseMethodListView->viewport()->update();
+    if (m_ui->purchaseMethodListView) {
+        m_ui->purchaseMethodListView->viewport()->update();
     }
 }
 
-void MainWindow::UpdateUser(const UserInfo& user, QWidget* parent)
+void MainWindow::updateUser(const UserInfo& user, QWidget* parent)
 {
     Q_UNUSED(parent);
-    m_services->GetUserSession()->SetCurrentUser(user);
+    m_services->getUserSession()->setCurrentUser(user);
 }
 
-void MainWindow::OnLoginClicked()
+void MainWindow::onLoginClicked()
 {
-    m_services->EnsureControllers(this);
+    m_services->ensureControllers(this);
 
-    AuthController::AuthResult auth = m_services->GetAuth()->Login(
-        ui->lineEdit_login->text(),
-        ui->lineEdit_password->text()
-    );
+    AuthController::AuthResult auth = m_services->getAuth()->login(m_ui->lineEdit_login->text(),
+                                                                   m_ui->lineEdit_password->text());
 
-    if (!auth.ok) {
-        QMessageBox::critical(this, "Авторизация", auth.error);
+    if (!auth.Ok) {
+        QMessageBox::critical(this, "Авторизация", auth.Error);
         return;
     }
 
-    UserInfo user = auth.user;
+    UserInfo user = auth.User;
 
-    if (user.role_ == Role::Admin) {
-        ui->lineEdit_login->clear();
-        ui->lineEdit_password->clear();
+    if (user.Role == Role::Admin) {
+        m_ui->lineEdit_login->clear();
+        m_ui->lineEdit_password->clear();
         QMessageBox::information(this, "Авторизация", "Выполнена авторизация как администратор.");
-        UpdateUser(user, this);
+        updateUser(user, this);
 
-        if (m_services->GetAdminTable()) {
-            m_services->GetAdminTable()->disconnect(this);
-            connect(m_services->GetAdminTable(), &AdminTableController::LogoutRequested, this, &MainWindow::OnLogoutClicked);
-            m_services->GetAdminTable()->Show(ui->stackedWidget, this);
+        if (m_services->getAdminTable()) {
+            m_services->getAdminTable()->disconnect(this);
+            connect(m_services->getAdminTable(),
+                    &AdminTableController::logoutRequested,
+                    this,
+                    &MainWindow::onLogoutClicked);
+            m_services->getAdminTable()->show(m_ui->stackedWidget, this);
         }
         return;
     }
 
-    if (user.role_ == Role::User) {
-        BuildDependencies();
-        UpdateUser(user, this);
+    if (user.Role == Role::User) {
+        buildDependencies();
+        updateUser(user, this);
 
-        m_services->GetProducts()->PullProducts();
+        m_services->getProducts()->pullProducts();
 
-        if (m_services->GetCatalog()) {
-            m_services->GetCatalog()->ResetDefault();
+        if (m_services->getCatalog()) {
+            m_services->getCatalog()->resetDefault();
         }
 
-        ui->lineEdit_login->clear();
-        ui->lineEdit_password->clear();
+        m_ui->lineEdit_login->clear();
+        m_ui->lineEdit_password->clear();
         QMessageBox::information(this, "Авторизация", "Выполнена авторизация как пользователь.");
 
-        if (m_services->GetFloatingWidget()) {
-            m_services->GetFloatingWidget()->setVisible(true);
+        if (m_services->getFloatingWidget()) {
+            m_services->getFloatingWidget()->setVisible(true);
         }
 
-        ui->stackedWidget->setCurrentWidget(ui->main);
+        m_ui->stackedWidget->setCurrentWidget(m_ui->main);
     }
 }
 
-void MainWindow::OnLogoutClicked()
+void MainWindow::onLogoutClicked()
 {
-    if (!this->ui->stackedWidget) return;
+    if (!this->m_ui->stackedWidget)
+        return;
 
-    if (m_services->GetUserSession()->IsUser()) {
-        if (ui->catalogListView) {
-            ui->catalogListView->setModel(nullptr);
-            ui->catalogListView->setItemDelegate(nullptr);
+    if (m_services->getUserSession()->isUser()) {
+        if (m_ui->catalogListView) {
+            m_ui->catalogListView->setModel(nullptr);
+            m_ui->catalogListView->setItemDelegate(nullptr);
         }
 
-        if (ui->purchasedListView) {
-            ui->purchasedListView->setModel(nullptr);
-            ui->purchasedListView->setItemDelegate(nullptr);
+        if (m_ui->purchasedListView) {
+            m_ui->purchasedListView->setModel(nullptr);
+            m_ui->purchasedListView->setItemDelegate(nullptr);
         }
     }
-    m_services->ResetSession();
+    m_services->resetSession();
 
-    if (this->ui->stackedWidget && this->ui->login) {
-        this->ui->stackedWidget->setCurrentWidget(this->ui->login);
+    if (this->m_ui->stackedWidget && this->m_ui->login) {
+        this->m_ui->stackedWidget->setCurrentWidget(this->m_ui->login);
     }
 }
 
-void MainWindow::BuildDependencies() {
-    m_services->EnsureControllers(this);
-    if (!m_services->GetFloatingWidget()) {
-        SetupFloatingMenu();
-    }
-
-    m_services->GetCatalog()->disconnect(this);
-    connect(m_services->GetCatalog(), &CatalogController::ProductSelected, this, [this](const ProductInfo& product) {
-        if (!m_services->GetProducts()) {
-            return;
-        }
-        auto productColors = m_services->GetProducts()->GetAllProductsWithName(product);
-        ShowProductOnPersonalPage(product, productColors);
-    });
-
-    m_services->GetCatalog()->Initialize(ui->catalogListView);
-    m_services->GetProfile()->Initialize(ui->purchasedListView, ui->label_clientname, ui->groupBox_6);
-}
-
-void MainWindow::SetupServicesScrollArea()
+void MainWindow::buildDependencies()
 {
-    if (!m_purchase_methods_controller) {
-        m_purchase_methods_controller.reset(new PurchaseMethodsController(this));
-        connect(m_purchase_methods_controller.get(), &PurchaseMethodsController::OpenCatalogRequested, this, [this]() {
-            ui->stackedWidget->setCurrentWidget(ui->main);
-        });
+    m_services->ensureControllers(this);
+    if (!m_services->getFloatingWidget()) {
+        setupFloatingMenu();
     }
-    m_purchase_methods_controller->Initialize(ui->purchaseMethodListView, m_services.get(), this);
+
+    m_services->getCatalog()->disconnect(this);
+    connect(m_services->getCatalog(),
+            &CatalogController::productSelected,
+            this,
+            [this](const ProductInfo& product) {
+                if (!m_services->getProducts()) {
+                    return;
+                }
+                auto productColors = m_services->getProducts()->getAllProductsWithName(product);
+                showProductOnPersonalPage(product, productColors);
+            });
+
+    m_services->getCatalog()->initialize(m_ui->catalogListView);
+    m_services->getProfile()->initialize(m_ui->purchasedListView,
+                                         m_ui->label_clientname,
+                                         m_ui->groupBox_6);
 }
 
-
-void MainWindow::SelectionProcessing(const bool ok, const QStringView selected_type, const QStringView selected_color)
+void MainWindow::setupServicesScrollArea()
 {
-    if (!ok) {
+    if (!m_purchaseMethodsController) {
+        m_purchaseMethodsController.reset(new PurchaseMethodsController(this));
+        connect(m_purchaseMethodsController.get(),
+                &PurchaseMethodsController::openCatalogRequested,
+                this,
+                [this]() { m_ui->stackedWidget->setCurrentWidget(m_ui->main); });
+    }
+    m_purchaseMethodsController->initialize(m_ui->purchaseMethodListView, m_services.get(), this);
+}
+
+void MainWindow::selectionProcessing(const bool kOk,
+                                     const QStringView kSelectedType,
+                                     const QStringView kSelectedColor)
+{
+    if (!kOk) {
         return;
     }
 
-    if (!m_services->GetCatalog()) {
+    if (!m_services->getCatalog()) {
         return;
     }
 
-    m_services->GetCatalog()->ApplyFilter(selected_type, selected_color);
-    ui->stackedWidget->setCurrentWidget(ui->main);
+    m_services->getCatalog()->applyFilter(kSelectedType, kSelectedColor);
+    m_ui->stackedWidget->setCurrentWidget(m_ui->main);
 }
-void MainWindow::ShowProductOnPersonalPage(const ProductInfo& product, QList<ProductInfo>& m_current_productcolors_) {
-    ui->label_name->setText(product.name_);
-    ui->label_price->setText(FormatPrice(product.price_) + " руб.");
-    m_current_product = product;
-    // ui->label_color_index->setText(QString::number(m_current_color_index + 1) + "/" + QString::number(m_current_productcolors_.size()));
+void MainWindow::showProductOnPersonalPage(const ProductInfo& product,
+                                           QList<ProductInfo>& mCurrentProductcolors)
+{
+    m_ui->label_name->setText(product.Name);
+    m_ui->label_price->setText(formatPrice(product.Price) + " руб.");
+    m_currentProduct = product;
+    // m_ui->label_Colorindex->setText(QString::number(m_currentColorIndex + 1) + "/" + QString::number(m_currentProductcolors_.size()));
 
-    QString imagePath = QDir::cleanPath(product.image_path_);
+    QString imagePath = QDir::cleanPath(product.ImagePath);
     QPixmap originalPixmap(imagePath);
 
     if (!originalPixmap.isNull()) {
-        const int availableWidth = ui->groupBox_2
-            ? qMax(ui->groupBox_2->width(), ui->groupBox_2->minimumWidth())
-            : 900;
-        const int imageWidth = qBound(520, availableWidth - 180, 700);
-        const QPixmap scaledPixmap = originalPixmap.scaled(
-            QSize(imageWidth, 285),
+        const int kAvailableWidth = m_ui->groupBox_2 ? qMax(m_ui->groupBox_2->width(),
+                                                            m_ui->groupBox_2->minimumWidth())
+                                                     : 900;
+        const int kImageWidth = qBound(520, kAvailableWidth - 180, 700);
+        const QPixmap kScaledPixmap = originalPixmap.scaled(
+            QSize(kImageWidth, 285),
             Qt::KeepAspectRatio,
             Qt::SmoothTransformation);
 
-        ui->label_car_image->setPixmap(scaledPixmap);
-        ui->label_car_image->setMinimumSize(imageWidth, 250);
-        ui->label_car_image->setMaximumSize(imageWidth, 285);
-        ui->label_car_image->setAlignment(Qt::AlignCenter);
-        ui->label_car_image->show();
+        m_ui->label_car_image->setPixmap(kScaledPixmap);
+        m_ui->label_car_image->setMinimumSize(kImageWidth, 250);
+        m_ui->label_car_image->setMaximumSize(kImageWidth, 285);
+        m_ui->label_car_image->setAlignment(Qt::AlignCenter);
+        m_ui->label_car_image->show();
     }
 
-    ui->pushButton_order->setVisible(product.stock_qty_ <= 0); // If product is not in stock, show order button
-    ui->pushButton_to_pay->setVisible(product.stock_qty_ > 0); // If product is in stock, show to pay button
+    m_ui->pushButton_order->setVisible(product.StockQty
+                                       <= 0); // If product is not in stock, show order button
+    m_ui->pushButton_to_pay->setVisible(product.StockQty
+                                        > 0); // If product is in stock, show to pay button
 
-    ui->stackedWidget->setCurrentWidget(ui->personal);
-    UpdatePersonalPageLayout();
+    m_ui->stackedWidget->setCurrentWidget(m_ui->personal);
+    updatePersonalPageLayout();
 }
 
-void MainWindow::OnNextLeftClicked()
+void MainWindow::onNextLeftClicked()
 {
     // If there are other products with the same name, show the previous product
-    auto m_current_productcolors_ = m_services->GetProducts()->GetAllProductsWithName(m_current_product);
-    if (!m_current_productcolors_.isEmpty())
+    auto mCurrentProductcolors = m_services->getProducts()->getAllProductsWithName(m_currentProduct);
+    if (!mCurrentProductcolors.isEmpty())
     {
-        m_current_color_index = (m_current_color_index - 1 + m_current_productcolors_.size()) % m_current_productcolors_.size();
-        m_current_product = m_current_productcolors_.at(m_current_color_index);
-        ShowProductOnPersonalPage(m_current_productcolors_.at(m_current_color_index), m_current_productcolors_);
+        m_currentColorIndex = (m_currentColorIndex - 1 + mCurrentProductcolors.size())
+                              % mCurrentProductcolors.size();
+        m_currentProduct = mCurrentProductcolors.at(m_currentColorIndex);
+        showProductOnPersonalPage(mCurrentProductcolors.at(m_currentColorIndex),
+                                  mCurrentProductcolors);
     }
 }
 
-void MainWindow::OnNextRightClicked()
+void MainWindow::onNextRightClicked()
 {
     // If there are other products with the same name, show the next product
-    auto m_current_productcolors_ = m_services->GetProducts()->GetAllProductsWithName(m_current_product);
-    if (!m_current_productcolors_.isEmpty())
+    auto mCurrentProductcolors = m_services->getProducts()->getAllProductsWithName(m_currentProduct);
+    if (!mCurrentProductcolors.isEmpty())
     {
-        m_current_color_index = (m_current_color_index + 1) % m_current_productcolors_.size();
-        m_current_product = m_current_productcolors_.at(m_current_color_index);
-        ShowProductOnPersonalPage(m_current_productcolors_.at(m_current_color_index), m_current_productcolors_);
+        m_currentColorIndex = (m_currentColorIndex + 1) % mCurrentProductcolors.size();
+        m_currentProduct = mCurrentProductcolors.at(m_currentColorIndex);
+        showProductOnPersonalPage(mCurrentProductcolors.at(m_currentColorIndex),
+                                  mCurrentProductcolors);
     }
 }
 
-void MainWindow::OnBackClicked()
+void MainWindow::onBackClicked()
 {
-    if (!m_services->GetUserSession()->IsUser()) return;
+    if (!m_services->getUserSession()->isUser())
+        return;
 
     // Reset current product state
-    m_current_product = ProductInfo();
-    m_current_color_index = 0;
+    m_currentProduct = ProductInfo();
+    m_currentColorIndex = 0;
 
-    // Rebuild the main catalog view
-    if (m_services->GetCatalog()) {
-        m_services->GetCatalog()->ResetDefault();
+    // Rebm_uild the main catalog view
+    if (m_services->getCatalog()) {
+        m_services->getCatalog()->resetDefault();
     }
 
-    ui->stackedWidget->setCurrentWidget(ui->main);
+    m_ui->stackedWidget->setCurrentWidget(m_ui->main);
 }
 
-void MainWindow::OnInfoClicked()
+void MainWindow::onInfoClicked()
 {
-    if (m_current_product.name_.isEmpty())
-    {
+    if (m_currentProduct.Name.isEmpty()) {
         QMessageBox::warning(this, "Ошибка", "Не выбран автомобиль для просмотра информации.");
         return;
     }
 
     // Show product information
     QString info = QString("Название: %1\nЦена: %2 руб.\nЦвет: %3\nОписание: %4")
-                       .arg(m_current_product.name_)
-                       .arg(FormatPrice(m_current_product.price_))
-                       .arg(m_current_product.color_)
-                       .arg(m_current_product.description_.isEmpty() ? "Описание отсутствует." : m_current_product.description_);
+                       .arg(m_currentProduct.Name)
+                       .arg(formatPrice(m_currentProduct.Price))
+                       .arg(m_currentProduct.Color)
+                       .arg(m_currentProduct.Description.isEmpty() ? "Описание отсутствует."
+                                                                   : m_currentProduct.Description);
 
     QMessageBox::information(this, "Информация об автомобиле", info);
 }
 
-void MainWindow::OnTestDriveClicked()
+void MainWindow::onTestDriveClicked()
 {
-    auto strategy = CreatePurchaseRequestStrategy(PurchaseMethod::TestDrive);
+    auto strategy = createPurchaseRequestStrategy(PurchaseMethod::TestDrive);
     if (!strategy) {
         QMessageBox::warning(this, "Error", "Strategy for test drive is not available.");
         return;
     }
-    strategy->Execute(this, m_services.get());
+    strategy->execute(this, m_services.get());
 }
 
-void MainWindow::OnToPayClicked()
+void MainWindow::onToPayClicked()
 {
-    auto strategy = CreateSelectedCarActionStrategy(SelectedCarAction::Checkout);
+    auto strategy = createSelectedCarActionStrategy(SelectedCarAction::Checkout);
     if (!strategy) {
         QMessageBox::warning(this, "Error", "Checkout strategy is not available.");
         return;
     }
-    strategy->Execute(this, m_services.get(), m_current_product);
+    strategy->execute(this, m_services.get(), m_currentProduct);
 }
 
-void MainWindow::OnOrderClicked()
+void MainWindow::onOrderClicked()
 {
-    auto strategy = CreateSelectedCarActionStrategy(SelectedCarAction::Order);
+    auto strategy = createSelectedCarActionStrategy(SelectedCarAction::Order);
     if (!strategy) {
         QMessageBox::warning(this, "Error", "Order strategy is not available.");
         return;
     }
-    strategy->Execute(this, m_services.get(), m_current_product);
+    strategy->execute(this, m_services.get(), m_currentProduct);
 }
 
-void MainWindow::OnNotificationsClicked()
+void MainWindow::onNotificationsClicked()
 {
-    if (!m_services->GetUserSession()->IsAuthorized() || !m_services->GetNotifications()) {
+    if (!m_services->getUserSession()->isAuthorized() || !m_services->getNotifications()) {
         return;
     }
-    m_services->GetNotifications()->ShowForUser(m_services->GetUserSession()->GetId(), this);
+    m_services->getNotifications()->showForUser(m_services->getUserSession()->getId(), this);
 }
 
-void MainWindow::OnSettingsClicked()
+void MainWindow::onSettingsClicked()
 {
-    if (!m_services->GetUserSession()->IsAuthorized()) {
+    if (!m_services->getUserSession()->isAuthorized()) {
         QMessageBox::warning(this, "Ошибка", "Авторизуйтесь для доступа к настройкам.");
         return;
     }
 
-    if (!m_settings_form) {
-        m_settings_form.reset(new SettingsForm(m_services.get(), this));
+    if (!m_settingsForm) {
+        m_settingsForm.reset(new SettingsForm(m_services.get(), this));
 
-        connect(m_settings_form.get(), &SettingsForm::ProfileSaved, this, [this](const QString& fullName, const QString&) {
-            if (ui->label_clientname) {
-                ui->label_clientname->setText(fullName + " — профиль");
-            }
-        });
-        connect(m_settings_form.get(), &SettingsForm::ThemeChanged, this, [this](bool darkEnabled) {
-            SetDarkThemeEnabled(darkEnabled);
+        connect(m_settingsForm.get(),
+                &SettingsForm::profileSaved,
+                this,
+                [this](const QString& fullName, const QString&) {
+                    if (m_ui->label_clientname) {
+                        m_ui->label_clientname->setText(fullName + " — профиль");
+                    }
+                });
+        connect(m_settingsForm.get(), &SettingsForm::themeChanged, this, [this](bool darkEnabled) {
+            setDarkThemeEnabled(darkEnabled);
         });
 
-        connect(m_settings_form.get(), &QDialog::finished, this, [this]() {
-            m_settings_form.reset();
+        connect(m_settingsForm.get(), &QDialog::finished, this, [this]() {
+            m_settingsForm.reset();
         });
     }
 
-    m_settings_form->show();
-    m_settings_form->raise();
-    m_settings_form->activateWindow();
+    m_settingsForm->show();
+    m_settingsForm->raise();
+    m_settingsForm->activateWindow();
 }
 
-void MainWindow::OnRegistrationClicked()
+void MainWindow::onRegistrationClicked()
 {
-    m_services->EnsureControllers(this);
+    m_services->ensureControllers(this);
 
-    bool registered = m_services->GetAuth()->RunRegistrationDialog(this);
+    bool registered = m_services->getAuth()->runRegistrationDialog(this);
     if (registered) {
-        ui->lineEdit_login->clear();
-        ui->lineEdit_password->clear();
+        m_ui->lineEdit_login->clear();
+        m_ui->lineEdit_password->clear();
     }
 }
-void MainWindow::OnProfileClicked()
+void MainWindow::onProfileClicked()
 {
-    if (!m_services->GetUserSession()->IsUser()) {
+    if (!m_services->getUserSession()->isUser()) {
         QMessageBox::warning(this, "Ошибка", "Авторизуйтесь для доступа к профилю.");
         return;
     }
 
-    if (ui->stackedWidget->currentWidget() == ui->user_page) return;
-    
-    if (m_services->GetProfile()) {
-        m_services->GetProfile()->ShowProfile(m_services->GetUserSession()->GetId(), m_services->GetUserSession()->GetName());
+    if (m_ui->stackedWidget->currentWidget() == m_ui->user_page)
+        return;
+
+    if (m_services->getProfile()) {
+        m_services->getProfile()->showProfile(m_services->getUserSession()->getId(),
+                                              m_services->getUserSession()->getName());
     }
 
-    SetupServicesScrollArea();
+    setupServicesScrollArea();
 
-    ui->stackedWidget->setCurrentWidget(ui->user_page);
+    m_ui->stackedWidget->setCurrentWidget(m_ui->user_page);
 }
 
-void MainWindow::OnSortByColorClicked()
+void MainWindow::onSortByColorClicked()
 {
-    if (m_services->GetUserSession()->IsAuthorized()) {
-        if (m_services->GetUserSession()->IsUser())
-        {
+    if (m_services->getUserSession()->isAuthorized()) {
+        if (m_services->getUserSession()->isUser()) {
             bool ok;
-            const QString selectedColor = GetItemFromThemedDialog(
-                this,
-                "Поиск по цветам",
-                "Выберите цвет:",
-                m_services->GetProducts()->GetAvailableColors(),
-                &ok);
+            const QString kSelectedColor
+                = getItemFromThemedDialog(this,
+                                          "Поиск по цветам",
+                                          "Выберите цвет:",
+                                          m_services->getProducts()->getAvailableColors(),
+                                          &ok);
 
-            SelectionProcessing(ok, QStringView(), selectedColor);
+            selectionProcessing(ok, QStringView(), kSelectedColor);
             return;
         }
     }
     QMessageBox::warning(this, "Ошибка", "Чтобы переключаться по остальным разделам, необходимо авторизоваться как пользователь.");
 }
 
-void MainWindow::OnSearchClicked()
+void MainWindow::onSearchClicked()
 {
     bool ok;
-    const QString term = GetTextFromThemedDialog(
+    const QString kTerm = getTextFromThemedDialog(
         this,
         "Поиск",
         "Укажите поисковый запрос:",
         &ok);
 
-    if (ok && !term.isEmpty())
+    if (ok && !kTerm.isEmpty())
     {
-        if (!m_services->GetProducts() || !m_services->GetCatalog()) {
+        if (!m_services->getProducts() || !m_services->getCatalog()) {
             QMessageBox::warning(this, "Поиск", "Каталог недоступен.");
             return;
         }
 
-        int relevant_count = m_services->GetCatalog()->Search(term);
-        if (relevant_count > 0)
+        int relevantCount = m_services->getCatalog()->search(kTerm);
+        if (relevantCount > 0)
         {
-            ui->stackedWidget->setCurrentWidget(ui->main);
-            QMessageBox::information(this, "Поиск", "Найдено " + QString::number(relevant_count) + " результатов по запросу «" + term + "».");
+            m_ui->stackedWidget->setCurrentWidget(m_ui->main);
+            QMessageBox::information(this, "Поиск", "Найдено " + QString::number(relevantCount) + " результатов по запросу «" + kTerm + "».");
         }
         else
         {
@@ -520,21 +554,19 @@ void MainWindow::OnSearchClicked()
     }
 }
 
-void MainWindow::OnSortByTypeClicked()
+void MainWindow::onSortByTypeClicked()
 {
-    if (m_services->GetUserSession()->IsAuthorized())
-    {
-        if (m_services->GetUserSession()->IsUser())
-        {
+    if (m_services->getUserSession()->isAuthorized()) {
+        if (m_services->getUserSession()->isUser()) {
             QStringList types;  // Список типов авто для выпадающего списка
 
-            if (m_services->GetDatabase()) {
-                types = m_services->GetDatabase()->GetCarTypeNames();
+            if (m_services->getDatabase()) {
+                types = m_services->getDatabase()->getCarTypeNames();
             }
             types << QString::fromUtf8("Все");
 
             bool ok;
-            const QString selected_type = GetItemFromThemedDialog(
+            const QString kSelectedType = getItemFromThemedDialog(
                 this,
                 "Поиск по типу авто",
                 "Тип:",
@@ -542,14 +574,14 @@ void MainWindow::OnSortByTypeClicked()
                 &ok);
 
             QString defaultColor;
-            if (m_services->GetDatabase()) {
-                defaultColor = m_services->GetDatabase()->GetDefaultCatalogColor();
+            if (m_services->getDatabase()) {
+                defaultColor = m_services->getDatabase()->getDefaultCatalogColor();
             }
 
-            if (selected_type == QString::fromUtf8("Все")) {
-                SelectionProcessing(ok, QStringView(), defaultColor);
+            if (kSelectedType == QString::fromUtf8("Все")) {
+                selectionProcessing(ok, QStringView(), defaultColor);
             } else {
-                SelectionProcessing(ok, selected_type, defaultColor);
+                selectionProcessing(ok, kSelectedType, defaultColor);
             }
             return;
         }
@@ -557,53 +589,55 @@ void MainWindow::OnSortByTypeClicked()
     QMessageBox::warning(this, "Ошибка", "Чтобы переключаться по остальным разделам, необходимо авторизоваться как пользователь.");
 }
 
-void MainWindow::SetupFloatingMenu()
+void MainWindow::setupFloatingMenu()
 {
-    m_services->EnsureFloatingWidget(this);
+    m_services->ensureFloatingWidget(this);
 
-    m_services->GetFloatingWidget()->BuildFloatingMenu(
-    58,                                               // Floating menu x position
-    this->height(),                                   // Floating menu height
-        [this]() { this->OnSortByTypeClicked(); },    // On sort by type clicked
-        [this]() { this->OnSearchClicked(); },        // On search clicked
-        [this]() { this->OnSortByColorClicked(); },   // On sort by color clicked
-        [this]() { this->OnProfileClicked(); }        // On profile clicked
+    m_services->getFloatingWidget()->buildFloatingMenu(
+        58,                                         // Floating menu x position
+        this->height(),                             // Floating menu height
+        [this]() { this->onSortByTypeClicked(); },  // On sort by type clicked
+        [this]() { this->onSearchClicked(); },      // On search clicked
+        [this]() { this->onSortByColorClicked(); }, // On sort by color clicked
+        [this]() { this->onProfileClicked(); }      // On profile clicked
     );
 
     // Show floating menu
-    if (m_services->GetFloatingWidget()) {
-        m_services->GetFloatingWidget()->setVisible(false);
+    if (m_services->getFloatingWidget()) {
+        m_services->getFloatingWidget()->setVisible(false);
     }
 }
 
-void MainWindow::UpdateFloatingMenuPosition()
+void MainWindow::updateFloatingMenuPosition()
 {
-    if (m_services->GetFloatingWidget()) {
+    if (m_services->getFloatingWidget()) {
         // Update floating menu position
         int x = 58;  // Floating menu x position
-        int y = (this->height() - m_services->GetFloatingWidget()->height()) / 2;  // Floating menu y position
-        m_services->GetFloatingWidget()->move(x, y);
+        int y = (this->height() - m_services->getFloatingWidget()->height())
+                / 2; // Floating menu y position
+        m_services->getFloatingWidget()->move(x, y);
     }
 }
 
-void MainWindow::UpdatePersonalPageLayout()
+void MainWindow::updatePersonalPageLayout()
 {
-    if (!ui || !ui->groupBox_2 || !ui->pushButton_next_left || !ui->pushButton_next_right) {
+    if (!m_ui || !m_ui->groupBox_2 || !m_ui->pushButton_next_left || !m_ui->pushButton_next_right) {
         return;
     }
 
-    constexpr int arrowSize = 68;
-    constexpr int sideMargin = 16;
-    const int y = qMax(0, (ui->groupBox_2->height() - arrowSize) / 2);
+    constexpr int kArrowSize = 68;
+    constexpr int kSideMargin = 16;
+    const int kY = qMax(0, (m_ui->groupBox_2->height() - kArrowSize) / 2);
 
-    ui->pushButton_next_left->setGeometry(sideMargin, y, arrowSize, arrowSize);
-    ui->pushButton_next_right->setGeometry(
-        qMax(sideMargin, ui->groupBox_2->width() - arrowSize - sideMargin),
-        y,
-        arrowSize,
-        arrowSize);
-    ui->pushButton_next_left->raise();
-    ui->pushButton_next_right->raise();
+    m_ui->pushButton_next_left->setGeometry(kSideMargin, kY, kArrowSize, kArrowSize);
+    m_ui->pushButton_next_right->setGeometry(qMax(kSideMargin,
+                                                  m_ui->groupBox_2->width() - kArrowSize
+                                                      - kSideMargin),
+                                             kY,
+                                             kArrowSize,
+                                             kArrowSize);
+    m_ui->pushButton_next_left->raise();
+    m_ui->pushButton_next_right->raise();
 }
 
 void MainWindow::resizeEvent(QResizeEvent *event)
@@ -611,6 +645,6 @@ void MainWindow::resizeEvent(QResizeEvent *event)
     QMainWindow::resizeEvent(event);  // Resize event
 
     // Update floating menu position
-    UpdateFloatingMenuPosition();
-    UpdatePersonalPageLayout();
+    updateFloatingMenuPosition();
+    updatePersonalPageLayout();
 }

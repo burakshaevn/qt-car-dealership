@@ -25,83 +25,83 @@ class MainWindow : public QMainWindow
 public:
     MainWindow(QWidget *parent = nullptr);
     ~MainWindow();
-    void SetDarkThemeEnabled(bool enabled);
+    void setDarkThemeEnabled(bool enabled);
 
     /*!
      * \brief Обновляет информацию о пользователе
      * \param user - информация о пользователе
      * \param parent - родительский виджет
      */
-    void UpdateUser(const UserInfo& user, QWidget* parent);
+    void updateUser(const UserInfo& user, QWidget* parent);
 
 private slots:
-    void OnLoginClicked();
+    void onLoginClicked();
 
-    void OnRegistrationClicked();
+    void onRegistrationClicked();
 
-    void OnLogoutClicked();
+    void onLogoutClicked();
 
-    void OnNextLeftClicked();
+    void onNextLeftClicked();
 
-    void OnNextRightClicked();
+    void onNextRightClicked();
 
-    void OnBackClicked();
+    void onBackClicked();
 
-    void OnToPayClicked();
+    void onToPayClicked();
 
-    void OnInfoClicked();
+    void onInfoClicked();
 
-    void OnTestDriveClicked();
+    void onTestDriveClicked();
 
-    void OnOrderClicked();
+    void onOrderClicked();
 
-    void OnNotificationsClicked();
+    void onNotificationsClicked();
 
-    void OnSettingsClicked();
+    void onSettingsClicked();
 
-    void OnProfileClicked();
+    void onProfileClicked();
 
-    void OnSortByColorClicked();
+    void onSortByColorClicked();
 
-    void OnSearchClicked();
+    void onSearchClicked();
 
-    void OnSortByTypeClicked();
+    void onSortByTypeClicked();
 
 protected:
     void resizeEvent(QResizeEvent *event) override;
 
 private:
-    void ApplyThemeIcons();
+    void applyThemeIcons();
 
-    Ui::MainWindow *ui;
+    Ui::MainWindow *m_ui;
 
-    ProductInfo m_current_product;                      ///< Информация о текущем товаре, который выбрал пользователь
-    int m_current_color_index = 0;                      ///< Индекс текущего цвета у товара, который выбрал пользователь
+    ProductInfo m_currentProduct;                      ///< Информация о текущем товаре, который выбрал пользователь
+    int m_currentColorIndex = 0;                      ///< Индекс текущего цвета у товара, который выбрал пользователь
 
     QScopedPointer<AppServices> m_services;             ///< сервисы приложения (DB, модели, контроллеры)
 
-    QScopedPointer<SettingsForm> m_settings_form;       ///< Форма настроек
-    QScopedPointer<PurchaseMethodsController> m_purchase_methods_controller; ///< Контроллер методов покупки
+    QScopedPointer<SettingsForm> m_settingsForm;       ///< Форма настроек
+    QScopedPointer<PurchaseMethodsController> m_purchaseMethodsController; ///< Контроллер методов покупки
 
     /*!
      * \brief Инициализация зависимостей
      */
-    void BuildDependencies();
+    void buildDependencies();
     
     /*!
      * \brief Инициализация бокового меню
      */
-    void SetupFloatingMenu();
+    void setupFloatingMenu();
 
     /*!
      * \brief Обновление позиции плавающего меню при изменении размера окна
      */
-    void UpdateFloatingMenuPosition();
+    void updateFloatingMenuPosition();
 
     /*!
      * \brief Обновляет размеры изображения и положение стрелок на странице автомобиля
      */
-    void UpdatePersonalPageLayout();
+    void updatePersonalPageLayout();
 
     /*!
      * \brief Обработка выбора услуги
@@ -109,19 +109,19 @@ private:
      * \param selected_type - тип услуги
      * \param selected_color - цвет услуги
      */
-    void SelectionProcessing(const bool ok, const QStringView selected_type, const QStringView selected_color = QStringView());
+    void selectionProcessing(const bool kOk, const QStringView kSelectedType, const QStringView kSelectedColor = QStringView());
 
     /*!
      * \brief Загружает доступные услуги для клиента в ScrollArea на странице пользователя
      */
-    void SetupServicesScrollArea();
+    void setupServicesScrollArea();
 
     /*!
      * \brief Настраивает страницу с информацей о конкретном автомобиле
      * \param const ProductInfo& - характеристики, информация об автомобиле
      * \param QList<ProductInfo>& - список с доступными цветами конкретного автомобиля
      */
-    void ShowProductOnPersonalPage(const ProductInfo&, QList<ProductInfo>&);
+    void showProductOnPersonalPage(const ProductInfo&, QList<ProductInfo>&);
 
 };
 

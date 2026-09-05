@@ -6,7 +6,7 @@
 #include <QtCore/QString>
 struct ProductInfo;
 
-namespace ContractTemplates {
+namespace contract_templates {
 
 /*!
  * \brief Сохранить HTML контекнт как PDF

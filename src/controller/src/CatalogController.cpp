@@ -16,74 +16,75 @@ CatalogController::CatalogController(QObject* parent)
 {
 }
 
-void CatalogController::SetDependencies(const QSharedPointer<ProductRepository>& products,
+void CatalogController::setDependencies(const QSharedPointer<ProductRepository>& products,
                                         const QSharedPointer<DatabaseHandler>& database)
 {
-    products_ = products;
-    database_ = database;
+    m_products = products;
+    m_database = database;
 }
 
-void CatalogController::Initialize(QListView* listView)
+void CatalogController::initialize(QListView* listView)
 {
-    list_view_ = listView;
-    if (!model_) {
-        model_.reset(new ProductListModel(this));
+    m_listView = listView;
+    if (!m_model) {
+        m_model.reset(new ProductListModel(this));
     }
-    if (!delegate_) {
-        delegate_.reset(new ProductCardDelegate(this));
+    if (!m_delegate) {
+        m_delegate.reset(new ProductCardDelegate(this));
     }
-    ConfigureListView();
+    configureListView();
 }
 
-void CatalogController::ConfigureListView()
+void CatalogController::configureListView()
 {
-    if (!list_view_ || !model_ || !delegate_) {
+    if (!m_listView || !m_model || !m_delegate) {
         return;
     }
 
-    list_view_->setModel(model_.get());
-    list_view_->setItemDelegate(delegate_.get());
-    list_view_->setSelectionMode(QAbstractItemView::NoSelection);
-    list_view_->setVerticalScrollMode(QAbstractItemView::ScrollPerPixel);
-    list_view_->setHorizontalScrollBarPolicy(Qt::ScrollBarAlwaysOff);
-    list_view_->setResizeMode(QListView::Adjust);
-    list_view_->setWrapping(false);
-    list_view_->setSpacing(22);
-    list_view_->setUniformItemSizes(false);
-    ApplyThemeStyle(list_view_, "ListViewTransparent");
+    m_listView->setModel(m_model.get());
+    m_listView->setItemDelegate(m_delegate.get());
+    m_listView->setSelectionMode(QAbstractItemView::NoSelection);
+    m_listView->setVerticalScrollMode(QAbstractItemView::ScrollPerPixel);
+    m_listView->setHorizontalScrollBarPolicy(Qt::ScrollBarAlwaysOff);
+    m_listView->setResizeMode(QListView::Adjust);
+    m_listView->setWrapping(false);
+    m_listView->setSpacing(22);
+    m_listView->setUniformItemSizes(false);
+    applyThemeStyle(m_listView, "ListViewTransparent");
 
-    disconnect(list_view_, &QListView::clicked, this, nullptr);
-    connect(list_view_, &QListView::clicked, this, [this](const QModelIndex& index) {
+    disconnect(m_listView, &QListView::clicked, this, nullptr);
+    connect(m_listView, &QListView::clicked, this, [this](const QModelIndex& index) {
         if (!index.isValid()) {
             return;
         }
-        ProductInfo product = ProductAt(index.row());
-        if (!product.name_.isEmpty()) {
-            emit ProductSelected(product);
+        ProductInfo product = productAt(index.row());
+        if (!product.Name.isEmpty()) {
+            emit productSelected(product);
         }
     });
 }
 
-void CatalogController::ApplyFilter(const QStringView typeFilter, const QStringView colorFilter)
+void CatalogController::applyFilter(const QStringView kTypeFilter, const QStringView kColorFilter)
 {
-    if (!products_ || !model_ || !database_) {
+    if (!m_products || !m_model || !m_database) {
         return;
     }
 
-    auto typeId = database_->TryGetCarTypeId(typeFilter);
-    const bool applyTypeFilter = typeFilter.size() > 0 && typeId.has_value();
-    const bool applyColorFilter = !colorFilter.isEmpty() && database_->IsKnownColor(colorFilter);
+    auto typeId = m_database->tryGetCarTypeId(kTypeFilter);
+    const bool kApplyTypeFilter = kTypeFilter.size() > 0 && typeId.has_value();
+    const bool kApplyColorFilter = !kColorFilter.isEmpty()
+                                   && m_database->isKnownColor(kColorFilter);
 
     QList<ProductInfo> filtered;
-    const auto allProducts = products_->GetProducts();
-    for (auto it = allProducts.constBegin(); it != allProducts.constEnd(); ++it) {
+    const auto kAllProducts = m_products->getProducts();
+    for (auto it = kAllProducts.constBegin(); it != kAllProducts.constEnd(); ++it) {
         const ProductInfo& product = it.value();
 
-        bool typeMatch = !applyTypeFilter || (product.type_id_ == *typeId);
+        bool typeMatch = !kApplyTypeFilter || (product.TypeId == *typeId);
 
         bool colorMatch = true;
-        if (applyColorFilter) {
-            colorMatch = (product.color_ == colorFilter);
+        if (kApplyColorFilter) {
+            colorMatch = (product.Color == kColorFilter);
         }
 
         if (typeMatch && colorMatch) {
@@ -92,35 +93,35 @@ void CatalogController::ApplyFilter(const QStringView typeFilter, const QStringV
     }
 
     std::sort(filtered.begin(), filtered.end(), [](const ProductInfo& a, const ProductInfo& b) {
-        return a.id_ < b.id_;
+        return a.Id < b.Id;
     });
 
-    model_->SetProducts(filtered);
+    m_model->setProducts(filtered);
 }
-int CatalogController::Search(const QString& term)
+int CatalogController::search(const QString& term)
 {
-    if (!products_ || !model_) {
+    if (!m_products || !m_model) {
         return 0;
     }
-    QList<ProductInfo> relevant = products_->FindRelevantProducts(term);
-    model_->SetProducts(relevant);
+    QList<ProductInfo> relevant = m_products->findRelevantProducts(term);
+    m_model->setProducts(relevant);
     return relevant.size();
 }
 
-void CatalogController::ResetDefault()
+void CatalogController::resetDefault()
 {
-    if (!database_) {
-        ApplyFilter(QStringView(), QStringView());
+    if (!m_database) {
+        applyFilter(QStringView(), QStringView());
         return;
     }
-    const QString defaultColor = database_->GetDefaultCatalogColor();
-    ApplyFilter(QStringView(), defaultColor);
+    const QString kDefaultColor = m_database->getDefaultCatalogColor();
+    applyFilter(QStringView(), kDefaultColor);
 }
 
-ProductInfo CatalogController::ProductAt(int row) const
+ProductInfo CatalogController::productAt(int row) const
 {
-    if (!model_) {
+    if (!m_model) {
         return ProductInfo();
     }
-    return model_->ProductAt(row);
+    return m_model->productAt(row);
 }

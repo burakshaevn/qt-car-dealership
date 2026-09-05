@@ -3,12 +3,10 @@
 PurchaseMethodListModel::PurchaseMethodListModel(QObject* parent)
     : QAbstractListModel(parent)
 {
-    items_ = {
-        { PurchaseMethod::Standart, "Покупка", "Оформить стандартную заявку на покупку" },
-        { PurchaseMethod::Rental, "Аренда", "Оформить заявку на аренду автомобиля" },
-        { PurchaseMethod::TestDrive, "Тест-драйв", "Записаться на тест-драйв автомобиля" },
-        { PurchaseMethod::Credit, "Кредит", "Подать заявку на кредитование" }
-    };
+    m_items = {{PurchaseMethod::Standart, "Покупка", "Оформить стандартную заявку на покупку"},
+               {PurchaseMethod::Rental, "Аренда", "Оформить заявку на аренду автомобиля"},
+               {PurchaseMethod::TestDrive, "Тест-драйв", "Записаться на тест-драйв автомобиля"},
+               {PurchaseMethod::Credit, "Кредит", "Подать заявку на кредитование"}};
 }
 
 int PurchaseMethodListModel::rowCount(const QModelIndex& parent) const
@@ -16,24 +14,24 @@ int PurchaseMethodListModel::rowCount(const QModelIndex& parent) const
     if (parent.isValid()) {
         return 0;
     }
-    return items_.size();
+    return m_items.size();
 }
 
 QVariant PurchaseMethodListModel::data(const QModelIndex& index, int role) const
 {
-    if (!index.isValid() || index.row() < 0 || index.row() >= items_.size()) {
+    if (!index.isValid() || index.row() < 0 || index.row() >= m_items.size()) {
         return {};
     }
 
-    const Item& item = items_.at(index.row());
+    const Item& item = m_items.at(index.row());
     switch (role) {
     case Qt::DisplayRole:
     case TitleRole:
-        return item.title;
+        return item.Title;
     case DescriptionRole:
-        return item.description;
+        return item.Description;
     case MethodRole:
-        return static_cast<int>(item.method);
+        return static_cast<int>(item.Method);
     default:
         return {};
     }

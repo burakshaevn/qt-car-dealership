@@ -17,9 +17,9 @@ class PurchaseRequestStrategy
 {
 public:
     virtual ~PurchaseRequestStrategy() = default;
-    virtual bool Execute(QWidget* parent, AppServices* services) = 0;
+    virtual bool execute(QWidget* parent, AppServices* services) = 0;
 };
 
-std::unique_ptr<PurchaseRequestStrategy> CreatePurchaseRequestStrategy(PurchaseMethod method);
+std::unique_ptr<PurchaseRequestStrategy> createPurchaseRequestStrategy(PurchaseMethod method);
 
 #endif // PURCHASE_REQUEST_STRATEGY_H

@@ -8,23 +8,23 @@
 class UserSession
 {
 public:
-    void SetCurrentUser(const UserInfo& user);
-    void Clear();
+    void setCurrentUser(const UserInfo& user);
+    void clear();
 
-    bool IsAuthorized() const;
-    bool IsAdmin() const;
-    bool IsUser() const;
+    bool isAuthorized() const;
+    bool isAdmin() const;
+    bool isUser() const;
 
-    int GetId() const;
-    const QString& GetName() const;
-    const QString& GetEmail() const;
-    Role GetRole() const;
-    void SetName(const QString& name);
-    void SetEmail(const QString& email);
+    int getId() const;
+    const QString& getName() const;
+    const QString& getEmail() const;
+    Role getRole() const;
+    void setName(const QString& name);
+    void setEmail(const QString& email);
 
 private:
-    UserInfo user_;
-    bool authorized_ = false;
+    UserInfo m_user;
+    bool m_authorized = false;
 };
 
 #endif // USER_SESSION_H

@@ -31,91 +31,91 @@ public:
     /*!
      * \brief Инициализирует основные сервисы
      */
-    void EnsureCore();
+    void ensureCore();
 
     /*!
      * \brief Инициализирует плавающее меню
      * \param owner - владелец плавающего меню
      */
-    void EnsureFloatingWidget(QWidget* owner);
+    void ensureFloatingWidget(QWidget* owner);
 
     /*!
      * \brief Инициализирует контроллеры
      * \param owner - владелец контроллеров
      */
-    void EnsureControllers(QObject* owner);
+    void ensureControllers(QObject* owner);
 
     /*!
      * \brief Сбрасывает сессию пользователя
      */
-    void ResetSession();
+    void resetSession();
 
     /*!
      * \brief Возвращает указатель на объект DatabaseHandler
      * \returns Указатель на объект DatabaseHandler
      */
-    QSharedPointer<DatabaseHandler> GetDatabase() const;
+    QSharedPointer<DatabaseHandler> getDatabase() const;
 
     /*!
      * \brief Возвращает указатель на объект Products
      * \returns Указатель на объект Products
      */
-    QSharedPointer<ProductRepository> GetProducts() const;
+    QSharedPointer<ProductRepository> getProducts() const;
 
     /*!
      * \brief Возвращает указатель на плавающую навигацию
      * \returns Указатель на FloatingNavigationWidget
      */
-    QSharedPointer<FloatingNavigationWidget> GetFloatingWidget() const;
+    QSharedPointer<FloatingNavigationWidget> getFloatingWidget() const;
 
     /*!
      * \brief Возвращает указатель на объект CatalogController
      * \returns Указатель на объект CatalogController
      */
-    CatalogController* GetCatalog() const;
+    CatalogController* getCatalog() const;
 
     /*!
      * \brief Возвращает указатель на объект ProfileController
      * \returns Указатель на объект ProfileController
      */
-    ProfileController* GetProfile() const;
+    ProfileController* getProfile() const;
 
     /*!
      * \brief Возвращает указатель на объект AuthController
      * \returns Указатель на объект AuthController
      */
-    AuthController* GetAuth() const;
+    AuthController* getAuth() const;
 
     /*!
      * \brief Возвращает указатель на объект NotificationsController
      * \returns Указатель на объект NotificationsController
      */
-    NotificationsController* GetNotifications() const;
-    AdminTableController* GetAdminTable() const;
+    NotificationsController* getNotifications() const;
+    AdminTableController* getAdminTable() const;
 
     /*!
      * \brief Возвращает указатель на объект UserSession
      * \returns Указатель на объект UserSession
      */
-    UserSession* GetUserSession();
+    UserSession* getUserSession();
 
     /*!
      * \brief Возвращает указатель на объект UserSession
      * \returns Указатель на объект UserSession
      */
-    const UserSession* GetUserSession() const;
+    const UserSession* getUserSession() const;
 
 private:
-    QSharedPointer<DatabaseHandler> database_;
-    QSharedPointer<ProductRepository> products_;
-    QSharedPointer<FloatingNavigationWidget> floating_widget_;
+    QSharedPointer<DatabaseHandler> m_database;
+    QSharedPointer<ProductRepository> m_products;
+    QSharedPointer<FloatingNavigationWidget> m_floatingWidget;
 
-    QScopedPointer<CatalogController> catalog_controller_;
-    QScopedPointer<ProfileController> profile_controller_;
-    QScopedPointer<AuthController> auth_controller_;
-    QScopedPointer<NotificationsController> notifications_controller_;
-    QScopedPointer<AdminTableController> admin_table_controller_;
-    UserSession user_session_;
+    QScopedPointer<CatalogController> m_catalogController;
+    QScopedPointer<ProfileController> m_profileController;
+    QScopedPointer<AuthController> m_authController;
+    QScopedPointer<NotificationsController> m_notificationsController;
+    QScopedPointer<AdminTableController> m_adminTableController;
+    UserSession m_userSession;
 };
 
 #endif // APP_SERVICES_H

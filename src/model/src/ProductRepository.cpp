@@ -8,12 +8,12 @@
 
 namespace {
 
-QString g_ResolveImagePath(const QString& imageUrlRaw)
+QString gResolveImagePath(const QString& imageUrlRaw)
 {
     QString imageUrl = imageUrlRaw;
     imageUrl.replace('\\', '/');
 
-    const QStringList candidates = {
+    const QStringList kCandidates = {
         QDir::cleanPath(
             QString(PROJECT_ROOT_DIR) +
             "/resources/cars/" +
@@ -33,41 +33,46 @@ QString g_ResolveImagePath(const QString& imageUrlRaw)
             )
     };
 
-    for (const QString& path : candidates) {
+    for (const QString& path : kCandidates) {
         if (QFile::exists(path)) {
             return path;
         }
     }
 
-    return candidates.first();
+    return kCandidates.first();
 }
 
 } // namespace
 
-ProductRepository::ProductRepository(QSharedPointer<DatabaseHandler> db_manager)
-    : m_database_manager(std::move(db_manager))
+ProductRepository::ProductRepository(QSharedPointer<DatabaseHandler> dbManager)
+    : m_databaseManager(std::move(dbManager))
 {}
 
-void ProductRepository::PushProduct(const ProductInfo& product) {
+void ProductRepository::pushProduct(const ProductInfo& product)
+{
     // Составной ключ
-    ProductKey key = std::make_tuple(product.name_, product.color_);
+    ProductKey key = std::make_tuple(product.Name, product.Color);
     m_products[key] = product;
 
-    if (std::find(m_available_colors.begin(), m_available_colors.end(), product.color_) == m_available_colors.end()){
-        m_available_colors.push_back(product.color_);
+    if (std::find(m_availableColors.begin(), m_availableColors.end(), product.Color)
+        == m_availableColors.end()) {
+        m_availableColors.push_back(product.Color);
     }
 }
 
-void ProductRepository::Clear() {
+void ProductRepository::clear()
+{
     m_products.clear();
-    m_available_colors.clear();
+    m_availableColors.clear();
 }
 
-QHash<ProductRepository::ProductKey, ProductInfo> ProductRepository::GetProducts() const {
+QHash<ProductRepository::ProductKey, ProductInfo> ProductRepository::getProducts() const
+{
     return m_products;
 }
 
-const ProductInfo* ProductRepository::FindProduct(const ProductKey& key) const {
+const ProductInfo* ProductRepository::findProduct(const ProductKey& key) const
+{
     auto iter = m_products.find(key);
     if (iter != m_products.end()) {
         return &iter.value();
@@ -75,24 +80,26 @@ const ProductInfo* ProductRepository::FindProduct(const ProductKey& key) const {
     return nullptr;
 }
 
-QList<ProductInfo> ProductRepository::FindProductsByName(const QString& product_name) const {
+QList<ProductInfo> ProductRepository::findProductsByName(const QString& productName) const
+{
     QList<ProductInfo> result;
     for (const auto& product : m_products) {
-        if (product.name_ == product_name) {
+        if (product.Name == productName) {
             result.append(product);
         }
     }
     return result;
 }
 
-QList<ProductInfo> ProductRepository::FindRelevantProducts(const QString& term) const {
+QList<ProductInfo> ProductRepository::findRelevantProducts(const QString& term) const
+{
     // Хранилище для всех инструментов и их релевантности
     QList<std::pair<ProductInfo, double>> scores;
 
     // Вычисляем TF-IDF для каждого инструмента
     for (const auto& info : m_products) {
-        double tf_idf = ComputeTfIdf(info.name_, term);
-        scores.append({info, tf_idf});
+        double tfIdf = computeTfIdf(info.Name, term);
+        scores.append({info, tfIdf});
     }
 
     // Сортируем результаты по убыванию TF-IDF
@@ -110,48 +117,49 @@ QList<ProductInfo> ProductRepository::FindRelevantProducts(const QString& term) 
     return result;
 }
 
-void ProductRepository::PullProducts()
+void ProductRepository::pullProducts()
 {
-    QSqlQuery query = m_database_manager->ExecuteNamedSelect(SqlQueryId::SelectAllProducts);
+    QSqlQuery query = m_databaseManager->executeNamedSelect(SqlQueryId::SelectAllProducts);
     if (query.isActive())
     {
 
         // Загружаем инструменты в m_products
-        Clear();
+        clear();
         while (query.next())
         {
             ProductInfo product;
-            product.id_ = query.value("id").toInt();
-            product.name_ = query.value("name").toString();
-            product.color_ = query.value("color").toString();
-            product.price_ = query.value("price").toDouble();
-            product.description_ = query.value("description").toString();
-            product.type_id_ = query.value("type_id").toInt();
+            product.Id = query.value("id").toInt();
+            product.Name = query.value("name").toString();
+            product.Color = query.value("color").toString();
+            product.Price = query.value("price").toDouble();
+            product.Description = query.value("description").toString();
+            product.TypeId = query.value("type_id").toInt();
             if (query.record().indexOf("trim") != -1) {
-                product.trim_ = query.value("trim").toString();
+                product.Trim = query.value("trim").toString();
             }
             if (query.record().indexOf("stock_qty") != -1) {
-                product.stock_qty_ = query.value("stock_qty").toInt();
+                product.StockQty = query.value("stock_qty").toInt();
             }
 
-            const QString imageUrl = query.value("image_url").toString().replace("\\", "/");
-            product.image_path_ = g_ResolveImagePath(imageUrl);
+            const QString kImageUrl = query.value("image_url").toString().replace("\\", "/");
+            product.ImagePath = gResolveImagePath(kImageUrl);
 
-            PushProduct(product);
+            pushProduct(product);
         }
 
     }
 }
 
-QList<ProductInfo> ProductRepository::GetAllProductsWithName(const ProductInfo& product) const {
+QList<ProductInfo> ProductRepository::getAllProductsWithName(const ProductInfo& product) const
+{
     QList<ProductInfo> temp;
 
-    QSqlQuery query = m_database_manager->ExecuteNamedSelect(
-        SqlQueryId::SelectProductsByName, {{"name", product.name_}});
+    QSqlQuery query = m_databaseManager->executeNamedSelect(SqlQueryId::SelectProductsByName,
+                                                            {{"name", product.Name}});
 
     if (query.isActive()) {
         while (query.next()) {
-            const QString imageUrl = query.value("image_url").toString().replace("\\", "/");
+            const QString kImageUrl = query.value("image_url").toString().replace("\\", "/");
             
             temp.append(ProductInfo{
                 query.value("id").toInt(),
@@ -159,7 +167,7 @@ QList<ProductInfo> ProductRepository::GetAllProductsWithName(const ProductInfo& 
                 query.value("color").toString(),
                 query.value("price").toInt(),
                 query.value("description").toString(),
-                g_ResolveImagePath(imageUrl),
+                gResolveImagePath(kImageUrl),
                 query.value("type_id").toInt(),
                 query.record().indexOf("trim") != -1 ? query.value("trim").toString() : QString(),
                 query.record().indexOf("stock_qty") != -1 ? query.value("stock_qty").toInt() : 0
@@ -170,16 +178,18 @@ QList<ProductInfo> ProductRepository::GetAllProductsWithName(const ProductInfo& 
     return std::move(temp);
 }
 
-QStringList ProductRepository::GetAvailableColors() const {
-    return m_available_colors;
+QStringList ProductRepository::getAvailableColors() const
+{
+    return m_availableColors;
 }
 
-double ProductRepository::ComputeTfIdf(const QString& document, const QString& term) const {
+double ProductRepository::computeTfIdf(const QString& document, const QString& term) const
+{
     // Подсчет частоты термина (TF — Term Frequency) - отношение количества вхождений термина к общему числу слов
-    int term_frequency = CountOccurrences(document, term);
-    int total_terms = CountTotalWords(document);
+    int termFrequency = countOccurrences(document, term);
+    int totalTerms = countTotalWords(document);
 
-    double tf = total_terms > 0 ? static_cast<double>(term_frequency) / total_terms : 0.0;
+    double tf = totalTerms > 0 ? static_cast<double>(termFrequency) / totalTerms : 0.0;
 
     // Подсчет обратной частотности (IDF — Inverse Document Frequency)
     // TODO: Требуется реализация подсчета IDF на основе корпуса документов
@@ -190,7 +200,8 @@ double ProductRepository::ComputeTfIdf(const QString& document, const QString& t
     return tf * idf;
 }
 
-int ProductRepository::CountOccurrences(const QString& document, const QString& term) const {
+int ProductRepository::countOccurrences(const QString& document, const QString& term) const
+{
     int count = 0;
     // Регулярное выражение для поиска точных совпадений слова:
     // \\b - граница слова, QRegularExpression::escape - экранирование специальных символов
@@ -207,7 +218,8 @@ int ProductRepository::CountOccurrences(const QString& document, const QString& 
 }
 
 // Подсчет общего количества слов в документе.
-int ProductRepository::CountTotalWords(const QString& document) const {
+int ProductRepository::countTotalWords(const QString& document) const
+{
     QRegularExpression wordRegex("\\s+"); // Используем регулярное выражение для разделения по пробелам
     return document.split(wordRegex, Qt::SkipEmptyParts).size();
 }

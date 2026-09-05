@@ -1,7 +1,7 @@
 #pragma once
 
 #ifndef m_productsH
-#define m_productsH
+#define M_PRODUCTS_H
 
 #include <QString>
 #include <QList>
@@ -21,30 +21,29 @@ class DatabaseHandler;
 struct ProductInfo
 {
     ProductInfo() = default;
-    explicit ProductInfo(const int id, const QString& name, const QString& color,
-                         const int price, const QString& description, const QString& image_path,
-                         const int type_id/*, const PurchaseMethod& purchas_method*/, const QString& trim = QString(), const int stock_qty = 0)
-        : id_(id)
-        , name_(name)
-        , color_(color)
-        , price_(price)
-        , description_(description)
-        , image_path_(image_path)
-        , type_id_(type_id)
-        , trim_(trim)
-        , stock_qty_(stock_qty)
-        // , purchas_method_(purchas_method)
+    explicit ProductInfo(const int kId, const QString& name, const QString& color,
+                         const int kPrice, const QString& description, const QString& imagePath,
+                         const int kTypeId/*, const PurchaseMethod& purchas_method*/, const QString& trim = QString(), const int kStockQty = 0)
+        : Id(kId)
+        , Name(name)
+        , Color(color)
+        , Price(kPrice)
+        , Description(description)
+        , ImagePath(imagePath)
+        , TypeId(kTypeId)
+        , Trim(trim)
+        , StockQty(kStockQty)
     {}
-    int id_ = 0;
-    QString name_;
-    QString color_;
-    int price_ = 0;
-    QString description_;
-    QString image_path_;
-    int type_id_ = 0;
-    QString trim_;
-    int stock_qty_ = 0;
-    PurchaseMethod purchas_method_ = PurchaseMethod::Unknown;
+    int Id = 0;
+    QString Name;
+    QString Color;
+    int Price = 0;
+    QString Description;
+    QString ImagePath;
+    int TypeId = 0;
+    QString Trim;
+    int StockQty = 0;
+    PurchaseMethod PurchasMethod = PurchaseMethod::Unknown;
 
 };
 
@@ -75,45 +74,45 @@ public:
      * \note Параметр обязателен для корректной работы объекта
      * \warning Передача nullptr может привести к неопределенному поведению
      */
-    explicit ProductRepository(QSharedPointer<DatabaseHandler> db_manager);
+    explicit ProductRepository(QSharedPointer<DatabaseHandler> dbManager);
 
     /*!
      * \brief Добавляет новый продукт
      * \param product — информация о продукте
      */
-    void PushProduct(const ProductInfo& product);
+    void pushProduct(const ProductInfo& product);
 
     /*!
      * \brief Очищает список продуктов
      */
-    void Clear();
+    void clear();
 
     /*!
      * \brief Возвращает неупорядоченный словарь продуктов
      * \return ProductKey — составной ключ <name_product, color_product>, ProductInfo — информация о продукте
      */
-    QHash<ProductKey, ProductInfo> GetProducts() const;
+    QHash<ProductKey, ProductInfo> getProducts() const;
 
     /*!
      * \brief Поиск продукта в хранилище
      * \param product_name — составной ключ продукта
      * \return Указатель на информацию о товаре
      */
-    const ProductInfo* FindProduct(const ProductKey& product_name) const;
+    const ProductInfo* findProduct(const ProductKey& productName) const;
 
     /*!
      * \brief FindProductsByName
      * \param product_name
      * \return
      */
-    QList<ProductInfo> FindProductsByName(const QString& product_name) const;
+    QList<ProductInfo> findProductsByName(const QString& productName) const;
 
     /*!
      * \brief FindRelevantProducts
      * \param term
      * \return
      */
-    QList<ProductInfo> FindRelevantProducts(const QString& term) const;
+    QList<ProductInfo> findRelevantProducts(const QString& term) const;
 
     /*!
      * \brief Кэширование товаров из базы данных
@@ -125,27 +124,27 @@ public:
      * \note Использует ORDER BY id ASC для гарантированного порядка загрузки
      * \warning Требует корректной инициализации m_database_manager
      */
-    void PullProducts();
+    void pullProducts();
 
     /*!
      * \brief Получить список всех продуктов с заданным именем
      * \param product — продукт, с которым нужно найти похожие
      * \return Список товаров. В каждой ячейке - информация о товаре
      */
-    QList<ProductInfo> GetAllProductsWithName(const ProductInfo& product) const;
+    QList<ProductInfo> getAllProductsWithName(const ProductInfo& product) const;
 
     /*!
      * \brief Возвращает список доступных цветов для всех продуктов
      * \return Список срок (поелm_available_colors)
      */
-    QStringList GetAvailableColors() const;
+    QStringList getAvailableColors() const;
 
 private:
     QHash<ProductKey, ProductInfo> m_products;              ///< Хранилище продуктов
 
-    QSharedPointer<DatabaseHandler> m_database_manager;     ///< Указатель на БД для работы с ней
+    QSharedPointer<DatabaseHandler> m_databaseManager;     ///< Указатель на БД для работы с ней
 
-    QStringList m_available_colors;                         ///< Список строк всех доступных цветов для всех автомобилей
+    QStringList m_availableColors;                         ///< Список строк всех доступных цветов для всех автомобилей
 
     /*!
      * \brief Вычисляет вес TF-IDF для термина в документе
@@ -154,7 +153,7 @@ private:
      * \return Значение TF-IDF. Если документ пуст, возвращает 0.0
      * \note В текущей реализации IDF фиксирован и равен 1.0, что эквивалентно отсутствию корпуса документов для сравнения
      */
-    double ComputeTfIdf(const QString& document, const QString& term) const;
+    double computeTfIdf(const QString& document, const QString& term) const;
 
     /*!
      * \brief Подсчитывает количество точных вхождений термина в документе
@@ -165,7 +164,7 @@ private:
      * \example Для документа "apple apple juice" и термина "apple" вернет 2
      * \example Для документа "apple pineapple" и термина "apple" вернет 1 (pineapple не считается)
      */
-    int CountOccurrences(const QString& document, const QString& term) const;
+    int countOccurrences(const QString& document, const QString& term) const;
 
     /*!
      * \brief Подсчитывает общее количество слов в документе
@@ -174,7 +173,7 @@ private:
      * \note Слова разделяются пробельными символами (пробелы, табуляции, переносы строк)
      * \note Пустые строки и последовательности пробелов игнорируются
      */
-    int CountTotalWords(const QString& document) const;
+    int countTotalWords(const QString& document) const;
 };
 
 #endif // m_productsH

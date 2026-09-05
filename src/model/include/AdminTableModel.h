@@ -13,16 +13,16 @@ class AdminTableModel final : public QSqlQueryModel
 public:
     explicit AdminTableModel(QObject* parent = nullptr);
 
-    bool Load(const QString& table_name);
-    QString GetCurrentTableName() const;
+    bool load(const QString& tableName);
+    QString getCurrentTableName() const;
 
-    static bool IsRequestTableName(const QString& table_name);
-
-private:
-    static QString BuildSelectQuery(const QString& table_name);
+    static bool isRequestTableName(const QString& tableName);
 
 private:
-    QString current_table_name_;
+    static QString buildSelectQuery(const QString& tableName);
+
+private:
+    QString m_currentTableName;
 };
 
 #endif // ADMINTABLEMODEL_H

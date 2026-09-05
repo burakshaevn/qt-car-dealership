@@ -22,11 +22,11 @@ public:
      * \brief Get updated record
      * \return Updated record
      */
-    QSqlRecord GetUpdatedRecord() const;
+    QSqlRecord getUpdatedRecord() const;
 
 private:
-    QSqlRecord record_;         ///< Record to edit
-    QVector<QLineEdit*> fields_;  ///< Fields to edit
+    QSqlRecord m_record;         ///< Record to edit
+    QVector<QLineEdit*> m_fields;  ///< Fields to edit
 };
 
 #endif // ADMIN_RECORD_EDIT_DIALOG_H

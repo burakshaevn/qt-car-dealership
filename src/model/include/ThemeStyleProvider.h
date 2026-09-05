@@ -15,12 +15,12 @@ enum class ThemeMode
     Dark
 };
 
-ThemeMode GetCurrentThemeMode();
-QString LoadThemeStyle(const QString& token, ThemeMode mode = GetCurrentThemeMode());
-void ApplyThemeStyle(QWidget* widget, const QString& token, ThemeMode mode = GetCurrentThemeMode());
-void ReapplyThemeStyles(QWidget* root, ThemeMode mode = GetCurrentThemeMode());
-QIcon LoadThemeIcon(const QString& iconName, ThemeMode mode = GetCurrentThemeMode());
-void ApplyThemeIcon(QAbstractButton* button, const QString& iconName, ThemeMode mode = GetCurrentThemeMode());
-void ReapplyThemeIcons(QWidget* root, ThemeMode mode = GetCurrentThemeMode());
+ThemeMode getCurrentThemeMode();
+QString loadThemeStyle(const QString& token, ThemeMode mode = getCurrentThemeMode());
+void applyThemeStyle(QWidget* widget, const QString& token, ThemeMode mode = getCurrentThemeMode());
+void reapplyThemeStyles(QWidget* root, ThemeMode mode = getCurrentThemeMode());
+QIcon loadThemeIcon(const QString& iconName, ThemeMode mode = getCurrentThemeMode());
+void applyThemeIcon(QAbstractButton* button, const QString& iconName, ThemeMode mode = getCurrentThemeMode());
+void reapplyThemeIcons(QWidget* root, ThemeMode mode = getCurrentThemeMode());
 
 #endif // THEME_STYLE_PROVIDER_H

@@ -7,41 +7,44 @@ AdminTableController::AdminTableController(QObject* parent)
 {
 }
 
-void AdminTableController::SetDependencies(const QSharedPointer<DatabaseHandler>& database)
+void AdminTableController::setDependencies(const QSharedPointer<DatabaseHandler>& database)
 {
-    database_ = database;
+    m_database = database;
 }
 
-void AdminTableController::EnsureView(QWidget* owner)
+void AdminTableController::ensureView(QWidget* owner)
 {
-    if (!table_view_) {
-        table_view_.reset(new AdminTableWidget(database_, owner));
-        connect(table_view_.get(), &AdminTableWidget::Logout, this, &AdminTableController::LogoutRequested);
+    if (!m_tableView) {
+        m_tableView.reset(new AdminTableWidget(m_database, owner));
+        connect(m_tableView.get(),
+                &AdminTableWidget::logout,
+                this,
+                &AdminTableController::logoutRequested);
     }
 
-    if (!is_initialized_) {
-        table_view_->BuildAdminTables();
-        is_initialized_ = true;
+    if (!m_isInitialized) {
+        m_tableView->buildAdminTables();
+        m_isInitialized = true;
     }
 }
 
-void AdminTableController::Show(QStackedWidget* stacked_widget, QWidget* owner)
+void AdminTableController::show(QStackedWidget* stackedWidget, QWidget* owner)
 {
-    if (!stacked_widget || !database_) {
+    if (!stackedWidget || !m_database) {
         return;
     }
 
-    EnsureView(owner);
+    ensureView(owner);
 
-    if (stacked_widget->indexOf(table_view_.get()) == -1) {
-        stacked_widget->addWidget(table_view_.get());
+    if (stackedWidget->indexOf(m_tableView.get()) == -1) {
+        stackedWidget->addWidget(m_tableView.get());
     }
 
-    stacked_widget->setCurrentWidget(table_view_.get());
+    stackedWidget->setCurrentWidget(m_tableView.get());
 }
 
-void AdminTableController::Reset()
+void AdminTableController::reset()
 {
-    table_view_.reset();
-    is_initialized_ = false;
+    m_tableView.reset();
+    m_isInitialized = false;
 }

@@ -38,46 +38,46 @@ public:
      * \param db_manager Умный указатель на обработчик базы данных
      * \param parent Родительский виджет (опционально)
      */
-    explicit AdminTableWidget(QSharedPointer<DatabaseHandler> db_manager, QWidget* parent = nullptr);
+    explicit AdminTableWidget(QSharedPointer<DatabaseHandler> dbManager, QWidget* parent = nullptr);
 
     /*!
      * \brief Строит административный интерфейс таблиц
      * \details Инициализирует все элементы управления: селектор таблиц, кнопки действий,
      *          плавающее меню и соединяет сигналы со слотами
      */
-    void BuildAdminTables();
+    void buildAdminTables();
 
     /*!
      * \brief Загружает данные выбранной таблицы в интерфейс
      * \details Выполняет SQL-запрос для получения данных таблицы и отображает их в QTableView.
      *          Автоматически определяет тип таблицы и настраивает соответствующий интерфейс
      */
-    void LoadTable();
+    void loadTable();
 
     /*!
      * \brief Добавляет новую запись в текущую таблицу
      * \details Открывает диалоговое окно для ввода данных новой записи и выполняет INSERT запрос
      */
-    void AddRecord();
+    void addRecord();
 
     /*!
      * \brief Удаляет выбранную запись из текущей таблицы
      * \details Запрашивает подтверждение и выполняет DELETE запрос с проверкой внешних ключей
      */
-    void DeleteRecord();
+    void deleteRecord();
 
     /*!
      * \brief Редактирует существующую запись в текущей таблице
      * \details Открывает диалоговое окно для изменения данных записи и выполняет UPDATE запрос
      */
-    void EditRecord();
+    void editRecord();
 
     /*!
      * \brief Получает имя столбца первичного ключа для указанной таблицы
      * \param table_name Имя таблицы для анализа
      * \return Имя столбца первичного ключа или пустую строку если не найден
      */
-    QString GetPrimaryKeyColumnName(const QString& table_name);
+    QString getPrimaryKeyColumnName(const QString& tableName);
 
     /*!
      * \brief Запрашивает подтверждение удаления записи
@@ -86,7 +86,7 @@ public:
      * \param id Значение первичного ключа удаляемой записи
      * \return true если пользователь подтвердил удаление, иначе false
      */
-    bool GetConfirmation(const QString& table_name, const QString& primary_key_column, int id);
+    bool getConfirmation(const QString& tableName, const QString& primaryKeyColumn, int id);
 
     /*!
      * \brief Фильтр событий для реализации перетаскивания плавающего меню
@@ -101,31 +101,31 @@ private slots:
      * \brief Подтверждает выбранную заявку
      * \details Устанавливает статус "подтверждено" или "одобрено" для выбранной заявки
      */
-    void ApproveRequest();
+    void approveRequest();
 
     /*!
      * \brief Отклоняет выбранную заявку
      * \details Устанавливает статус "отменено" или "отклонено" для выбранной заявки
      */
-    void RejectRequest();
+    void rejectRequest();
 
 signals:
     /*!
      * \brief Сигнал выхода из системы
      * \details Испускается при нажатии кнопки выхода
      */
-    void Logout();
+    void logout();
 
 protected:
-    QSharedPointer<DatabaseHandler> m_database_handler;    ///< Умный указатель на обработчик БД
-    QScopedPointer<AdminTableModel> m_table_model;         ///< Модель данных админской таблицы
+    QSharedPointer<DatabaseHandler> m_databaseHandler; ///< Умный указатель на обработчик БД
+    QScopedPointer<AdminTableModel> m_tableModel;      ///< Модель данных админской таблицы
 
-    QTableView* m_data_table;                              ///< Виджет для отображения данных таблицы
-    QLabel* m_description_table;                           ///< Метка для описания текущей таблицы
+    QTableView* m_dataTable;    ///< Виджет для отображения данных таблицы
+    QLabel* m_descriptionTable; ///< Метка для описания текущей таблицы
 
-    QComboBox* m_table_selector;                           ///< Выпадающий список для выбора таблицы
+    QComboBox* m_tableSelector; ///< Выпадающий список для выбора таблицы
 
-    QScopedPointer<QWidget> m_floating_menu;               ///< Плавающее меню с кнопками действий
+    QScopedPointer<QWidget> m_floatingMenu; ///< Плавающее меню с кнопками действий
 
     /*!
      * \brief Обновляет статус заявки в базе данных
@@ -133,20 +133,20 @@ protected:
      * \param status - Новый статус заявки
      * \param request_id ID заявки для обновления
      */
-    void UpdateRequestStatus(const QString& table_name, const QString& status, const int request_id);
+    void updateRequestStatus(const QString& tableName, const QString& status, const int kRequestId);
 
     /*!
      * \brief Проверяет является ли таблица таблицей заявок
      * \param table_name - Имя таблицы для проверки
      * \return true - если таблица содержит заявки, иначе - false
      */
-    bool IsRequestTable(const QString& table_name) const;
+    bool isRequestTable(const QString& tableName) const;
 
     /*!
      * \brief Показывает или скрывает кнопки обработки заявок
      * \param show true - показать кнопки, false - скрыть
      */
-    void ShowRequestButtons(bool show);
+    void showRequestButtons(bool show);
 };
 
 #endif // ADMINTABLEWIDGET_H

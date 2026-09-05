@@ -24,69 +24,69 @@ AuthController::AuthController(QObject* parent)
 {
 }
 
-void AuthController::SetDependencies(const QSharedPointer<DatabaseHandler>& database)
+void AuthController::setDependencies(const QSharedPointer<DatabaseHandler>& database)
 {
-    database_ = database;
+    m_database = database;
 }
 
-AuthController::AuthResult AuthController::Login(const QString& login, const QString& password) const
+AuthController::AuthResult AuthController::login(const QString& login, const QString& password) const
 {
     AuthResult result;
-    if (!database_) {
-        result.error = "База данных недоступна.";
+    if (!m_database) {
+        result.Error = "База данных недоступна.";
         return result;
     }
 
-    QSqlQuery query = database_->ExecuteNamedSelect(
-        SqlQueryId::SelectAdminByUsername, {{"username", login}});
+    QSqlQuery query = m_database->executeNamedSelect(SqlQueryId::SelectAdminByUsername,
+                                                     {{"username", login}});
     if (query.isActive()) {
         if (query.next()) {
             UserInfo user;
-            user.id_ = query.value("id").toInt();
-            user.password_ = query.value("password").toString();
-            user.role_ = Role::Admin;
-            if (user.password_ == password) {
-                result.ok = true;
-                result.user = user;
+            user.Id = query.value("id").toInt();
+            user.Password = query.value("password").toString();
+            user.Role = Role::Admin;
+            if (user.Password == password) {
+                result.Ok = true;
+                result.User = user;
             } else {
-                result.error = "Неверный логин или пароль.";
+                result.Error = "Неверный логин или пароль.";
             }
             return result;
         }
     }
 
-    query = database_->ExecuteNamedSelect(SqlQueryId::SelectClientByEmail, {{"email", login}});
+    query = m_database->executeNamedSelect(SqlQueryId::SelectClientByEmail, {{"email", login}});
     if (query.isActive()) {
         if (query.next()) {
             UserInfo user;
-            user.id_ = query.value("id").toInt();
-            user.full_name_ = query.value("first_name").toString();
-            user.full_name_ += " " + query.value("last_name").toString();
-            user.email_ = query.value("email").toString();
-            user.password_ = query.value("password").toString();
-            user.role_ = Role::User;
+            user.Id = query.value("id").toInt();
+            user.FullName = query.value("first_name").toString();
+            user.FullName += " " + query.value("last_name").toString();
+            user.Email = query.value("email").toString();
+            user.Password = query.value("password").toString();
+            user.Role = Role::User;
 
             QString hashedInputPassword = QString(QCryptographicHash::hash(
                 password.toUtf8(),
                 QCryptographicHash::Sha256).toHex());
 
-            if (user.password_ == hashedInputPassword) {
-                result.ok = true;
-                result.user = user;
+            if (user.Password == hashedInputPassword) {
+                result.Ok = true;
+                result.User = user;
             } else {
-                result.error = "Неверный логин или пароль.";
+                result.Error = "Неверный логин или пароль.";
             }
             return result;
         }
     }
 
-    result.error = "Неверный логин или пароль.";
+    result.Error = "Неверный логин или пароль.";
     return result;
 }
 
-bool AuthController::RunRegistrationDialog(QWidget* parent)
+bool AuthController::runRegistrationDialog(QWidget* parent)
 {
-    if (!database_) {
+    if (!m_database) {
         QMessageBox::warning(parent, "Ошибка", "База данных недоступна.");
         return false;
     }
@@ -94,7 +94,7 @@ bool AuthController::RunRegistrationDialog(QWidget* parent)
     QDialog dialog(parent);
     dialog.setWindowTitle("Регистрация");
     dialog.setFixedSize(500, 800);
-    ApplyThemeStyle(&dialog, "DialogForm");
+    applyThemeStyle(&dialog, "DialogForm");
 
     QVBoxLayout* layout = new QVBoxLayout(&dialog);
     layout->setSpacing(10);
@@ -192,9 +192,9 @@ bool AuthController::RunRegistrationDialog(QWidget* parent)
             return;
         }
 
-        QSqlQuery checkQuery = database_->ExecuteNamedSelect(
-            SqlQueryId::SelectClientByEmailOrPhone,
-            {{"email", emailEdit->text()}, {"phone", phone}});
+        QSqlQuery checkQuery = m_database->executeNamedSelect(SqlQueryId::SelectClientByEmailOrPhone,
+                                                              {{"email", emailEdit->text()},
+                                                               {"phone", phone}});
 
         if (checkQuery.isActive() && checkQuery.next()) {
             QMessageBox::warning(&dialog, "Ошибка", "Пользователь с таким email или телефоном уже существует.");
@@ -206,20 +206,20 @@ bool AuthController::RunRegistrationDialog(QWidget* parent)
             QCryptographicHash::Sha256).toHex());
 
         QString databaseError;
-        if (database_->ExecuteNamedQuery(
-                SqlQueryId::InsertClient,
-                {{"first_name", firstNameEdit->text()},
-                 {"last_name", lastNameEdit->text()},
-                 {"phone", phone},
-                 {"email", emailEdit->text()},
-                 {"password", hashedPassword}},
-                &databaseError)) {
+        if (m_database->executeNamedQuery(SqlQueryId::InsertClient,
+                                          {{"first_name", firstNameEdit->text()},
+                                           {"last_name", lastNameEdit->text()},
+                                           {"phone", phone},
+                                           {"email", emailEdit->text()},
+                                           {"password", hashedPassword}},
+                                          &databaseError)) {
             QMessageBox::information(&dialog, "Успех",
                                      "Регистрация успешно завершена.\nТеперь вы можете войти в систему, используя email и пароль.");
             accepted = true;
             dialog.accept();
         } else {
-            QMessageBox::critical(&dialog, "Ошибка",
+            QMessageBox::critical(&dialog,
+                                  "Ошибка",
                                   "Не удалось создать учетную запись: " + databaseError);
         }
     });

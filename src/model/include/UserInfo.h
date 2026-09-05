@@ -9,11 +9,11 @@
 
 struct UserInfo
 {
-    int id_ = 0;
-    QString full_name_;
-    QString email_;
-    QString password_;
-    Role role_ = Role::Unknown;
+    int Id = 0;
+    QString FullName;
+    QString Email;
+    QString Password;
+    Role Role = Role::Unknown;
 };
 
 #endif // USER_INFO_H

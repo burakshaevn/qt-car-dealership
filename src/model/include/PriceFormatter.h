@@ -6,7 +6,7 @@
 #include <QLocale>
 #include <QString>
 
-inline QString FormatPrice(qint64 price)
+inline QString formatPrice(qint64 price)
 {
     return QLocale(QLocale::Russian, QLocale::Russia)
         .toString(price)

@@ -7,77 +7,75 @@ FloatingNavigationWidget::FloatingNavigationWidget(QWidget* parent)
     : QWidget{parent}
 {}
 
-void FloatingNavigationWidget::BuildFloatingMenu(
-    const size_t x,
-    const size_t parent_height,
-    const std::function<void()>& onMoreClicked,
-    const std::function<void()>& onSearchClicked,
-    const std::function<void()>& onColorFilterClicked,
-    const std::function<void()>& onUserProfileClicked
-    ) {
-
+void FloatingNavigationWidget::buildFloatingMenu(const size_t kX,
+                                                 const size_t kParentHeight,
+                                                 const std::function<void()>& onMoreClicked,
+                                                 const std::function<void()>& onSearchClicked,
+                                                 const std::function<void()>& onColorFilterClicked,
+                                                 const std::function<void()>& onUserProfileClicked)
+{
     // Создаём основной контейнер для меню
     this->setFixedSize(88, 485);
 
     // Создаём виджет для фона с эффектом блюра
-    QWidget* background_widget = new QWidget(this);
-    background_widget->setFixedSize(88, 485);
-    ApplyThemeStyle(background_widget, "FloatingWidget");
+    QWidget* backgroundWidget = new QWidget(this);
+    backgroundWidget->setFixedSize(88, 485);
+    applyThemeStyle(backgroundWidget, "FloatingWidget");
 
     // Создаём layout для кнопок
-    QVBoxLayout* menu_layout = new QVBoxLayout(this);
-    menu_layout->setContentsMargins(0, 0, 0, 0);
-    menu_layout->setSpacing(0);
+    QVBoxLayout* menuLayout = new QVBoxLayout(this);
+    menuLayout->setContentsMargins(0, 0, 0, 0);
+    menuLayout->setSpacing(0);
 
     // Логотип
     QPushButton* logo = new QPushButton(this);
-    ApplyThemeIcon(logo, "logo.svg");
+    applyThemeIcon(logo, "logo.svg");
     logo->setIconSize(QSize(41, 41));
-    ApplyThemeStyle(logo, "IconButton");
+    applyThemeStyle(logo, "IconButton");
 
     // Модели
     QPushButton* models = new QPushButton(this);
-    ApplyThemeIcon(models, "directions_car.svg");
+    applyThemeIcon(models, "directions_car.svg");
     models->setIconSize(QSize(41, 41));
-    ApplyThemeStyle(models, "IconButton");
+    applyThemeStyle(models, "IconButton");
     connect(models, &QPushButton::clicked, this, [onMoreClicked]() {
         if (onMoreClicked) onMoreClicked();
     });
 
     // Поиск
-    QPushButton* search_button = new QPushButton(this);
-    ApplyThemeIcon(search_button, "search.svg");
-    search_button->setIconSize(QSize(41, 41));
-    ApplyThemeStyle(search_button, "IconButton");
-    connect(search_button, &QPushButton::clicked, this, [onSearchClicked]() {
+    QPushButton* searchButton = new QPushButton(this);
+    applyThemeIcon(searchButton, "search.svg");
+    searchButton->setIconSize(QSize(41, 41));
+    applyThemeStyle(searchButton, "IconButton");
+    connect(searchButton, &QPushButton::clicked, this, [onSearchClicked]() {
         if (onSearchClicked) onSearchClicked();
     });
 
     // Сортировка по цветам
-    QPushButton* sort_by_color = new QPushButton(this);
-    ApplyThemeIcon(sort_by_color, "color_swatch_02.svg");
-    sort_by_color->setIconSize(QSize(41, 41));
-    ApplyThemeStyle(sort_by_color, "IconButton");
-    connect(sort_by_color, &QPushButton::clicked, this, [onColorFilterClicked]() {
+    QPushButton* sortByColor = new QPushButton(this);
+    applyThemeIcon(sortByColor, "color_swatch_02.svg");
+    sortByColor->setIconSize(QSize(41, 41));
+    applyThemeStyle(sortByColor, "IconButton");
+    connect(sortByColor, &QPushButton::clicked, this, [onColorFilterClicked]() {
         if (onColorFilterClicked) onColorFilterClicked();
     });
 
     // Кнопка User Profile
-    QPushButton* user_button = new QPushButton(this);
-    ApplyThemeIcon(user_button, "person.svg");
-    user_button->setIconSize(QSize(41, 41));
-    ApplyThemeStyle(user_button, "IconButton");
-    connect(user_button, &QPushButton::clicked, this, [onUserProfileClicked]() {
+    QPushButton* userButton = new QPushButton(this);
+    applyThemeIcon(userButton, "person.svg");
+    userButton->setIconSize(QSize(41, 41));
+    applyThemeStyle(userButton, "IconButton");
+    connect(userButton, &QPushButton::clicked, this, [onUserProfileClicked]() {
         if (onUserProfileClicked) onUserProfileClicked();
     });
 
     // Добавляем кнопки в макет
-    menu_layout->addWidget(logo);
-    menu_layout->addWidget(models);
-    menu_layout->addWidget(search_button);
-    menu_layout->addWidget(sort_by_color);
-    menu_layout->addWidget(user_button);
+    menuLayout->addWidget(logo);
+    menuLayout->addWidget(models);
+    menuLayout->addWidget(searchButton);
+    menuLayout->addWidget(sortByColor);
+    menuLayout->addWidget(userButton);
 
-    this->move(x, (parent_height - this->height()) / 2);
+    this->move(kX, (kParentHeight - this->height()) / 2);
     this->show();
 }

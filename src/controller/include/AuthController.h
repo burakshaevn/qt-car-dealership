@@ -22,9 +22,9 @@ public:
      * \brief Структура, содержащая результат авторизации
      */
     struct AuthResult {
-        bool ok = false;
-        UserInfo user;
-        QString error;
+        bool Ok = false;
+        UserInfo User;
+        QString Error;
     };
 
     explicit AuthController(QObject* parent = nullptr);
@@ -33,23 +33,23 @@ public:
      * \brief Устанавливает зависимости
      * \param database - указатель на объект DatabaseHandler
      */
-    void SetDependencies(const QSharedPointer<DatabaseHandler>& database);
+    void setDependencies(const QSharedPointer<DatabaseHandler>& database);
     /*!
      * \brief Выполняет авторизацию
      * \param login - логин
      * \param password - пароль
      * \returns Результат авторизации
      */
-    AuthResult Login(const QString& login, const QString& password) const;
+    AuthResult login(const QString& login, const QString& password) const;
     /*!
      * \brief Выполняет регистрацию
      * \param parent - владелец диалога регистрации
      * \returns true, если регистрация выполнена успешно, false - в противном случае
      */
-    bool RunRegistrationDialog(QWidget* parent);
+    bool runRegistrationDialog(QWidget* parent);
 
 private:
-    QSharedPointer<DatabaseHandler> database_;
+    QSharedPointer<DatabaseHandler> m_database;
 };
 
 #endif // AUTH_CONTROLLER_H

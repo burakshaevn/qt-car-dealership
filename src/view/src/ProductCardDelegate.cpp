@@ -15,12 +15,12 @@ ProductCardDelegate::ProductCardDelegate(QObject* parent)
 }
 
 namespace {
-bool IsDarkTheme()
+bool isDarkTheme()
 {
     if (qApp) {
-        const QVariant prop = qApp->property("app_theme");
-        if (prop.isValid()) {
-            return prop.toString().trimmed().compare("dark", Qt::CaseInsensitive) == 0;
+        const QVariant kProp = qApp->property("app_theme");
+        if (kProp.isValid()) {
+            return kProp.toString().trimmed().compare("dark", Qt::CaseInsensitive) == 0;
         }
     }
     return qEnvironmentVariable("APP_THEME").trimmed().compare("dark", Qt::CaseInsensitive) == 0;
@@ -30,8 +30,8 @@ bool IsDarkTheme()
 QSize ProductCardDelegate::sizeHint(const QStyleOptionViewItem& option, const QModelIndex& index) const
 {
     Q_UNUSED(index);
-    const int width = option.widget ? qMax(320, option.widget->width() - 4) : 833;
-    return QSize(width, 149);
+    const int kWidth = option.widget ? qMax(320, option.widget->width() - 4) : 833;
+    return QSize(kWidth, 149);
 }
 
 void ProductCardDelegate::paint(QPainter* painter, const QStyleOptionViewItem& option, const QModelIndex& index) const
@@ -42,64 +42,65 @@ void ProductCardDelegate::paint(QPainter* painter, const QStyleOptionViewItem& o
 
     painter->save();
     painter->setRenderHint(QPainter::Antialiasing, true);
-    const bool darkTheme = IsDarkTheme();
+    const bool kDarkTheme = isDarkTheme();
 
-    const QRect rect = option.rect.adjusted(0, 0, -1, -1);
+    const QRect kRect = option.rect.adjusted(0, 0, -1, -1);
     painter->setPen(Qt::NoPen);
-    painter->setBrush(darkTheme ? QColor("#1f2631") : QColor("#ffffff"));
-    painter->drawRoundedRect(rect, 39, 39);
+    painter->setBrush(kDarkTheme ? QColor("#1f2631") : QColor("#ffffff"));
+    painter->drawRoundedRect(kRect, 39, 39);
 
-    const QString name = index.data(ProductListModel::NameRole).toString();
-    const QString color = index.data(ProductListModel::ColorRole).toString();
-    const QString trim = index.data(ProductListModel::TrimRole).toString();
-    const int stockQty = index.data(ProductListModel::StockQtyRole).toInt();
-    const int price = index.data(ProductListModel::PriceRole).toInt();
-    const QString imagePath = index.data(ProductListModel::ImagePathRole).toString();
+    const QString kName = index.data(ProductListModel::NameRole).toString();
+    const QString kColor = index.data(ProductListModel::ColorRole).toString();
+    const QString kTrim = index.data(ProductListModel::TrimRole).toString();
+    const int kStockQty = index.data(ProductListModel::StockQtyRole).toInt();
+    const int kPrice = index.data(ProductListModel::PriceRole).toInt();
+    const QString kImagePath = index.data(ProductListModel::ImagePathRole).toString();
 
-    QString description = color;
-    if (!trim.isEmpty()) {
-        description += " • " + trim;
+    QString description = kColor;
+    if (!kTrim.isEmpty()) {
+        description += " • " + kTrim;
     }
-    if (stockQty <= 0) {
+    if (kStockQty <= 0) {
         description += " • Нет в наличии";
     }
 
-    const int imageAreaWidth = qBound(180, rect.width() * 44 / 100, 367);
-    const int textLeft = rect.x() + imageAreaWidth;
-    const int textWidth = qMax(80, rect.right() - textLeft - 28);
-    const int imageX = rect.x();
-    const int imageY = rect.y() + 11;
+    const int kImageAreaWidth = qBound(180, kRect.width() * 44 / 100, 367);
+    const int kTextLeft = kRect.x() + kImageAreaWidth;
+    const int kTextWidth = qMax(80, kRect.right() - kTextLeft - 28);
+    const int kImageX = kRect.x();
+    const int kImageY = kRect.y() + 11;
 
-    if (!imagePath.isEmpty()) {
-        QPixmap originalPixmap(imagePath);
+    if (!kImagePath.isEmpty()) {
+        QPixmap originalPixmap(kImagePath);
         if (!originalPixmap.isNull()) {
             QPixmap scaledPixmap = originalPixmap.scaled(
-                QSize(qMax(1, imageAreaWidth - 24), 130),
+                QSize(qMax(1, kImageAreaWidth - 24), 130),
                 Qt::KeepAspectRatio,
                 Qt::SmoothTransformation);
-            const int imageWidth = scaledPixmap.width();
-            const int x = imageX + qMax(0, (imageAreaWidth - imageWidth) / 2);
-            painter->drawPixmap(x, imageY, scaledPixmap);
+            const int kImageWidth = scaledPixmap.width();
+            const int kX = kImageX + qMax(0, (kImageAreaWidth - kImageWidth) / 2);
+            painter->drawPixmap(kX, kImageY, scaledPixmap);
         }
     }
 
     QFont nameFont("Open Sans", 20, QFont::Bold);
     painter->setFont(nameFont);
-    painter->setPen(darkTheme ? QColor("#e7edf5") : QColor("#1d1b20"));
-    painter->drawText(QRect(textLeft, rect.y() + 15, textWidth, 32),
-                      Qt::AlignLeft | Qt::AlignVCenter, name);
+    painter->setPen(kDarkTheme ? QColor("#e7edf5") : QColor("#1d1b20"));
+    painter->drawText(QRect(kTextLeft, kRect.y() + 15, kTextWidth, 32),
+                      Qt::AlignLeft | Qt::AlignVCenter, kName);
 
     QFont descFont("JetBrains Mono", 15);
     painter->setFont(descFont);
-    painter->setPen(darkTheme ? QColor("#b8c6d8") : QColor("#555555"));
-    painter->drawText(QRect(textLeft, rect.y() + 64, textWidth, 24),
+    painter->setPen(kDarkTheme ? QColor("#b8c6d8") : QColor("#555555"));
+    painter->drawText(QRect(kTextLeft, kRect.y() + 64, kTextWidth, 24),
                       Qt::AlignLeft | Qt::AlignVCenter, description);
 
     QFont priceFont("Open Sans", 20, QFont::Bold);
     painter->setFont(priceFont);
-    painter->setPen(darkTheme ? QColor("#e7edf5") : QColor("#1d1b20"));
-    painter->drawText(QRect(textLeft, rect.y() + 106, textWidth, 32),
-                      Qt::AlignRight | Qt::AlignVCenter, FormatPrice(price) + " руб.");
+    painter->setPen(kDarkTheme ? QColor("#e7edf5") : QColor("#1d1b20"));
+    painter->drawText(QRect(kTextLeft, kRect.y() + 106, kTextWidth, 32),
+                      Qt::AlignRight | Qt::AlignVCenter,
+                      formatPrice(kPrice) + " руб.");
 
     painter->restore();
 }

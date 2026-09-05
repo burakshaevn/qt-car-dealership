@@ -15,17 +15,17 @@
 
 SettingsForm::SettingsForm(AppServices* services, QWidget* parent)
     : QDialog(parent)
-    , services_(services)
+    , m_services(services)
 {
-    BuildUi();
-    LoadData();
+    buildUi();
+    loadData();
 }
 
-void SettingsForm::BuildUi()
+void SettingsForm::buildUi()
 {
     setWindowTitle("Настройки профиля");
     setFixedSize(450, 600);
-    ApplyThemeStyle(this, "DialogForm");
+    applyThemeStyle(this, "DialogForm");
 
     auto* dialogLayout = new QVBoxLayout(this);
     dialogLayout->setSpacing(10);
@@ -42,18 +42,18 @@ void SettingsForm::BuildUi()
         dialogLayout->addWidget(edit);
     };
 
-    addLabeledField("Имя:", first_name_edit_);
-    addLabeledField("Фамилия:", last_name_edit_);
-    addLabeledField("Email:", email_edit_);
-    addLabeledField("Телефон:", phone_edit_);
-    addLabeledField("Пароль:", password_edit_);
-    password_edit_->setEchoMode(QLineEdit::Password);
-    password_edit_->setPlaceholderText("Введите новый пароль или оставьте пустым");
+    addLabeledField("Имя:", m_firstNameEdit);
+    addLabeledField("Фамилия:", m_lastNameEdit);
+    addLabeledField("Email:", m_emailEdit);
+    addLabeledField("Телефон:", m_phoneEdit);
+    addLabeledField("Пароль:", m_passwordEdit);
+    m_passwordEdit->setEchoMode(QLineEdit::Password);
+    m_passwordEdit->setPlaceholderText("Введите новый пароль или оставьте пустым");
     dialogLayout->addWidget(new QLabel("Тема:", this));
-    theme_combo_ = new QComboBox(this);
-    theme_combo_->addItem("Светлая", "light");
-    theme_combo_->addItem("Тёмная", "dark");
-    dialogLayout->addWidget(theme_combo_);
+    m_themeCombo = new QComboBox(this);
+    m_themeCombo->addItem("Светлая", "light");
+    m_themeCombo->addItem("Тёмная", "dark");
+    dialogLayout->addWidget(m_themeCombo);
 
     dialogLayout->addStretch();
 
@@ -70,51 +70,50 @@ void SettingsForm::BuildUi()
     dialogLayout->addLayout(buttonLayout);
 
     connect(cancelButton, &QPushButton::clicked, this, &QDialog::reject);
-    connect(saveButton, &QPushButton::clicked, this, &SettingsForm::OnSaveClicked);
+    connect(saveButton, &QPushButton::clicked, this, &SettingsForm::onSaveClicked);
 }
 
-bool SettingsForm::LoadData()
+bool SettingsForm::loadData()
 {
-    if (!services_ || !services_->GetDatabase() || !services_->GetUserSession()->IsAuthorized()) {
+    if (!m_services || !m_services->getDatabase() || !m_services->getUserSession()->isAuthorized()) {
         return false;
     }
 
     QSqlQuery query;
-    const QString queryStr = QString(
-        "SELECT first_name, last_name, email, phone "
-        "FROM clients WHERE id = %1")
-        .arg(services_->GetUserSession()->GetId());
+    const QString kQueryStr = QString("SELECT first_name, last_name, email, phone "
+                                      "FROM clients WHERE id = %1")
+                                  .arg(m_services->getUserSession()->getId());
 
-    if (!query.exec(queryStr) || !query.next()) {
+    if (!query.exec(kQueryStr) || !query.next()) {
         return false;
     }
 
-    first_name_edit_->setText(query.value("first_name").toString());
-    last_name_edit_->setText(query.value("last_name").toString());
-    email_edit_->setText(query.value("email").toString());
-    phone_edit_->setText(query.value("phone").toString());
-    password_edit_->clear();
-    if (theme_combo_) {
-        const bool dark = (GetCurrentThemeMode() == ThemeMode::Dark);
-        theme_combo_->setCurrentIndex(dark ? 1 : 0);
+    m_firstNameEdit->setText(query.value("first_name").toString());
+    m_lastNameEdit->setText(query.value("last_name").toString());
+    m_emailEdit->setText(query.value("email").toString());
+    m_phoneEdit->setText(query.value("phone").toString());
+    m_passwordEdit->clear();
+    if (m_themeCombo) {
+        const bool kDark = (getCurrentThemeMode() == ThemeMode::Dark);
+        m_themeCombo->setCurrentIndex(kDark ? 1 : 0);
     }
     return true;
 }
 
-void SettingsForm::OnSaveClicked()
+void SettingsForm::onSaveClicked()
 {
-    if (!services_ || !services_->GetDatabase() || !services_->GetUserSession()->IsAuthorized()) {
+    if (!m_services || !m_services->getDatabase() || !m_services->getUserSession()->isAuthorized()) {
         QMessageBox::warning(this, "Ошибка", "Сессия пользователя недоступна.");
         return;
     }
 
-    const QString firstName = first_name_edit_->text().trimmed();
-    const QString lastName = last_name_edit_->text().trimmed();
-    const QString email = email_edit_->text().trimmed();
-    const QString phone = phone_edit_->text().trimmed();
-    const QString password = password_edit_->text();
+    const QString kFirstName = m_firstNameEdit->text().trimmed();
+    const QString kLastName = m_lastNameEdit->text().trimmed();
+    const QString kEmail = m_emailEdit->text().trimmed();
+    const QString kPhone = m_phoneEdit->text().trimmed();
+    const QString kPassword = m_passwordEdit->text();
 
-    if (firstName.isEmpty() || lastName.isEmpty() || email.isEmpty() || phone.isEmpty()) {
+    if (kFirstName.isEmpty() || kLastName.isEmpty() || kEmail.isEmpty() || kPhone.isEmpty()) {
         QMessageBox::warning(this, "Ошибка", "Все поля кроме пароля должны быть заполнены.");
         return;
     }
@@ -125,37 +124,37 @@ void SettingsForm::OnSaveClicked()
         "last_name = '%2', "
         "email = '%3', "
         "phone = '%4'")
-        .arg(firstName)
-        .arg(lastName)
-        .arg(email)
-        .arg(phone);
+        .arg(kFirstName)
+        .arg(kLastName)
+        .arg(kEmail)
+        .arg(kPhone);
 
-    if (!password.isEmpty()) {
-        const QString hashedPassword = QString(QCryptographicHash::hash(
-            password.toUtf8(),
+    if (!kPassword.isEmpty()) {
+        const QString kHashedPassword = QString(QCryptographicHash::hash(
+            kPassword.toUtf8(),
             QCryptographicHash::Sha256).toHex());
-        updateQuery += QString(", password = '%1'").arg(hashedPassword);
+        updateQuery += QString(", password = '%1'").arg(kHashedPassword);
     }
 
-    updateQuery += QString(" WHERE id = %1").arg(services_->GetUserSession()->GetId());
+    updateQuery += QString(" WHERE id = %1").arg(m_services->getUserSession()->getId());
 
-    if (!services_->GetDatabase()->ExecuteQuery(updateQuery)) {
-        QMessageBox::critical(
-            this,
-            "Ошибка",
-            "Не удалось обновить данные профиля: " + services_->GetDatabase()->GetLastError());
+    if (!m_services->getDatabase()->executeQuery(updateQuery)) {
+        QMessageBox::critical(this,
+                              "Ошибка",
+                              "Не удалось обновить данные профиля: "
+                                  + m_services->getDatabase()->getLastError());
         return;
     }
 
-    const QString fullName = firstName + " " + lastName;
-    services_->GetUserSession()->SetName(fullName);
-    services_->GetUserSession()->SetEmail(email);
-    if (theme_combo_) {
-        const bool darkEnabled = theme_combo_->currentData().toString() == "dark";
-        emit ThemeChanged(darkEnabled);
+    const QString kFullName = kFirstName + " " + kLastName;
+    m_services->getUserSession()->setName(kFullName);
+    m_services->getUserSession()->setEmail(kEmail);
+    if (m_themeCombo) {
+        const bool kDarkEnabled = m_themeCombo->currentData().toString() == "dark";
+        emit themeChanged(kDarkEnabled);
     }
 
-    emit ProfileSaved(fullName, email);
+    emit profileSaved(kFullName, kEmail);
     QMessageBox::information(this, "Успех", "Данные профиля обновлены.");
     accept();
 }

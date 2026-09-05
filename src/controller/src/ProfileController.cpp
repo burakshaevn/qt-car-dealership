@@ -19,113 +19,113 @@ ProfileController::ProfileController(QObject* parent)
 {
 }
 
-void ProfileController::SetDependencies(const QSharedPointer<ProductRepository>& products,
+void ProfileController::setDependencies(const QSharedPointer<ProductRepository>& products,
                                         const QSharedPointer<DatabaseHandler>& database)
 {
-    products_ = products;
-    database_ = database;
+    m_products = products;
+    m_database = database;
 }
 
-void ProfileController::Initialize(QListView* purchasedListView,
+void ProfileController::initialize(QListView* purchasedListView,
                                    QLabel* clientNameLabel,
                                    QGroupBox* purchasedGroupBox)
 {
-    purchased_list_view_ = purchasedListView;
-    client_name_label_ = clientNameLabel;
-    purchased_group_box_ = purchasedGroupBox;
+    m_purchasedListView = purchasedListView;
+    m_clientNameLabel = clientNameLabel;
+    m_purchasedGroupBox = purchasedGroupBox;
 
-    if (!purchased_model_) {
-        purchased_model_.reset(new ProductListModel(this));
+    if (!m_purchasedModel) {
+        m_purchasedModel.reset(new ProductListModel(this));
     }
-    if (!purchased_delegate_) {
-        purchased_delegate_.reset(new ProductCardDelegate(this));
+    if (!m_purchasedDelegate) {
+        m_purchasedDelegate.reset(new ProductCardDelegate(this));
     }
-    ConfigurePurchasedListView();
+    configurePurchasedListView();
 }
 
-void ProfileController::ShowProfile(int userId, const QString& userName)
+void ProfileController::showProfile(int userId, const QString& userName)
 {
-    if (client_name_label_) {
-        client_name_label_->setText(userName + " — профиль");
+    if (m_clientNameLabel) {
+        m_clientNameLabel->setText(userName + " — профиль");
     }
-    UpdatePurchasedList(userId);
+    updatePurchasedList(userId);
 }
 
-void ProfileController::ConfigurePurchasedListView()
+void ProfileController::configurePurchasedListView()
 {
-    if (!purchased_list_view_ || !purchased_model_ || !purchased_delegate_) {
+    if (!m_purchasedListView || !m_purchasedModel || !m_purchasedDelegate) {
         return;
     }
 
-    purchased_list_view_->setModel(purchased_model_.get());
-    purchased_list_view_->setItemDelegate(purchased_delegate_.get());
-    purchased_list_view_->setSelectionMode(QAbstractItemView::NoSelection);
-    purchased_list_view_->setVerticalScrollMode(QAbstractItemView::ScrollPerPixel);
-    purchased_list_view_->setHorizontalScrollBarPolicy(Qt::ScrollBarAlwaysOff);
-    purchased_list_view_->setResizeMode(QListView::Adjust);
-    purchased_list_view_->setWrapping(false);
-    purchased_list_view_->setSpacing(22);
-    purchased_list_view_->setUniformItemSizes(false);
-    ApplyThemeStyle(purchased_list_view_, "ListViewTransparent");
+    m_purchasedListView->setModel(m_purchasedModel.get());
+    m_purchasedListView->setItemDelegate(m_purchasedDelegate.get());
+    m_purchasedListView->setSelectionMode(QAbstractItemView::NoSelection);
+    m_purchasedListView->setVerticalScrollMode(QAbstractItemView::ScrollPerPixel);
+    m_purchasedListView->setHorizontalScrollBarPolicy(Qt::ScrollBarAlwaysOff);
+    m_purchasedListView->setResizeMode(QListView::Adjust);
+    m_purchasedListView->setWrapping(false);
+    m_purchasedListView->setSpacing(22);
+    m_purchasedListView->setUniformItemSizes(false);
+    applyThemeStyle(m_purchasedListView, "ListViewTransparent");
 }
 
-void ProfileController::UpdatePurchasedList(int userId)
+void ProfileController::updatePurchasedList(int userId)
 {
-    if (!products_ || !database_ || !purchased_model_) {
+    if (!m_products || !m_database || !m_purchasedModel) {
         return;
     }
 
-    const auto purchasedKeys = GetPurchasedProducts(userId);
-    const bool hasPurchases = !purchasedKeys.isEmpty();
+    const auto kPurchasedKeys = getPurchasedProducts(userId);
+    const bool kHasPurchases = !kPurchasedKeys.isEmpty();
 
-    if (purchased_group_box_) {
-        purchased_group_box_->setVisible(hasPurchases);
+    if (m_purchasedGroupBox) {
+        m_purchasedGroupBox->setVisible(kHasPurchases);
     }
-    if (purchased_list_view_) {
-        purchased_list_view_->setVisible(hasPurchases);
+    if (m_purchasedListView) {
+        m_purchasedListView->setVisible(kHasPurchases);
     }
 
-    if (!hasPurchases) {
-        purchased_model_->Clear();
+    if (!kHasPurchases) {
+        m_purchasedModel->clear();
         return;
     }
 
     QList<ProductInfo> purchasedInfos;
-    for (const auto& key : purchasedKeys) {
-        if (const auto* info = products_->FindProduct(key)) {
+    for (const auto& key : kPurchasedKeys) {
+        if (const auto* info = m_products->findProduct(key)) {
             purchasedInfos.append(*info);
         }
     }
-    purchased_model_->SetProducts(purchasedInfos);
+    m_purchasedModel->setProducts(purchasedInfos);
 }
 
-QList<ProductRepository::ProductKey> ProfileController::GetPurchasedProducts(int userId) const
+QList<ProductRepository::ProductKey> ProfileController::getPurchasedProducts(int userId) const
 {
     QList<ProductRepository::ProductKey> purchased;
 
     QSqlQuery query;
-    const QString queryStr = QString(
+    const QString kQueryStr = QString(
         "SELECT c.name, c.color "
         "FROM cars c "
         "INNER JOIN purchases p ON c.id = p.car_id "
         "WHERE p.client_id = %1"
     ).arg(userId);
 
-    if (!query.exec(queryStr)) {
+    if (!query.exec(kQueryStr)) {
         qDebug() << "GetPurchasedProducts: Query failed:" << query.lastError().text();
         return purchased;
     }
 
     while (query.next()) {
-        const QString name = query.value("name").toString();
-        const QString color = query.value("color").toString();
-        purchased.append(std::make_tuple(name, color));
+        const QString kName = query.value("name").toString();
+        const QString kColor = query.value("color").toString();
+        purchased.append(std::make_tuple(kName, kColor));
     }
 
     return purchased;
 }
 
-QList<ProductRepository::ProductKey> ProfileController::GetPurchasedProductKeys(int userId) const
+QList<ProductRepository::ProductKey> ProfileController::getPurchasedProductKeys(int userId) const
 {
-    return GetPurchasedProducts(userId);
+    return getPurchasedProducts(userId);
 }

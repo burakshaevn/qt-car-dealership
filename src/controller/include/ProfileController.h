@@ -30,7 +30,7 @@ public:
      * \param products - указатель на объект Products
      * \param database - указатель на объект DatabaseHandler
      */
-    void SetDependencies(const QSharedPointer<ProductRepository>& products,
+    void setDependencies(const QSharedPointer<ProductRepository>& products,
                          const QSharedPointer<DatabaseHandler>& database);
 
     /*!
@@ -39,7 +39,7 @@ public:
      * \param clientNameLabel - лейбл с именем клиента
      * \param purchasedGroupBox - групповая коробка для списка купленных продуктов
      */
-    void Initialize(QListView* purchasedListView,
+    void initialize(QListView* purchasedListView,
                     QLabel* clientNameLabel,
                     QGroupBox* purchasedGroupBox);
 
@@ -48,13 +48,13 @@ public:
      * \param userId - ID пользователя
      * \param userName - имя пользователя
      */
-    void ShowProfile(int userId, const QString& userName);
+    void showProfile(int userId, const QString& userName);
     /*!
      * \brief Возвращает список купленных продуктов
      * \param userId - ID пользователя
      * \returns Список купленных продуктов
      */
-    QList<ProductRepository::ProductKey> GetPurchasedProductKeys(int userId) const;
+    QList<ProductRepository::ProductKey> getPurchasedProductKeys(int userId) const;
 
 private:
     /*!
@@ -62,27 +62,27 @@ private:
      * \param userId - ID пользователя
      * \returns Список купленных продуктов
      */
-    QList<ProductRepository::ProductKey> GetPurchasedProducts(int userId) const;
+    QList<ProductRepository::ProductKey> getPurchasedProducts(int userId) const;
 
     /*!
      * \brief Конфигурирует список купленных продуктов
      */
-    void ConfigurePurchasedListView();
+    void configurePurchasedListView();
 
     /*!
      * \brief Обновляет список купленных продуктов
      * \param userId - ID пользователя
      */
-    void UpdatePurchasedList(int userId);
+    void updatePurchasedList(int userId);
 
-    QPointer<QListView> purchased_list_view_;
-    QPointer<QLabel> client_name_label_;
-    QPointer<QGroupBox> purchased_group_box_;
+    QPointer<QListView> m_purchasedListView;
+    QPointer<QLabel> m_clientNameLabel;
+    QPointer<QGroupBox> m_purchasedGroupBox;
 
-    QSharedPointer<ProductRepository> products_;
-    QSharedPointer<DatabaseHandler> database_;
-    QScopedPointer<ProductListModel> purchased_model_;
-    QScopedPointer<ProductCardDelegate> purchased_delegate_;
+    QSharedPointer<ProductRepository> m_products;
+    QSharedPointer<DatabaseHandler> m_database;
+    QScopedPointer<ProductListModel> m_purchasedModel;
+    QScopedPointer<ProductCardDelegate> m_purchasedDelegate;
 };
 
 #endif // PROFILE_CONTROLLER_H

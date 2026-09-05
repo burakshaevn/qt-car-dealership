@@ -19,27 +19,27 @@ class NotificationsHandler : public QDialog
     Q_OBJECT
 
 public:
-    explicit NotificationsHandler(QSharedPointer<DatabaseHandler> database_handler, QWidget *parent = nullptr);
+    explicit NotificationsHandler(QSharedPointer<DatabaseHandler> databaseHandler, QWidget *parent = nullptr);
     ~NotificationsHandler();
 
     /*!
      * \brief Получает и отображает уведомления
      * \param user_id Для какого пользователя выполняется действие
      */
-    void loadAndShowNotifications(const int user_id);
+    void loadAndShowNotifications(const int kUserId);
 
     /*!
      * \brief Возвращает новые уведомления, если они есть
      * \param user_id Для какого пользователя выполняется поиск новых уведомлений
      * \return
      */
-    QVariant getNewNotifications(const int user_id);
+    QVariant getNewNotifications(const int kUserId);
 
     /*!
      * \brief Отмечает все уведомления как прочитанные
      * \param user_id Для какого пользователя выполняется действие
      */
-    void markNotificationsAsReaded(const int user_id);
+    void markNotificationsAsReaded(const int kUserId);
 
     /*!
      * \brief Очищает ScrollArea от всех уведомлений
@@ -70,15 +70,15 @@ private slots:
     void onMarkAllReadClicked();
 
 private:
-    Ui::notifications *ui;
+    Ui::notifications* m_ui;
 
-    QVBoxLayout* m_notifications_layout;
+    QVBoxLayout* m_notificationsLayout;
 
-    QWeakPointer<DatabaseHandler> m_database_handler;       ///< Предоставляет интерфейс для работы с БД
+    QWeakPointer<DatabaseHandler> m_databaseHandler;       ///< Предоставляет интерфейс для работы с БД
 
-    bool m_is_sorted_ascending;                             ///< Направление для сортировки по дате
-    int m_current_user_id;                                  ///< ID текущего пользователя
-    QString m_current_filter;                               ///< Текущий фильтр
+    bool m_isSortedAscending;                             ///< Направление для сортировки по дате
+    int m_currentUserId;                                  ///< ID текущего пользователя
+    QString m_currentFilter;                               ///< Текущий фильтр
 
     /*!
      * \brief Генерирует договор на основе уведомления
@@ -95,7 +95,7 @@ private:
      * \brief Сортирует уведомления по дате
      * \param ascending - направление сортировки
      */
-    void sortNotifications(const bool ascending);
+    void sortNotifications(const bool kAscending);
 };
 
 #endif // NOTIFICATIONSHANDLER_H

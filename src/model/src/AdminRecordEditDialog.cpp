@@ -12,10 +12,10 @@
 
 AdminRecordEditDialog::AdminRecordEditDialog(const QSqlRecord& record, QWidget* parent)
     : QDialog(parent)
-    , record_(record)
+    , m_record(record)
 {
     setWindowTitle(QStringLiteral("Редактирование записи"));
-    ApplyThemeStyle(this, "DialogForm");
+    applyThemeStyle(this, "DialogForm");
 
     // Основной макет
     auto* layout = new QVBoxLayout(this);
@@ -28,7 +28,7 @@ AdminRecordEditDialog::AdminRecordEditDialog(const QSqlRecord& record, QWidget* 
         if (fieldName == "id") {
             editor->setReadOnly(true);
         }
-        fields_.append(editor);
+        m_fields.append(editor);
 
         layout->addWidget(label);
         layout->addWidget(editor);
@@ -56,19 +56,19 @@ AdminRecordEditDialog::AdminRecordEditDialog(const QSqlRecord& record, QWidget* 
     move(screenGeometry.center() - rect().center());
 }
 
-QSqlRecord AdminRecordEditDialog::GetUpdatedRecord() const {
-    QSqlRecord updatedRecord = record_;
+QSqlRecord AdminRecordEditDialog::getUpdatedRecord() const
+{
+    QSqlRecord updatedRecord = m_record;
 
-    for (int i = 0; i < fields_.size(); ++i) {
-        QString value = fields_[i]->text();
+    for (int i = 0; i < m_fields.size(); ++i) {
+        QString value = m_fields[i]->text();
 
         if (value.isEmpty()) {
             throw std::runtime_error(
-                QString("Поле '%1' не может быть пустым.").arg(record_.fieldName(i)).toStdString()
-                );
+                QString("Поле '%1' не может быть пустым.").arg(m_record.fieldName(i)).toStdString());
         }
 
-        QString fieldName = record_.fieldName(i);
+        QString fieldName = m_record.fieldName(i);
         if (fieldName.toLower() == "email") {
             QRegularExpression emailRegex(R"((\w+)(\.\w+)*@(\w+)(\.\w{2,})+)");
             if (!emailRegex.match(value).hasMatch()) {

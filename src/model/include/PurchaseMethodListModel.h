@@ -28,12 +28,12 @@ public:
 
 private:
     struct Item {
-        PurchaseMethod method = PurchaseMethod::Unknown;
-        QString title;
-        QString description;
+        PurchaseMethod Method = PurchaseMethod::Unknown;
+        QString Title;
+        QString Description;
     };
 
-    QList<Item> items_; // Список элементов
+    QList<Item> m_items; // Список элементов
 };
 
 #endif // PURCHASE_METHOD_LIST_MODEL_H

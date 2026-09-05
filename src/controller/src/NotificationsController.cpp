@@ -8,19 +8,19 @@ NotificationsController::NotificationsController(QObject* parent)
 {
 }
 
-void NotificationsController::SetDependencies(const QSharedPointer<DatabaseHandler>& database)
+void NotificationsController::setDependencies(const QSharedPointer<DatabaseHandler>& database)
 {
-    database_ = database;
+    m_database = database;
 }
 
-void NotificationsController::ShowForUser(int userId, QWidget* parent)
+void NotificationsController::showForUser(int userId, QWidget* parent)
 {
-    if (!database_) {
+    if (!m_database) {
         return;
     }
-    if (!handler_) {
-        handler_.reset(new NotificationsHandler(database_, parent));
+    if (!m_handler) {
+        m_handler.reset(new NotificationsHandler(m_database, parent));
     }
-    handler_->loadAndShowNotifications(userId);
-    handler_->exec();
+    m_handler->loadAndShowNotifications(userId);
+    m_handler->exec();
 }

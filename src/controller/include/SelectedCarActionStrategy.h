@@ -20,9 +20,9 @@ class SelectedCarActionStrategy
 {
 public:
     virtual ~SelectedCarActionStrategy() = default;
-    virtual bool Execute(QWidget* parent, AppServices* services, const ProductInfo& product) = 0;
+    virtual bool execute(QWidget* parent, AppServices* services, const ProductInfo& product) = 0;
 };
 
-std::unique_ptr<SelectedCarActionStrategy> CreateSelectedCarActionStrategy(SelectedCarAction action);
+std::unique_ptr<SelectedCarActionStrategy> createSelectedCarActionStrategy(SelectedCarAction action);
 
 #endif // SELECTED_CAR_ACTION_STRATEGY_H

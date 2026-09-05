@@ -14,47 +14,47 @@ class DatabaseHandler {
 public:
     DatabaseHandler();
 
-    bool Open();
-    void Close();
+    bool open();
+    void close();
 
     /// Подключение к файлу SQLite
-    void UpdateConnection(const QString& database_path);
+    void updateConnection(const QString& databasePath);
 
     /// Подключается к БД по умолчанию (путь берётся из окружения или дефолтный)
-    void LoadDefault();
+    void loadDefault();
 
-    QString GetLastError() const;
+    QString getLastError() const;
 
     /// Возвращает строку из sys_strings по категории и ключу
-    QString GetString(const QString& category, const QString& key,
+    QString getString(const QString& category, const QString& key,
                       const QString& fallback = QString()) const;
     /// Возвращает значение настройки из sys_settings
-    QString GetSetting(const QString& key, const QString& fallback = QString()) const;
+    QString getSetting(const QString& key, const QString& fallback = QString()) const;
 
-    QString GetTableDescription(QStringView table_name) const;
-    QStringList GetTables() const;
+    QString getTableDescription(QStringView tableName) const;
+    QStringList getTables() const;
 
-    bool ExecuteQuery(QStringView string_query);
-    bool ExecuteQueryWithUserMessage(QStringView string_query, QString& error_message);
-    QVariant ExecuteSelectQuery(QStringView string_query) const;
-    QSqlQuery ExecuteNamedSelect(SqlQueryId query_id,
+    bool executeQuery(QStringView stringQuery);
+    bool executeQueryWithUserMessage(QStringView stringQuery, QString& errorMessage);
+    QVariant executeSelectQuery(QStringView stringQuery) const;
+    QSqlQuery executeNamedSelect(SqlQueryId queryId,
                                  const QVariantMap& bindings = {}) const;
-    bool ExecuteNamedQuery(SqlQueryId query_id,
+    bool executeNamedQuery(SqlQueryId queryId,
                            const QVariantMap& bindings = {},
-                           QString* error_message = nullptr);
+                           QString* errorMessage = nullptr);
 
-    std::optional<int> TryGetCarTypeId(QStringView type_name) const;
-    bool IsKnownColor(QStringView color) const;
-    QStringList GetCarTypeNames() const;
-    QString GetDefaultCatalogColor() const;
+    std::optional<int> tryGetCarTypeId(QStringView typeName) const;
+    bool isKnownColor(QStringView color) const;
+    QStringList getCarTypeNames() const;
+    QString getDefaultCatalogColor() const;
 
-    int GetColumnsCount(QStringView table_name) const;
-    int GetMaxOrMinValueFromTable(const QString& max_or_min,
-                                  const QString& column_name,
-                                  const QString& table_name);
-    const QStringList GetForeignKeysForColumn(const QString& table_name,
-                                              const QString& column_name);
-    QList<QString> GetDistinctColors();
+    int getColumnsCount(QStringView tableName) const;
+    int getMaxOrMinValueFromTable(const QString& maxOrMin,
+                                  const QString& columnName,
+                                  const QString& tableName);
+    const QStringList getForeignKeysForColumn(const QString& tableName,
+                                              const QString& columnName);
+    QList<QString> getDistinctColors();
 
 private:
     QSqlDatabase m_database;

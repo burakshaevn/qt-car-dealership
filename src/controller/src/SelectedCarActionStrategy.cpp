@@ -21,14 +21,15 @@ namespace {
 class CheckoutSelectedCarStrategy final : public SelectedCarActionStrategy
 {
 public:
-    bool Execute(QWidget* parent, AppServices* services, const ProductInfo& product) override
+    bool execute(QWidget* parent, AppServices* services, const ProductInfo& product) override
     {
-        if (!services || !services->GetUserSession() || !services->GetUserSession()->IsAuthorized()) {
+        if (!services || !services->getUserSession()
+            || !services->getUserSession()->isAuthorized()) {
             QMessageBox::warning(parent, "Ошибка", "Авторизуйтесь для оформления заявки.");
             return false;
         }
 
-        if (product.name_.isEmpty()) {
+        if (product.Name.isEmpty()) {
             QMessageBox::warning(parent, "Ошибка", "Не выбран автомобиль для оформления заявки.");
             return false;
         }
@@ -37,16 +38,16 @@ public:
         dialog.setWindowTitle("Оформление заявки на покупку");
         dialog.setMinimumSize(500, 400);
         dialog.resize(500, 500);
-        ApplyThemeStyle(&dialog, "DialogForm");
+        applyThemeStyle(&dialog, "DialogForm");
 
         QVBoxLayout* layout = new QVBoxLayout(&dialog);
         layout->setSpacing(15);
         layout->setContentsMargins(30, 30, 30, 30);
 
         QLabel* carInfoLabel = new QLabel(QString("Автомобиль: %1\nЦвет: %2\nЦена: %3 руб.")
-                                              .arg(product.name_)
-                                              .arg(product.color_)
-                                              .arg(FormatPrice(product.price_)),
+                                              .arg(product.Name)
+                                              .arg(product.Color)
+                                              .arg(formatPrice(product.Price)),
                                           &dialog);
         carInfoLabel->setObjectName("carInfo");
         layout->addWidget(carInfoLabel);
@@ -79,16 +80,16 @@ public:
         {
             QSqlQuery q;
             q.prepare("SELECT DISTINCT trim FROM cars WHERE name = :name AND trim IS NOT NULL AND trim <> ''");
-            q.bindValue(":name", product.name_);
+            q.bindValue(":name", product.Name);
             if (q.exec()) {
                 while (q.next()) {
                     trimCombo->addItem(q.value(0).toString());
                 }
             }
-            if (!product.trim_.isEmpty()) {
-                const int idx = trimCombo->findText(product.trim_);
-                if (idx >= 0) {
-                    trimCombo->setCurrentIndex(idx);
+            if (!product.Trim.isEmpty()) {
+                const int kIdx = trimCombo->findText(product.Trim);
+                if (kIdx >= 0) {
+                    trimCombo->setCurrentIndex(kIdx);
                 }
             }
         }
@@ -158,24 +159,24 @@ public:
         }
 
         QSqlQuery query;
-        const QString selectedTrim = trimCombo->isVisible() ? trimCombo->currentText() : QString();
-        int targetCarId = product.id_;
-        int targetStock = product.stock_qty_;
+        const QString kSelectedTrim = trimCombo->isVisible() ? trimCombo->currentText() : QString();
+        int targetCarId = product.Id;
+        int targetStock = product.StockQty;
 
-        if (trimCombo->isVisible() && !selectedTrim.isEmpty() && selectedTrim != product.trim_) {
+        if (trimCombo->isVisible() && !kSelectedTrim.isEmpty() && kSelectedTrim != product.Trim) {
             QSqlQuery find;
             find.prepare("SELECT id, stock_qty FROM cars WHERE name = :name AND trim = :trim AND color = :color ORDER BY stock_qty DESC LIMIT 1");
-            find.bindValue(":name", product.name_);
-            find.bindValue(":trim", selectedTrim);
-            find.bindValue(":color", product.color_);
+            find.bindValue(":name", product.Name);
+            find.bindValue(":trim", kSelectedTrim);
+            find.bindValue(":color", product.Color);
             if (find.exec() && find.next()) {
                 targetCarId = find.value(0).toInt();
                 targetStock = find.value(1).toInt();
             } else {
                 find.finish();
                 find.prepare("SELECT id, stock_qty FROM cars WHERE name = :name AND trim = :trim ORDER BY stock_qty DESC LIMIT 1");
-                find.bindValue(":name", product.name_);
-                find.bindValue(":trim", selectedTrim);
+                find.bindValue(":name", product.Name);
+                find.bindValue(":trim", kSelectedTrim);
                 if (find.exec() && find.next()) {
                     targetCarId = find.value(0).toInt();
                     targetStock = find.value(1).toInt();
@@ -189,7 +190,7 @@ public:
             if (targetStock > 0) {
                 QSqlQuery purchaseQuery;
                 purchaseQuery.prepare("INSERT INTO purchase_requests (client_id, car_id, status) VALUES (:client_id, :car_id, 'не обработано')");
-                purchaseQuery.bindValue(":client_id", services->GetUserSession()->GetId());
+                purchaseQuery.bindValue(":client_id", services->getUserSession()->getId());
                 purchaseQuery.bindValue(":car_id", targetCarId);
                 if (!purchaseQuery.exec()) {
                     QMessageBox::critical(parent, "Ошибка", "Не удалось создать заявку на покупку: " + purchaseQuery.lastError().text());
@@ -198,10 +199,10 @@ public:
             } else {
                 QSqlQuery ins;
                 ins.prepare("INSERT INTO order_requests (client_id, car_name, color, trim, status) VALUES (:client_id, :car_name, :color, :trim, 'не обработано')");
-                ins.bindValue(":client_id", services->GetUserSession()->GetId());
-                ins.bindValue(":car_name", product.name_);
-                ins.bindValue(":color", product.color_);
-                ins.bindValue(":trim", selectedTrim.isEmpty() ? product.trim_ : selectedTrim);
+                ins.bindValue(":client_id", services->getUserSession()->getId());
+                ins.bindValue(":car_name", product.Name);
+                ins.bindValue(":color", product.Color);
+                ins.bindValue(":trim", kSelectedTrim.isEmpty() ? product.Trim : kSelectedTrim);
                 if (!ins.exec()) {
                     QMessageBox::critical(parent, "Ошибка", "Не удалось создать заявку на заказ: " + ins.lastError().text());
                     return false;
@@ -215,30 +216,31 @@ public:
                 return false;
             }
 
-            const int months = loanTermCombo->currentText().split(" ")[0].toInt();
-            const QString queryStr = QString(
-                "INSERT INTO loan_requests (client_id, car_id, loan_amount, loan_term_months, status) "
-                "VALUES (%1, %2, %3, %4, 'не обработано');")
-                                         .arg(services->GetUserSession()->GetId())
-                                         .arg(targetCarId)
-                                         .arg(product.price_)
-                                         .arg(months);
+            const int kMonths = loanTermCombo->currentText().split(" ")[0].toInt();
+            const QString kQueryStr = QString("INSERT INTO loan_requests (client_id, car_id, "
+                                              "loan_amount, loan_term_months, status) "
+                                              "VALUES (%1, %2, %3, %4, 'не обработано');")
+                                          .arg(services->getUserSession()->getId())
+                                          .arg(targetCarId)
+                                          .arg(product.Price)
+                                          .arg(kMonths);
 
-            if (!query.exec(queryStr)) {
+            if (!query.exec(kQueryStr)) {
                 QMessageBox::critical(parent, "Ошибка", "Не удалось оформить заявку на кредит: " + query.lastError().text());
                 return false;
             }
         }
 
         if (insuranceCheckBox->isChecked()) {
-            const QString queryStr = QString(
-                "INSERT INTO insurance_requests (client_id, car_id, insurance_type, status) "
-                "VALUES (%1, %2, '%3', 'не обработано');")
-                                         .arg(services->GetUserSession()->GetId())
-                                         .arg(targetCarId)
-                                         .arg(insuranceTypeCombo->currentText());
+            const QString kQueryStr
+                = QString(
+                      "INSERT INTO insurance_requests (client_id, car_id, insurance_type, status) "
+                      "VALUES (%1, %2, '%3', 'не обработано');")
+                      .arg(services->getUserSession()->getId())
+                      .arg(targetCarId)
+                      .arg(insuranceTypeCombo->currentText());
 
-            if (!query.exec(queryStr)) {
+            if (!query.exec(kQueryStr)) {
                 QMessageBox::critical(parent, "Ошибка", "Не удалось оформить заявку на страхование: " + query.lastError().text());
                 return false;
             }
@@ -250,16 +252,16 @@ public:
                 return false;
             }
 
-            const QString queryStr = QString(
-                "INSERT INTO rental_requests (client_id, car_id, rental_days, start_date, status) "
-                "VALUES (%1, %2, %3, '%4', 'не обработано');")
-                                         .arg(services->GetUserSession()->GetId())
-                                         .arg(targetCarId)
-                                         .arg(rentalTermCombo->currentText().split(" ")[0].toInt())
-                                         .arg(QDate::currentDate().toString("yyyy-MM-dd"));
+            const QString kQueryStr = QString("INSERT INTO rental_requests (client_id, car_id, "
+                                              "rental_days, start_date, status) "
+                                              "VALUES (%1, %2, %3, '%4', 'не обработано');")
+                                          .arg(services->getUserSession()->getId())
+                                          .arg(targetCarId)
+                                          .arg(rentalTermCombo->currentText().split(" ")[0].toInt())
+                                          .arg(QDate::currentDate().toString("yyyy-MM-dd"));
 
             QString errorMessage;
-            if (!services->GetDatabase()->ExecuteQueryWithUserMessage(queryStr, errorMessage)) {
+            if (!services->getDatabase()->executeQueryWithUserMessage(kQueryStr, errorMessage)) {
                 QMessageBox::warning(parent, "Ошибка", errorMessage);
                 return false;
             }
@@ -273,14 +275,15 @@ public:
 class OrderSelectedCarStrategy final : public SelectedCarActionStrategy
 {
 public:
-    bool Execute(QWidget* parent, AppServices* services, const ProductInfo& product) override
+    bool execute(QWidget* parent, AppServices* services, const ProductInfo& product) override
     {
-        if (!services || !services->GetUserSession() || !services->GetUserSession()->IsAuthorized()) {
+        if (!services || !services->getUserSession()
+            || !services->getUserSession()->isAuthorized()) {
             QMessageBox::warning(parent, "Ошибка", "Авторизуйтесь для оформления заказа.");
             return false;
         }
 
-        if (product.name_.isEmpty()) {
+        if (product.Name.isEmpty()) {
             QMessageBox::warning(parent, "Ошибка", "Не выбран автомобиль для заказа.");
             return false;
         }
@@ -288,16 +291,16 @@ public:
         QDialog dialog(parent);
         dialog.setWindowTitle("Заказ автомобиля");
         dialog.setFixedSize(500, 400);
-        ApplyThemeStyle(&dialog, "DialogForm");
+        applyThemeStyle(&dialog, "DialogForm");
 
         QVBoxLayout* layout = new QVBoxLayout(&dialog);
         layout->setSpacing(15);
         layout->setContentsMargins(30, 30, 30, 30);
 
         QLabel* carInfoLabel = new QLabel(QString("Автомобиль: %1\nЦвет: %2\nЦена: %3 руб.")
-                                              .arg(product.name_)
-                                              .arg(product.color_)
-                                              .arg(FormatPrice(product.price_)),
+                                              .arg(product.Name)
+                                              .arg(product.Color)
+                                              .arg(formatPrice(product.Price)),
                                           &dialog);
         carInfoLabel->setObjectName("carInfo");
         layout->addWidget(carInfoLabel);
@@ -309,7 +312,7 @@ public:
         QComboBox* trimCombo = new QComboBox(&dialog);
         QSqlQuery query;
         query.prepare("SELECT DISTINCT trim FROM cars WHERE name = :name AND trim IS NOT NULL AND trim <> ''");
-        query.bindValue(":name", product.name_);
+        query.bindValue(":name", product.Name);
         if (query.exec()) {
             while (query.next()) {
                 trimCombo->addItem(query.value(0).toString());
@@ -317,11 +320,11 @@ public:
         }
 
         if (trimCombo->count() == 0) {
-            trimCombo->addItem(product.trim_.isEmpty() ? QString("Стандартная") : product.trim_);
-        } else if (!product.trim_.isEmpty()) {
-            const int idx = trimCombo->findText(product.trim_);
-            if (idx >= 0) {
-                trimCombo->setCurrentIndex(idx);
+            trimCombo->addItem(product.Trim.isEmpty() ? QString("Стандартная") : product.Trim);
+        } else if (!product.Trim.isEmpty()) {
+            const int kIdx = trimCombo->findText(product.Trim);
+            if (kIdx >= 0) {
+                trimCombo->setCurrentIndex(kIdx);
             }
         }
         layout->addWidget(trimCombo);
@@ -332,12 +335,12 @@ public:
         auto updateStockInfo = [=](const QString& trim) {
             QSqlQuery stockQuery;
             stockQuery.prepare("SELECT stock_qty FROM cars WHERE name = :name AND trim = :trim AND color = :color");
-            stockQuery.bindValue(":name", product.name_);
+            stockQuery.bindValue(":name", product.Name);
             stockQuery.bindValue(":trim", trim);
-            stockQuery.bindValue(":color", product.color_);
+            stockQuery.bindValue(":color", product.Color);
             if (stockQuery.exec() && stockQuery.next()) {
-                const int stock = stockQuery.value(0).toInt();
-                stockLabel->setText(stock > 0 ? QString("В наличии: %1 шт.").arg(stock) : QString("Нет в наличии - будет создана заявка на заказ"));
+                const int kStock = stockQuery.value(0).toInt();
+                stockLabel->setText(kStock > 0 ? QString("В наличии: %1 шт.").arg(kStock) : QString("Нет в наличии - будет создана заявка на заказ"));
             } else {
                 stockLabel->setText("Нет в наличии - будет создана заявка на заказ");
             }
@@ -365,14 +368,14 @@ public:
             return false;
         }
 
-        const QString selectedTrim = trimCombo->currentText();
+        const QString kSelectedTrim = trimCombo->currentText();
         QSqlQuery checkQuery;
         checkQuery.prepare("SELECT id, stock_qty FROM cars WHERE name = :name AND trim = :trim AND color = :color");
-        checkQuery.bindValue(":name", product.name_);
-        checkQuery.bindValue(":trim", selectedTrim);
-        checkQuery.bindValue(":color", product.color_);
+        checkQuery.bindValue(":name", product.Name);
+        checkQuery.bindValue(":trim", kSelectedTrim);
+        checkQuery.bindValue(":color", product.Color);
 
-        int targetCarId = product.id_;
+        int targetCarId = product.Id;
         int targetStock = 0;
         if (checkQuery.exec() && checkQuery.next()) {
             targetCarId = checkQuery.value(0).toInt();
@@ -382,7 +385,7 @@ public:
         if (targetStock > 0) {
             QSqlQuery purchaseQuery;
             purchaseQuery.prepare("INSERT INTO purchase_requests (client_id, car_id, status) VALUES (:client_id, :car_id, 'не обработано')");
-            purchaseQuery.bindValue(":client_id", services->GetUserSession()->GetId());
+            purchaseQuery.bindValue(":client_id", services->getUserSession()->getId());
             purchaseQuery.bindValue(":car_id", targetCarId);
             if (!purchaseQuery.exec()) {
                 QMessageBox::critical(parent, "Ошибка", "Не удалось создать заявку на покупку: " + purchaseQuery.lastError().text());
@@ -391,10 +394,10 @@ public:
         } else {
             QSqlQuery orderQuery;
             orderQuery.prepare("INSERT INTO order_requests (client_id, car_name, color, trim, status) VALUES (:client_id, :car_name, :color, :trim, 'не обработано')");
-            orderQuery.bindValue(":client_id", services->GetUserSession()->GetId());
-            orderQuery.bindValue(":car_name", product.name_);
-            orderQuery.bindValue(":color", product.color_);
-            orderQuery.bindValue(":trim", selectedTrim);
+            orderQuery.bindValue(":client_id", services->getUserSession()->getId());
+            orderQuery.bindValue(":car_name", product.Name);
+            orderQuery.bindValue(":color", product.Color);
+            orderQuery.bindValue(":trim", kSelectedTrim);
             if (!orderQuery.exec()) {
                 QMessageBox::critical(parent, "Ошибка", "Не удалось создать заявку на заказ: " + orderQuery.lastError().text());
                 return false;
@@ -407,7 +410,7 @@ public:
 
 } // namespace
 
-std::unique_ptr<SelectedCarActionStrategy> CreateSelectedCarActionStrategy(SelectedCarAction action)
+std::unique_ptr<SelectedCarActionStrategy> createSelectedCarActionStrategy(SelectedCarAction action)
 {
     switch (action) {
     case SelectedCarAction::Checkout:

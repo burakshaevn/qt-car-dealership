@@ -14,14 +14,16 @@ PurchaseMethodsController::PurchaseMethodsController(QObject* parent)
 {
 }
 
-void PurchaseMethodsController::Initialize(QListView* listView, AppServices* services, QWidget* hostWidget)
+void PurchaseMethodsController::initialize(QListView* listView,
+                                           AppServices* services,
+                                           QWidget* hostWidget)
 {
     if (!listView || !services || !hostWidget) {
         return;
     }
 
     m_services = services;
-    m_host_widget = hostWidget;
+    m_hostWidget = hostWidget;
 
     if (!m_model) {
         m_model.reset(new PurchaseMethodListModel(this));
@@ -30,33 +32,35 @@ void PurchaseMethodsController::Initialize(QListView* listView, AppServices* ser
         m_delegate.reset(new PurchaseMethodCardDelegate(this));
     }
 
-    m_list_view = listView;
+    m_listView = listView;
 
-    m_list_view->setModel(m_model.get());
-    m_list_view->setItemDelegate(m_delegate.get());
-    m_list_view->disconnect(this);
+    m_listView->setModel(m_model.get());
+    m_listView->setItemDelegate(m_delegate.get());
+    m_listView->disconnect(this);
 
-    connect(m_list_view, &QListView::clicked, this, [this](const QModelIndex& index) {
-        if (!m_services || !m_host_widget) {
+    connect(m_listView, &QListView::clicked, this, [this](const QModelIndex& index) {
+        if (!m_services || !m_hostWidget) {
             return;
         }
-        if (!m_services->GetUserSession()->IsAuthorized()) {
-            QMessageBox::warning(m_host_widget, "Error", "Please sign in to submit a request.");
-            return;
-        }
-
-        const auto method = static_cast<PurchaseMethod>(index.data(PurchaseMethodListModel::MethodRole).toInt());
-        if (method == PurchaseMethod::Standart) {
-            emit OpenCatalogRequested();
+        if (!m_services->getUserSession()->isAuthorized()) {
+            QMessageBox::warning(m_hostWidget, "Error", "Please sign in to submit a request.");
             return;
         }
 
-        auto strategy = CreatePurchaseRequestStrategy(method);
+        const auto kMethod = static_cast<PurchaseMethod>(index.data(PurchaseMethodListModel::MethodRole).toInt());
+        if (kMethod == PurchaseMethod::Standart) {
+            emit openCatalogRequested();
+            return;
+        }
+
+        auto strategy = createPurchaseRequestStrategy(kMethod);
         if (!strategy) {
-            QMessageBox::warning(m_host_widget, "Error", "Strategy for selected method is not available.");
+            QMessageBox::warning(m_hostWidget,
+                                 "Error",
+                                 "Strategy for selected method is not available.");
             return;
         }
 
-        strategy->Execute(m_host_widget, m_services);
+        strategy->execute(m_hostWidget, m_services);
     });
 }

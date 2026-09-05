@@ -7,34 +7,34 @@ AdminTableModel::AdminTableModel(QObject* parent)
 {
 }
 
-bool AdminTableModel::Load(const QString& table_name)
+bool AdminTableModel::load(const QString& tableName)
 {
-    current_table_name_ = table_name;
-    const QString query = BuildSelectQuery(table_name);
-    setQuery(query);
+    m_currentTableName = tableName;
+    const QString kQuery = buildSelectQuery(tableName);
+    setQuery(kQuery);
     return lastError().type() == QSqlError::NoError;
 }
 
-QString AdminTableModel::GetCurrentTableName() const
+QString AdminTableModel::getCurrentTableName() const
 {
-    return current_table_name_;
+    return m_currentTableName;
 }
 
-bool AdminTableModel::IsRequestTableName(const QString& table_name)
+bool AdminTableModel::isRequestTableName(const QString& tableName)
 {
-    return table_name == "service_requests" ||
-           table_name == "insurance_requests" ||
-           table_name == "loan_requests" ||
-           table_name == "purchase_requests" ||
-           table_name == "sell_requests" ||
-           table_name == "test_drives" ||
-           table_name == "rental_requests" ||
-           table_name == "order_requests";
+    return tableName == "service_requests" ||
+           tableName == "insurance_requests" ||
+           tableName == "loan_requests" ||
+           tableName == "purchase_requests" ||
+           tableName == "sell_requests" ||
+           tableName == "test_drives" ||
+           tableName == "rental_requests" ||
+           tableName == "order_requests";
 }
 
-QString AdminTableModel::BuildSelectQuery(const QString& table_name)
+QString AdminTableModel::buildSelectQuery(const QString& tableName)
 {
-    if (table_name == "service_requests") {
+    if (tableName == "service_requests") {
         return "SELECT sr.id as \"№\", CONCAT(c.first_name, ' ', c.last_name) as \"Клиент\", "
                "c.phone as \"Телефон\", "
                "cars.name as \"Автомобиль\", "
@@ -45,7 +45,7 @@ QString AdminTableModel::BuildSelectQuery(const QString& table_name)
                "LEFT JOIN cars ON sr.car_id = cars.id";
     }
 
-    if (table_name == "purchases") {
+    if (tableName == "purchases") {
         return "SELECT "
                "p.id as \"№\", "
                "CONCAT(cl.first_name, ' ', cl.last_name) as \"Клиент\", "
@@ -61,7 +61,7 @@ QString AdminTableModel::BuildSelectQuery(const QString& table_name)
                "JOIN cars c ON c.id = p.car_id";
     }
 
-    if (table_name == "test_drives") {
+    if (tableName == "test_drives") {
         return "SELECT td.id as \"№\", "
                "CONCAT(c.first_name, ' ', c.last_name) as \"Клиент\", "
                "c.phone as \"Телефон\", "
@@ -74,7 +74,7 @@ QString AdminTableModel::BuildSelectQuery(const QString& table_name)
                "LEFT JOIN cars ON td.car_id = cars.id";
     }
 
-    if (table_name == "insurance_requests") {
+    if (tableName == "insurance_requests") {
         return "SELECT ir.id as \"№\", CONCAT(c.first_name, ' ', c.last_name) as \"Клиент\", "
                "c.phone as \"Телефон\", "
                "cars.name as \"Автомобиль\", "
@@ -85,7 +85,7 @@ QString AdminTableModel::BuildSelectQuery(const QString& table_name)
                "LEFT JOIN cars ON ir.car_id = cars.id";
     }
 
-    if (table_name == "loan_requests") {
+    if (tableName == "loan_requests") {
         return "SELECT lr.id as \"№\", CONCAT(c.first_name, ' ', c.last_name) as \"Клиент\", "
                "c.phone as \"Телефон\", "
                "cars.name as \"Автомобиль\", cars.price as \"Цена автомобиля\", "
@@ -96,7 +96,7 @@ QString AdminTableModel::BuildSelectQuery(const QString& table_name)
                "LEFT JOIN cars ON lr.car_id = cars.id";
     }
 
-    if (table_name == "purchase_requests") {
+    if (tableName == "purchase_requests") {
         return "SELECT pr.id as \"№\", CONCAT(c.first_name, ' ', c.last_name) as \"Клиент\", "
                "c.phone as \"Телефон\", "
                "CONCAT(cars.name, ' (', cars.color, ')') as \"Автомобиль\", "
@@ -107,7 +107,7 @@ QString AdminTableModel::BuildSelectQuery(const QString& table_name)
                "LEFT JOIN cars ON pr.car_id = cars.id";
     }
 
-    if (table_name == "order_requests") {
+    if (tableName == "order_requests") {
         return "SELECT ord.id as \"№\", CONCAT(c.first_name, ' ', c.last_name) as \"Клиент\", "
                "c.phone as \"Телефон\", "
                "ord.car_name as \"Автомобиль\", ord.color as \"Цвет\", ord.trim as \"Комплектация\", "
@@ -116,7 +116,7 @@ QString AdminTableModel::BuildSelectQuery(const QString& table_name)
                "LEFT JOIN clients c ON ord.client_id = c.id";
     }
 
-    if (table_name == "rental_requests") {
+    if (tableName == "rental_requests") {
         return "SELECT rr.id as \"№\", "
                "CONCAT(c.first_name, ' ', c.last_name) as \"Клиент\", "
                "c.phone as \"Телефон\", "
@@ -130,5 +130,5 @@ QString AdminTableModel::BuildSelectQuery(const QString& table_name)
                "LEFT JOIN cars ON rr.car_id = cars.id";
     }
 
-    return QString("SELECT * FROM %1").arg(table_name);
+    return QString("SELECT * FROM %1").arg(tableName);
 }

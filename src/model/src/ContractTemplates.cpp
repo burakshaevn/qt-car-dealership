@@ -16,12 +16,12 @@
 #include <QTextStream>
 #include <QUrl>
 
-namespace ContractTemplates {
+namespace contract_templates {
 namespace {
 
 using TemplateValues = QHash<QString, QString>;
 
-QString LoadTemplate(const QString& code)
+QString loadTemplate(const QString& code)
 {
     QSqlQuery query;
     query.prepare(
@@ -36,14 +36,14 @@ QString LoadTemplate(const QString& code)
         return {};
     }
 
-    const QString title = query.value("title").toString().toHtmlEscaped();
-    const QString body = query.value("body_template").toString();
-    return QStringLiteral("<h1>%1</h1>%2").arg(title, body);
+    const QString kTitle = query.value("title").toString().toHtmlEscaped();
+    const QString kBody = query.value("body_template").toString();
+    return QStringLiteral("<h1>%1</h1>%2").arg(kTitle, kBody);
 }
 
-QString RenderTemplate(const QString& code, const TemplateValues& values)
+QString renderTemplate(const QString& code, const TemplateValues& values)
 {
-    QString body = LoadTemplate(code);
+    QString body = loadTemplate(code);
     if (body.isEmpty()) {
         return {};
     }
@@ -73,7 +73,7 @@ QString RenderTemplate(const QString& code, const TemplateValues& values)
 </html>)").arg(body);
 }
 
-TemplateValues BaseValues(const QString& currentDate,
+TemplateValues baseValues(const QString& currentDate,
                           const QString& carName,
                           const QString& carColor)
 {
@@ -108,15 +108,15 @@ void saveContract(const QString& content, const ProductInfo& product)
         return;
     }
 
-    const QString defaultFileName = QStringLiteral("Договор_%1_%2")
-        .arg(QString(product.name_).replace(' ', '_'))
-        .arg(QDateTime::currentDateTime().toString("dd_MM_yyyy"));
+    const QString kDefaultFileName = QStringLiteral("Договор_%1_%2")
+                                         .arg(QString(product.Name).replace(' ', '_'),
+                                              QDateTime::currentDateTime().toString("dd_MM_yyyy"));
 
     QString selectedFilter;
     QString fileName = QFileDialog::getSaveFileName(
         nullptr,
         QStringLiteral("Сохранить договор"),
-        defaultFileName,
+        kDefaultFileName,
         QStringLiteral("PDF (*.pdf);;HTML (*.html)"),
         &selectedFilter);
 
@@ -163,9 +163,9 @@ QString getPurchaseContractHtml(const QString& currentDate,
                                 const QString& carColor,
                                 const QString& carPrice)
 {
-    auto values = BaseValues(currentDate, carName, carColor);
+    auto values = baseValues(currentDate, carName, carColor);
     values.insert("car_price", carPrice);
-    return RenderTemplate("purchase", values);
+    return renderTemplate("purchase", values);
 }
 
 QString getLoanContractHtml(const QString& currentDate,
@@ -175,11 +175,11 @@ QString getLoanContractHtml(const QString& currentDate,
                             const QString& loanAmount,
                             const QString& loanTerm)
 {
-    auto values = BaseValues(currentDate, carName, carColor);
+    auto values = baseValues(currentDate, carName, carColor);
     values.insert("car_price", carPrice);
     values.insert("loan_amount", loanAmount);
     values.insert("loan_term", loanTerm);
-    return RenderTemplate("loan", values);
+    return renderTemplate("loan", values);
 }
 
 QString getRentalContractHtml(const QString& currentDate,
@@ -188,10 +188,10 @@ QString getRentalContractHtml(const QString& currentDate,
                               const QString& rentalDays,
                               const QString& startDate)
 {
-    auto values = BaseValues(currentDate, carName, carColor);
+    auto values = baseValues(currentDate, carName, carColor);
     values.insert("rental_days", rentalDays);
     values.insert("start_date", startDate);
-    return RenderTemplate("rental", values);
+    return renderTemplate("rental", values);
 }
 
 QString getInsuranceContractHtml(const QString& currentDate,
@@ -199,9 +199,9 @@ QString getInsuranceContractHtml(const QString& currentDate,
                                  const QString& carColor,
                                  const QString& insuranceType)
 {
-    auto values = BaseValues(currentDate, carName, carColor);
+    auto values = baseValues(currentDate, carName, carColor);
     values.insert("insurance_type", insuranceType);
-    return RenderTemplate("insurance", values);
+    return renderTemplate("insurance", values);
 }
 
 QString getServiceContractHtml(const QString& currentDate,
@@ -210,10 +210,10 @@ QString getServiceContractHtml(const QString& currentDate,
                                const QString& serviceType,
                                const QString& scheduledDate)
 {
-    auto values = BaseValues(currentDate, carName, carColor);
+    auto values = baseValues(currentDate, carName, carColor);
     values.insert("service_type", serviceType);
     values.insert("scheduled_date", scheduledDate);
-    return RenderTemplate("service", values);
+    return renderTemplate("service", values);
 }
 
 QString getTestDriveContractHtml(const QString& currentDate,
@@ -221,9 +221,9 @@ QString getTestDriveContractHtml(const QString& currentDate,
                                  const QString& carColor,
                                  const QString& scheduledDate)
 {
-    auto values = BaseValues(currentDate, carName, carColor);
+    auto values = baseValues(currentDate, carName, carColor);
     values.insert("scheduled_date", scheduledDate);
-    return RenderTemplate("test_drive", values);
+    return renderTemplate("test_drive", values);
 }
 
 QString getOrderContractHtml(const QString& currentDate,
@@ -232,10 +232,10 @@ QString getOrderContractHtml(const QString& currentDate,
                              const QString& carPrice,
                              const QString& trim)
 {
-    auto values = BaseValues(currentDate, carName, carColor);
+    auto values = baseValues(currentDate, carName, carColor);
     values.insert("car_price", carPrice);
     values.insert("trim", trim);
-    return RenderTemplate("order", values);
+    return renderTemplate("order", values);
 }
 
-} // namespace ContractTemplates
+} // namespace contract_templates

@@ -12,12 +12,12 @@ PurchaseMethodCardDelegate::PurchaseMethodCardDelegate(QObject* parent)
 }
 
 namespace {
-bool IsDarkTheme()
+bool isDarkTheme()
 {
     if (qApp) {
-        const QVariant prop = qApp->property("app_theme");
-        if (prop.isValid()) {
-            return prop.toString().trimmed().compare("dark", Qt::CaseInsensitive) == 0;
+        const QVariant kProp = qApp->property("app_theme");
+        if (kProp.isValid()) {
+            return kProp.toString().trimmed().compare("dark", Qt::CaseInsensitive) == 0;
         }
     }
     return qEnvironmentVariable("APP_THEME").trimmed().compare("dark", Qt::CaseInsensitive) == 0;
@@ -36,34 +36,34 @@ void PurchaseMethodCardDelegate::paint(QPainter* painter,
     painter->save();
     painter->setRenderHint(QPainter::Antialiasing, true);
 
-    const QRect cardRect = option.rect.adjusted(2, 2, -2, -2);
-    const bool selected = (option.state & QStyle::State_Selected) != 0;
-    const bool hovered = (option.state & QStyle::State_MouseOver) != 0;
-    const bool darkTheme = IsDarkTheme();
+    const QRect kCardRect = option.rect.adjusted(2, 2, -2, -2);
+    const bool kSelected = (option.state & QStyle::State_Selected) != 0;
+    const bool kHovered = (option.state & QStyle::State_MouseOver) != 0;
+    const bool kDarkTheme = isDarkTheme();
 
-    QColor background = darkTheme ? QColor("#252d39") : QColor("#fafafa");
-    if (selected) {
-        background = darkTheme ? QColor("#2c3f59") : QColor("#d7ebff");
-    } else if (hovered) {
-        background = darkTheme ? QColor("#2c3645") : QColor("#ececec");
+    QColor background = kDarkTheme ? QColor("#252d39") : QColor("#fafafa");
+    if (kSelected) {
+        background = kDarkTheme ? QColor("#2c3f59") : QColor("#d7ebff");
+    } else if (kHovered) {
+        background = kDarkTheme ? QColor("#2c3645") : QColor("#ececec");
     }
 
     painter->setPen(Qt::NoPen);
     painter->setBrush(background);
-    painter->drawRoundedRect(cardRect, 30, 30);
+    painter->drawRoundedRect(kCardRect, 30, 30);
 
-    const QString title = index.data(PurchaseMethodListModel::TitleRole).toString();
-    const QString description = index.data(PurchaseMethodListModel::DescriptionRole).toString();
+    const QString kTitle = index.data(PurchaseMethodListModel::TitleRole).toString();
+    const QString kDescription = index.data(PurchaseMethodListModel::DescriptionRole).toString();
 
     QFont titleFont("JetBrains Mono", 14, QFont::DemiBold);
     painter->setFont(titleFont);
-    painter->setPen(darkTheme ? QColor("#e7edf5") : QColor("#1d1b20"));
-    painter->drawText(cardRect.adjusted(16, 18, -16, -16), Qt::AlignLeft | Qt::AlignTop, title);
+    painter->setPen(kDarkTheme ? QColor("#e7edf5") : QColor("#1d1b20"));
+    painter->drawText(kCardRect.adjusted(16, 18, -16, -16), Qt::AlignLeft | Qt::AlignTop, kTitle);
 
     QFont descFont("JetBrains Mono", 10);
     painter->setFont(descFont);
-    painter->setPen(darkTheme ? QColor("#b8c6d8") : QColor("#505050"));
-    painter->drawText(cardRect.adjusted(16, 56, -16, -16), Qt::AlignLeft | Qt::TextWordWrap, description);
+    painter->setPen(kDarkTheme ? QColor("#b8c6d8") : QColor("#505050"));
+    painter->drawText(kCardRect.adjusted(16, 56, -16, -16), Qt::AlignLeft | Qt::TextWordWrap, kDescription);
 
     painter->restore();
 }

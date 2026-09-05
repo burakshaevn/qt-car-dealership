@@ -5,7 +5,8 @@
 
 DatabaseHandler::DatabaseHandler() = default;
 
-bool DatabaseHandler::Open() {
+bool DatabaseHandler::open()
+{
     if (!m_database.open())
         return false;
     // Обязательно для SQLite: включаем внешние ключи
@@ -13,43 +14,48 @@ bool DatabaseHandler::Open() {
     return true;
 }
 
-void DatabaseHandler::Close() {
+void DatabaseHandler::close()
+{
     m_database.close();
 }
 
-void DatabaseHandler::UpdateConnection(const QString& database_path) {
+void DatabaseHandler::updateConnection(const QString& databasePath)
+{
     m_database = QSqlDatabase::addDatabase("QSQLITE");
-    m_database.setDatabaseName(database_path);
+    m_database.setDatabaseName(databasePath);
 }
 
-void DatabaseHandler::LoadDefault() {
+void DatabaseHandler::loadDefault()
+{
     // The project database is opened as-is. Creating or copying a database at
     // start-up is deliberately not part of the connection responsibility.
     QString dbPath = qEnvironmentVariable("CAR_DEALERSHIP_DB");
     if (dbPath.isEmpty())
-        dbPath = SystemData::DefaultDatabasePath();
+        dbPath = SystemData::defaultDatabasePath();
 
     if (!QFileInfo::exists(dbPath)) {
         qCritical() << "SQLite database file does not exist:" << dbPath;
         return;
     }
 
-    UpdateConnection(dbPath);
+    updateConnection(dbPath);
 
-    if (!Open()) {
+    if (!open()) {
         qCritical() << "Не удалось открыть базу данных:" << dbPath;
-        qCritical() << "Ошибка:" << GetLastError();
+        qCritical() << "Ошибка:" << getLastError();
         return;
     }
-
 }
 
-QString DatabaseHandler::GetLastError() const {
+QString DatabaseHandler::getLastError() const
+{
     return m_database.lastError().text();
 }
 
-QString DatabaseHandler::GetString(const QString& category, const QString& key,
-                                   const QString& fallback) const {
+QString DatabaseHandler::getString(const QString& category,
+                                   const QString& key,
+                                   const QString& fallback) const
+{
     QSqlQuery q(m_database);
     q.prepare("SELECT value FROM sys_strings WHERE category = ? AND key = ?;");
     q.addBindValue(category);
@@ -59,7 +65,8 @@ QString DatabaseHandler::GetString(const QString& category, const QString& key,
     return fallback;
 }
 
-QString DatabaseHandler::GetSetting(const QString& key, const QString& fallback) const {
+QString DatabaseHandler::getSetting(const QString& key, const QString& fallback) const
+{
     QSqlQuery q(m_database);
     q.prepare("SELECT value FROM sys_settings WHERE key = ?;");
     q.addBindValue(key);
@@ -68,15 +75,14 @@ QString DatabaseHandler::GetSetting(const QString& key, const QString& fallback)
     return fallback;
 }
 
-// ---------------------------------------------------------------------------
-// Метаданные (замена information_schema / pg_class)
-// ---------------------------------------------------------------------------
-QString DatabaseHandler::GetTableDescription(QStringView table_name) const {
+QString DatabaseHandler::getTableDescription(QStringView tableName) const
+{
     // В SQLite нет obj_description — описания храним в sys_strings
-    return GetString("table_description", table_name.toString());
+    return getString("table_description", tableName.toString());
 }
 
-QStringList DatabaseHandler::GetTables() const {
+QStringList DatabaseHandler::getTables() const
+{
     QStringList tables;
     QSqlQuery q(m_database);
     // Системные таблицы (sys_*, sqlite_*) не показываем
@@ -87,139 +93,140 @@ QStringList DatabaseHandler::GetTables() const {
         return tables;
     }
     while (q.next()) {
-        const QString displayName = GetString("table_display_name", q.value(0).toString());
-        if (!displayName.isEmpty())
-            tables << displayName;
+        const QString kDisplayName = getString("table_display_name", q.value(0).toString());
+        if (!kDisplayName.isEmpty())
+            tables << kDisplayName;
     }
     return tables;
 }
 
-int DatabaseHandler::GetColumnsCount(QStringView table_name) const {
+int DatabaseHandler::getColumnsCount(QStringView tableName) const
+{
     QSqlQuery q(m_database);
     q.prepare("SELECT COUNT(*) FROM pragma_table_info(?);");
-    q.addBindValue(table_name.toString());
+    q.addBindValue(tableName.toString());
     if (q.exec() && q.next())
         return q.value(0).toInt();
     return 0;
 }
 
-const QStringList DatabaseHandler::GetForeignKeysForColumn(const QString& table_name,
-                                                           const QString& column_name) {
+const QStringList DatabaseHandler::getForeignKeysForColumn(const QString& tableName,
+                                                           const QString& columnName)
+{
     QStringList result;
     // Ищем все таблицы, ссылающиеся на table_name(column_name)
     QSqlQuery tablesQuery(m_database);
     tablesQuery.exec("SELECT name FROM sqlite_master WHERE type='table' "
                      "AND name NOT LIKE 'sqlite_%';");
     while (tablesQuery.next()) {
-        const QString referencing = tablesQuery.value(0).toString();
+        const QString kReferencing = tablesQuery.value(0).toString();
         QSqlQuery fk(m_database);
         fk.prepare("SELECT \"table\", \"from\", \"to\" FROM pragma_foreign_key_list(?);");
-        fk.addBindValue(referencing);
+        fk.addBindValue(kReferencing);
         if (!fk.exec()) continue;
         while (fk.next()) {
-            if (fk.value(0).toString() == table_name &&
-                fk.value(2).toString() == column_name) {
+            if (fk.value(0).toString() == tableName &&
+                fk.value(2).toString() == columnName) {
                 result << QString("%1(%2) -> %3(%4)")
-                .arg(referencing, fk.value(1).toString(),
-                     table_name, column_name);
+                .arg(kReferencing, fk.value(1).toString(),
+                     tableName, columnName);
             }
         }
     }
     return result;
 }
 
-// ---------------------------------------------------------------------------
-// Выполнение запросов
-// ---------------------------------------------------------------------------
-bool DatabaseHandler::ExecuteQuery(QStringView string_query) {
+bool DatabaseHandler::executeQuery(QStringView stringQuery)
+{
     QSqlQuery q(m_database);
-    if (!q.exec(string_query.toString())) {
+    if (!q.exec(stringQuery.toString())) {
         qDebug() << "Query execution failed:" << q.lastError().text();
         return false;
     }
     return true;
 }
 
-bool DatabaseHandler::ExecuteQueryWithUserMessage(QStringView string_query,
-                                                  QString& error_message) {
+bool DatabaseHandler::executeQueryWithUserMessage(QStringView stringQuery, QString& errorMessage)
+{
     QSqlQuery q(m_database);
-    if (q.exec(string_query.toString())) {
-        error_message.clear();
+    if (q.exec(stringQuery.toString())) {
+        errorMessage.clear();
         return true;
     }
 
-    const QString dbError = q.lastError().text();
-    qDebug() << "Query execution failed:" << dbError;
+    const QString kDbError = q.lastError().text();
+    qDebug() << "Query execution failed:" << kDbError;
 
     // Тексты ошибок SQLite + сообщения из sys_strings
     QString key = "default";
-    if (dbError.contains("UNIQUE constraint failed"))        key = "unique";
-    else if (dbError.contains("FOREIGN KEY constraint"))     key = "fk";
-    else if (dbError.contains("NOT NULL constraint failed")) key = "notnull";
-    else if (dbError.contains("CHECK constraint failed"))    key = "check";
-    else if (dbError.contains("нет автомобиля на складе"))   key = "no_stock"; // RAISE из триггера
+    if (kDbError.contains("UNIQUE constraint failed"))        key = "unique";
+    else if (kDbError.contains("FOREIGN KEY constraint"))     key = "fk";
+    else if (kDbError.contains("NOT NULL constraint failed")) key = "notnull";
+    else if (kDbError.contains("CHECK constraint failed"))    key = "check";
+    else if (kDbError.contains("нет автомобиля на складе"))   key = "no_stock"; // RAISE из триггера
 
-    error_message = GetString("error_message", key,
-                              GetString("error_message", "default"));
+    errorMessage = getString("error_message", key, getString("error_message", "default"));
     return false;
 }
 
-QVariant DatabaseHandler::ExecuteSelectQuery(QStringView string_query) const {
+QVariant DatabaseHandler::executeSelectQuery(QStringView stringQuery) const
+{
     QSqlQuery q(m_database);
-    if (!q.exec(string_query.toString())) {
+    if (!q.exec(stringQuery.toString())) {
         qDebug() << "Query execution failed:" << q.lastError().text();
         return QVariant();
     }
     return QVariant::fromValue(q);
 }
 
-QSqlQuery DatabaseHandler::ExecuteNamedSelect(const SqlQueryId query_id,
-                                               const QVariantMap& bindings) const {
-    const QString statement = SystemData::Sql(query_id);
+QSqlQuery DatabaseHandler::executeNamedSelect(const SqlQueryId kQueryId,
+                                              const QVariantMap& bindings) const
+{
+    const QString kStatement = SystemData::sql(kQueryId);
     QSqlQuery query(m_database);
-    if (statement.isEmpty()) {
-        qCritical() << "SQL statement is not registered:" << static_cast<int>(query_id);
+    if (kStatement.isEmpty()) {
+        qCritical() << "SQL statement is not registered:" << static_cast<int>(kQueryId);
         return query;
     }
-    if (!query.prepare(statement)) {
-        qDebug() << "Unable to prepare SQL statement" << static_cast<int>(query_id) << ':' << query.lastError().text();
+    if (!query.prepare(kStatement)) {
+        qDebug() << "Unable to prepare SQL statement" << static_cast<int>(kQueryId) << ':' << query.lastError().text();
         return query;
     }
     for (auto it = bindings.cbegin(); it != bindings.cend(); ++it)
         query.bindValue(QStringLiteral(":") + it.key(), it.value());
     if (!query.exec())
-        qDebug() << "SQL statement failed" << static_cast<int>(query_id) << ':' << query.lastError().text();
+        qDebug() << "SQL statement failed" << static_cast<int>(kQueryId) << ':' << query.lastError().text();
     return query;
 }
 
-bool DatabaseHandler::ExecuteNamedQuery(const SqlQueryId query_id,
+bool DatabaseHandler::executeNamedQuery(const SqlQueryId kQueryId,
                                         const QVariantMap& bindings,
-                                        QString* error_message) {
-    QSqlQuery query = ExecuteNamedSelect(query_id, bindings);
+                                        QString* errorMessage)
+{
+    QSqlQuery query = executeNamedSelect(kQueryId, bindings);
     if (query.isActive()) {
-        if (error_message)
-            error_message->clear();
+        if (errorMessage)
+            errorMessage->clear();
         return true;
     }
-    if (error_message)
-        *error_message = query.lastError().text();
+    if (errorMessage)
+        *errorMessage = query.lastError().text();
     return false;
 }
 
-// ---------------------------------------------------------------------------
-// Прикладные выборки (теперь с prepared statements — без SQL-инъекций)
-// ---------------------------------------------------------------------------
-std::optional<int> DatabaseHandler::TryGetCarTypeId(QStringView type_name) const {
-    if (type_name.isEmpty()) return std::nullopt;
+std::optional<int> DatabaseHandler::tryGetCarTypeId(QStringView typeName) const
+{
+    if (typeName.isEmpty()) return std::nullopt;
     QSqlQuery q(m_database);
     q.prepare("SELECT id FROM car_types WHERE name = ?;");
-    q.addBindValue(type_name.toString());
+    q.addBindValue(typeName.toString());
     if (q.exec() && q.next())
         return q.value(0).toInt();
     return std::nullopt;
 }
 
-bool DatabaseHandler::IsKnownColor(QStringView color) const {
+bool DatabaseHandler::isKnownColor(QStringView color) const
+{
     if (color.isEmpty()) return false;
     QSqlQuery q(m_database);
     q.prepare("SELECT 1 FROM cars WHERE color = ? LIMIT 1;");
@@ -227,7 +234,8 @@ bool DatabaseHandler::IsKnownColor(QStringView color) const {
     return q.exec() && q.next();
 }
 
-QStringList DatabaseHandler::GetCarTypeNames() const {
+QStringList DatabaseHandler::getCarTypeNames() const
+{
     QStringList types;
     QSqlQuery q(m_database);
     if (q.exec("SELECT name FROM car_types ORDER BY name;"))
@@ -235,13 +243,14 @@ QStringList DatabaseHandler::GetCarTypeNames() const {
     return types;
 }
 
-QString DatabaseHandler::GetDefaultCatalogColor() const {
+QString DatabaseHandler::getDefaultCatalogColor() const
+{
     // Предпочтительный цвет берём из sys_strings, а не из кода
-    const QString preferred = GetString("defaults", "catalog_color");
-    if (!preferred.isEmpty()) {
+    const QString kPreferred = getString("defaults", "catalog_color");
+    if (!kPreferred.isEmpty()) {
         QSqlQuery q(m_database);
         q.prepare("SELECT color FROM cars WHERE color = ? LIMIT 1;");
-        q.addBindValue(preferred);
+        q.addBindValue(kPreferred);
         if (q.exec() && q.next())
             return q.value(0).toString();
     }
@@ -252,17 +261,19 @@ QString DatabaseHandler::GetDefaultCatalogColor() const {
     return QString();
 }
 
-int DatabaseHandler::GetMaxOrMinValueFromTable(const QString& max_or_min,
-                                               const QString& column_name,
-                                               const QString& table_name) {
+int DatabaseHandler::getMaxOrMinValueFromTable(const QString& maxOrMin,
+                                               const QString& columnName,
+                                               const QString& tableName)
+{
     QSqlQuery q(m_database);
     if (!q.exec(QString("SELECT %1(%2) FROM %3;")
-                    .arg(max_or_min.toUpper(), column_name, table_name)))
+                    .arg(maxOrMin.toUpper(), columnName, tableName)))
         return -1;
     return q.next() ? q.value(0).toInt() : -1;
 }
 
-QList<QString> DatabaseHandler::GetDistinctColors() {
+QList<QString> DatabaseHandler::getDistinctColors()
+{
     QList<QString> colors;
     QSqlQuery q(m_database);
     if (q.exec("SELECT DISTINCT color FROM cars;"))

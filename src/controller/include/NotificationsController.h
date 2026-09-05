@@ -25,17 +25,17 @@ public:
      * \brief Устанавливает зависимости
      * \param database - указатель на объект DatabaseHandler
      */
-    void SetDependencies(const QSharedPointer<DatabaseHandler>& database);
+    void setDependencies(const QSharedPointer<DatabaseHandler>& database);
     /*!
      * \brief Отображает уведомления для пользователя
      * \param userId - ID пользователя
      * \param parent - владелец диалога уведомлений
      */
-    void ShowForUser(int userId, QWidget* parent);
+    void showForUser(int userId, QWidget* parent);
 
 private:
-    QSharedPointer<DatabaseHandler> database_;
-    QScopedPointer<NotificationsHandler> handler_;
+    QSharedPointer<DatabaseHandler> m_database;
+    QScopedPointer<NotificationsHandler> m_handler;
 };
 
 #endif // NOTIFICATIONS_CONTROLLER_H

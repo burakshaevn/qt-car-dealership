@@ -35,9 +35,9 @@ public:
      *
      * \warning Координаты x и y должны быть в пределах видимой области родительского виджета
      */
-    void BuildFloatingMenu(
-        const size_t x,
-        const size_t parent_height,
+    void buildFloatingMenu(
+        const size_t kX,
+        const size_t kParentHeight,
         const std::function<void()>& onMoreClicked,
         const std::function<void()>& onSearchClicked,
         const std::function<void()>& onColorFilterClicked,

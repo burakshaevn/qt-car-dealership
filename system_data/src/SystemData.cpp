@@ -3,9 +3,9 @@
 #include <QFile>
 
 namespace {
-QString SqlFileName(const SqlQueryId queryId)
+QString sqlFileName(const SqlQueryId kQueryId)
 {
-    switch (queryId) {
+    switch (kQueryId) {
     case SqlQueryId::SelectAllProducts: return QStringLiteral("products/select_all.sql");
     case SqlQueryId::SelectProductsByName: return QStringLiteral("products/select_by_name.sql");
     case SqlQueryId::SelectAdminByUsername: return QStringLiteral("auth/select_admin_by_username.sql");
@@ -17,10 +17,10 @@ QString SqlFileName(const SqlQueryId queryId)
 }
 }
 
-QString SystemData::Sql(const SqlQueryId queryId)
+QString SystemData::sql(const SqlQueryId kQueryId)
 {
     QFile file(QStringLiteral(SYSTEM_DATA_DIRECTORY) + QStringLiteral("/resources/sql/")
-               + SqlFileName(queryId));
+               + sqlFileName(kQueryId));
     if (!file.open(QIODevice::ReadOnly | QIODevice::Text)) {
         return {};
     }
@@ -28,7 +28,7 @@ QString SystemData::Sql(const SqlQueryId queryId)
     return QString::fromUtf8(file.readAll()).trimmed();
 }
 
-QString SystemData::DefaultDatabasePath()
+QString SystemData::defaultDatabasePath()
 {
     return QStringLiteral(SYSTEM_DATA_DIRECTORY) + QStringLiteral("/sysdb/system_data.sqlite");
 }
