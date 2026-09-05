@@ -1,0 +1,170 @@
+QMainWindow,
+QDialog,
+QWidget#user_page,
+QWidget#main,
+QWidget#personal,
+QWidget#login {
+    background-color: #fafafa;
+    color: #1d1b20;
+}
+
+QLabel,
+QPushButton,
+QLineEdit,
+QTextEdit,
+QPlainTextEdit,
+QCheckBox,
+QRadioButton,
+QGroupBox,
+QComboBox,
+QSpinBox,
+QDoubleSpinBox,
+QTimeEdit,
+QDateEdit,
+QTableView,
+QListView,
+QTreeView,
+QMenu,
+QHeaderView::section {
+    color: #1d1b20;
+}
+
+QGroupBox {
+    border: none;
+    background-color: transparent;
+}
+
+QListView {
+    background-color: transparent;
+    border: none;
+    color: #1d1b20;
+}
+
+QListView::item {
+    background-color: transparent;
+}
+
+QComboBox {
+    background-color: #ffffff;
+    padding-right: 38px;
+}
+
+QComboBox::drop-down {
+    subcontrol-origin: padding;
+    subcontrol-position: top right;
+    width: 34px;
+    border: none;
+    background: transparent;
+}
+
+QComboBox::down-arrow {
+    image: url(:/icons/light/combo_down.svg);
+    width: 14px;
+    height: 14px;
+}
+
+QComboBox QAbstractItemView {
+    background-color: #ffffff;
+    color: #1d1b20;
+    border: 1px solid #d9e1ea;
+    selection-background-color: #e8f2fc;
+    selection-color: #1d1b20;
+    outline: none;
+}
+
+QComboBox QAbstractItemView::item {
+    background-color: #ffffff;
+}
+
+QLabel#label_clientname,
+QLabel#label {
+    color: #1d1b20;
+    background-color: transparent;
+    font: 700 21pt "JetBrains Mono";
+}
+
+QPushButton#pushButton_settings,
+QPushButton#pushButton_notifications,
+QPushButton#pushButton_logout {
+    background-color: #fafafa;
+    border: 0;
+    border-radius: 17px;
+}
+
+QPushButton#pushButton_login,
+QPushButton#pushButton_registration {
+    background-color: #fafafa;
+    color: #140f10;
+    font: 16pt "JetBrains Mono";
+    border: none;
+    border-radius: 12px;
+}
+
+QLineEdit#lineEdit_login,
+QLineEdit#lineEdit_password {
+    color: #1d1b20;
+    background-color: #fafafa;
+    border: none;
+    border-radius: 13px;
+    font: 16pt "JetBrains Mono";
+    padding-left: 27px;
+}
+
+QLineEdit#lineEdit_login:focus,
+QLineEdit#lineEdit_password:focus {
+    border: 2px solid #140f10;
+}
+
+QPushButton#pushButton_back,
+QPushButton#pushButton_info,
+QPushButton#pushButton_test_drive,
+QPushButton#pushButton_to_pay {
+    background-color: transparent;
+    color: #1d1b20;
+    border: none;
+    border-radius: 18px;
+    font: 14pt "JetBrains Mono";
+}
+
+QPushButton#pushButton_order {
+    background-color: #ff6b35;
+    color: #ffffff;
+    border: none;
+    border-radius: 11px;
+    font: 14pt "JetBrains Mono";
+}
+
+QPushButton#pushButton_order:hover {
+    background-color: #e55a2b;
+}
+
+QLabel#label_name {
+    color: #1d1b20;
+    background-color: transparent;
+    font: 700 26pt "JetBrains Mono";
+}
+
+QLabel#label_price {
+    color: #1d1b20;
+    background-color: transparent;
+    font: 500 19pt "JetBrains Mono";
+}
+
+QLabel#label_car_image {
+    background-color: transparent;
+    border: none;
+}
+
+QPushButton#pushButton_next_left,
+QPushButton#pushButton_next_right {
+    background-color: transparent;
+    color: #1d1b20;
+    border: none;
+    border-radius: 25px;
+    font: 28pt "JetBrains Mono";
+}
+
+QPushButton#pushButton_next_left:pressed,
+QPushButton#pushButton_next_right:pressed {
+    border: 2px solid #1d1b20;
+}

@@ -1,0 +1,41 @@
+#pragma once
+
+#ifndef NOTIFICATIONS_CONTROLLER_H
+#define NOTIFICATIONS_CONTROLLER_H
+
+#include <QObject>
+#include <QScopedPointer>
+#include <QSharedPointer>
+
+#include "NotificationsHandler.h"
+
+class DatabaseHandler;
+class QWidget;
+
+/*!
+ * \brief Класс, предоставляющий сервисы для работы с уведомлениями
+ */
+class NotificationsController : public QObject
+{
+    Q_OBJECT
+public:
+    explicit NotificationsController(QObject* parent = nullptr);
+
+    /*!
+     * \brief Устанавливает зависимости
+     * \param database - указатель на объект DatabaseHandler
+     */
+    void setDependencies(const QSharedPointer<DatabaseHandler>& database);
+    /*!
+     * \brief Отображает уведомления для пользователя
+     * \param userId - ID пользователя
+     * \param parent - владелец диалога уведомлений
+     */
+    void showForUser(int userId, QWidget* parent);
+
+private:
+    QSharedPointer<DatabaseHandler> m_database;
+    QScopedPointer<NotificationsHandler> m_handler;
+};
+
+#endif // NOTIFICATIONS_CONTROLLER_H

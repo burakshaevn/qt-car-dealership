@@ -15,16 +15,132 @@ set(CMAKE_CXX_STANDARD_REQUIRED ON)
 # Find packages
 find_package(QT NAMES Qt6 Qt5 REQUIRED COMPONENTS Widgets Sql)
 find_package(Qt${QT_VERSION_MAJOR} REQUIRED COMPONENTS Widgets Sql)
-# find_package(PostgreSQL REQUIRED)
 
-# Если не находит PostgreSQL, можно явно указать путь:
-set(PostgreSQL_ADDITIONAL_VERSIONS "18")
-set(PostgreSQL_ROOT "C:/.dev/PostgreSQL/18")
+# SQL statements and the bundled initial SQLite database are kept in a
+# dedicated target so application code does not contain database dialect text.
+add_subdirectory(system_data)
 
-# Add subdirectories for MVC components
-add_subdirectory(src/model)
-add_subdirectory(src/controller)
-add_subdirectory(src/view)
+# Model
+set(MODEL_DIR ${CMAKE_CURRENT_SOURCE_DIR}/src/model)
+set(MODEL_SOURCES
+    ${MODEL_DIR}/src/ContractTemplates.cpp
+    ${MODEL_DIR}/src/AdminTableModel.cpp
+    ${MODEL_DIR}/src/DatabaseHandler.cpp
+    ${MODEL_DIR}/src/AdminRecordEditDialog.cpp
+    ${MODEL_DIR}/src/FloatingNavigationWidget.cpp
+    ${MODEL_DIR}/src/ProductListModel.cpp
+    ${MODEL_DIR}/src/PurchaseMethodListModel.cpp
+    ${MODEL_DIR}/src/ProductRepository.cpp
+    ${MODEL_DIR}/src/AdminTableWidget.cpp
+    ${MODEL_DIR}/src/ThemeStyleProvider.cpp
+)
+set(MODEL_HEADERS
+    ${MODEL_DIR}/include/ContractTemplates.h
+    ${MODEL_DIR}/include/AdminTableModel.h
+    ${MODEL_DIR}/include/DatabaseHandler.h
+    ${MODEL_DIR}/include/UserRole.h
+    ${MODEL_DIR}/include/UserInfo.h
+    ${MODEL_DIR}/include/PriceFormatter.h
+    ${MODEL_DIR}/include/AdminRecordEditDialog.h
+    ${MODEL_DIR}/include/FloatingNavigationWidget.h
+    ${MODEL_DIR}/include/ProductListModel.h
+    ${MODEL_DIR}/include/PurchaseMethod.h
+    ${MODEL_DIR}/include/PurchaseMethodListModel.h
+    ${MODEL_DIR}/include/ProductRepository.h
+    ${MODEL_DIR}/include/AdminTableWidget.h
+    ${MODEL_DIR}/include/ThemeStyleProvider.h
+)
+
+add_library(model ${MODEL_SOURCES} ${MODEL_HEADERS})
+
+target_compile_definitions(model PUBLIC
+    PROJECT_ROOT_DIR="${CMAKE_SOURCE_DIR}"
+)
+
+target_include_directories(model PUBLIC
+    ${MODEL_DIR}/include
+    ${PostgreSQL_INCLUDE_DIR}
+)
+
+target_link_libraries(model PUBLIC
+    Qt${QT_VERSION_MAJOR}::Core
+    Qt${QT_VERSION_MAJOR}::Widgets
+    Qt${QT_VERSION_MAJOR}::Sql
+    system_data
+    ${PostgreSQL_LIBRARY}
+)
+
+# Controller ---
+set(VIEW_DIR ${CMAKE_CURRENT_SOURCE_DIR}/src/view)
+set(CONTROLLER_DIR ${CMAKE_CURRENT_SOURCE_DIR}/src/controller)
+set(CONTROLLER_SOURCES
+    ${CONTROLLER_DIR}/src/AppServices.cpp
+    ${CONTROLLER_DIR}/src/UserSession.cpp
+    ${CONTROLLER_DIR}/src/MainWindow.cpp
+    ${CONTROLLER_DIR}/src/CatalogController.cpp
+    ${CONTROLLER_DIR}/src/ProfileController.cpp
+    ${CONTROLLER_DIR}/src/AuthController.cpp
+    ${CONTROLLER_DIR}/src/NotificationsController.cpp
+    ${CONTROLLER_DIR}/src/AdminTableController.cpp
+    ${CONTROLLER_DIR}/src/PurchaseMethodsController.cpp
+    ${CONTROLLER_DIR}/src/PurchaseRequestStrategy.cpp
+    ${CONTROLLER_DIR}/src/SelectedCarActionStrategy.cpp
+    ${CONTROLLER_DIR}/src/SettingsForm.cpp
+    ${CONTROLLER_DIR}/src/NotificationsHandler.cpp
+    ${CONTROLLER_DIR}/include/AppServices.h
+    ${CONTROLLER_DIR}/include/UserSession.h
+    ${CONTROLLER_DIR}/include/MainWindow.h
+    ${CONTROLLER_DIR}/include/CatalogController.h
+    ${CONTROLLER_DIR}/include/ProfileController.h
+    ${CONTROLLER_DIR}/include/AuthController.h
+    ${CONTROLLER_DIR}/include/NotificationsController.h
+    ${CONTROLLER_DIR}/include/AdminTableController.h
+    ${CONTROLLER_DIR}/include/PurchaseMethodsController.h
+    ${CONTROLLER_DIR}/include/PurchaseRequestStrategy.h
+    ${CONTROLLER_DIR}/include/SelectedCarActionStrategy.h
+    ${CONTROLLER_DIR}/include/SettingsForm.h
+    ${CONTROLLER_DIR}/include/NotificationsHandler.h
+)
+add_library(controller STATIC ${CONTROLLER_SOURCES})
+target_include_directories(controller PUBLIC
+    ${CONTROLLER_DIR}/include
+    ${MODEL_DIR}/include
+    ${VIEW_DIR}/include
+)
+target_link_libraries(controller PUBLIC
+    Qt${QT_VERSION_MAJOR}::Core
+    Qt${QT_VERSION_MAJOR}::Widgets
+    Qt${QT_VERSION_MAJOR}::Sql
+    model
+    view
+)
+
+# --- View (исходники из папки src/view) ---
+set(VIEW_SOURCES
+    ${VIEW_DIR}/MainWindow.ui
+    ${VIEW_DIR}/notifications.ui
+    ${VIEW_DIR}/PurchaseRequestForm.ui
+    ${VIEW_DIR}/RentalRequestForm.ui
+    ${VIEW_DIR}/TestDriveRequestForm.ui
+    ${VIEW_DIR}/CreditRequestForm.ui
+    ${VIEW_DIR}/src/ProductCardDelegate.cpp
+    ${VIEW_DIR}/src/PurchaseMethodCardDelegate.cpp
+)
+set(VIEW_HEADERS
+    ${VIEW_DIR}/include/ProductCardDelegate.h
+    ${VIEW_DIR}/include/PurchaseMethodCardDelegate.h
+)
+add_library(view STATIC ${VIEW_SOURCES} ${VIEW_HEADERS})
+target_include_directories(view PUBLIC
+    ${VIEW_DIR}
+    ${VIEW_DIR}/include
+    ${MODEL_DIR}/include
+)
+target_link_libraries(view PUBLIC
+    Qt${QT_VERSION_MAJOR}::Core
+    Qt${QT_VERSION_MAJOR}::Widgets
+    Qt${QT_VERSION_MAJOR}::Sql
+)
 
 # Add tests (optional - only if testing is enabled)
 option(BUILD_TESTS "Build tests" ON)
@@ -71,10 +187,6 @@ target_link_libraries(qt-car-dealership PRIVATE
     view
 )
 
-# PostgreSQL
-target_include_directories(qt-car-dealership PRIVATE ${PostgreSQL_INCLUDE_DIR})
-target_link_libraries(qt-car-dealership PRIVATE ${PostgreSQL_LIBRARY})
-
 # Qt for iOS sets MACOSX_BUNDLE_GUI_IDENTIFIER automatically since Qt 6.1.
 # If you are developing for iOS or macOS you should consider setting an
 # explicit, fixed bundle identifier manually though.
@@ -99,4 +211,3 @@ install(TARGETS qt-car-dealership
 if(QT_VERSION_MAJOR EQUAL 6)
     qt_finalize_executable(qt-car-dealership)
 endif()
-

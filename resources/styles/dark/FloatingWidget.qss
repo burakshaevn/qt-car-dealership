@@ -1,0 +1,4 @@
+QWidget {
+    background-color: #252b34;
+    border-radius: 39px;
+}

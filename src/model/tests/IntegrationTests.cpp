@@ -6,7 +6,7 @@
 #include <QSharedPointer>
 #include "../include/database_handler.h"
 #include "../../controller/include/notifications_handler.h"
-#include "../include/contract_templates.h"
+#include "../include/ContractTemplates.h"
 
 class IntegrationTest : public ::testing::Test {
 protected:
