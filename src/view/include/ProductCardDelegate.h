@@ -24,8 +24,8 @@ public:
     /// Card size for a view of \a viewportWidth with \a spacing between cards.
     [[nodiscard]] static QSize cardSize(int viewportWidth, int spacing);
 
-    static constexpr int kMinCardWidth = 280;
-    static constexpr int kCardHeight = 300;
+    static constexpr int kMinCardWidth = 270;
+    static constexpr int kCardHeight = 336;
 };
 
 #endif // PRODUCT_CARD_DELEGATE_H

@@ -1,9 +1,9 @@
 #include "pages/NotificationsPage.h"
 
-#include "ThemeManager.h"
 #include "UiKit.h"
 
 #include <QButtonGroup>
+#include <QFrame>
 #include <QHBoxLayout>
 #include <QLabel>
 #include <QLocale>
@@ -13,59 +13,38 @@
 #include <QVBoxLayout>
 #include <algorithm>
 
-namespace {
-
-QString iconForType(const QString& type)
-{
-    static const QHash<QString, QString> kIcons = {
-        {QStringLiteral("purchase"), QStringLiteral("cart")},
-        {QStringLiteral("order"), QStringLiteral("car")},
-        {QStringLiteral("loan"), QStringLiteral("wallet")},
-        {QStringLiteral("insurance"), QStringLiteral("shield")},
-        {QStringLiteral("rental"), QStringLiteral("key")},
-        {QStringLiteral("test_drive"), QStringLiteral("steering")},
-        {QStringLiteral("service"), QStringLiteral("settings")},
-    };
-    return kIcons.value(type, QStringLiteral("inbox"));
-}
-
-} // namespace
 
 NotificationsPage::NotificationsPage(QWidget* parent)
     : QWidget(parent)
     , m_filters(new QButtonGroup(this))
 {
     setObjectName(QStringLiteral("notificationsPage"));
-    ThemeManager& theme = ThemeManager::instance();
 
     auto* root = new QVBoxLayout(this);
-    root->setContentsMargins(36, 30, 36, 0);
+    root->setContentsMargins(56, 40, 56, 0);
     root->setSpacing(0);
 
     auto* header = new QHBoxLayout;
     auto* titles = new QVBoxLayout;
-    titles->setSpacing(4);
+    titles->setSpacing(10);
+    titles->addWidget(UiKit::overline(tr("Заявки и договоры"), this));
     titles->addWidget(UiKit::label(tr("Уведомления"), "h1", this));
-    titles->addWidget(UiKit::label(tr("Статусы ваших заявок и договоры"), "muted", this));
     header->addLayout(titles);
     header->addStretch(1);
+    header->setSpacing(24);
 
     m_sort = UiKit::button(tr("Сначала новые"), "ghost", this);
     m_sort->setObjectName(QStringLiteral("btn_sort_by_data"));
-    m_sort->setIconSize(QSize(18, 18));
-    theme.bindIcon(m_sort, QStringLiteral("sort"), QStringLiteral("textSecondary"));
-    header->addWidget(m_sort, 0, Qt::AlignVCenter);
+    header->addWidget(m_sort, 0, Qt::AlignBottom);
 
-    auto* markAll = UiKit::button(tr("Прочитать все"), nullptr, this);
+    auto* markAll = UiKit::button(tr("Отметить всё прочитанным"), "ghost", this);
     markAll->setObjectName(QStringLiteral("btn_mark_all_read"));
-    markAll->setIconSize(QSize(18, 18));
-    theme.bindIcon(markAll, QStringLiteral("done_all"), QStringLiteral("text"));
-    header->addWidget(markAll, 0, Qt::AlignVCenter);
+    header->addWidget(markAll, 0, Qt::AlignBottom);
     root->addLayout(header);
-    root->addSpacing(22);
+    root->addSpacing(28);
 
     auto* chips = new QHBoxLayout;
-    chips->setSpacing(8);
+    chips->setSpacing(28);
     const QList<QPair<NotificationFilter, QString>> kFilters = {
         {NotificationFilter::All, tr("Все")},
         {NotificationFilter::Unread, tr("Непрочитанные")},
@@ -74,7 +53,7 @@ NotificationsPage::NotificationsPage(QWidget* parent)
         {NotificationFilter::LastMonth, tr("За месяц")},
     };
     for (const auto& [filter, title] : kFilters) {
-        auto* chip = UiKit::button(title, "chip", this);
+        auto* chip = UiKit::button(title, "tab", this);
         chip->setCheckable(true);
         m_filters->addButton(chip, static_cast<int>(filter));
         chips->addWidget(chip);
@@ -82,7 +61,7 @@ NotificationsPage::NotificationsPage(QWidget* parent)
     m_filters->button(static_cast<int>(NotificationFilter::All))->setChecked(true);
     chips->addStretch(1);
     root->addLayout(chips);
-    root->addSpacing(18);
+    root->addWidget(UiKit::divider(this));
 
     m_stack = new QStackedWidget(this);
 
@@ -93,32 +72,19 @@ NotificationsPage::NotificationsPage(QWidget* parent)
     auto* listHost = new QWidget(scroll);
     m_list = new QVBoxLayout(listHost);
     m_list->setContentsMargins(0, 0, 4, 24);
-    m_list->setSpacing(10);
+    m_list->setSpacing(0);
     m_list->addStretch(1);
     scroll->setWidget(listHost);
     m_stack->addWidget(scroll);
 
     auto* empty = new QWidget(m_stack);
     auto* emptyLayout = new QVBoxLayout(empty);
-    emptyLayout->addStretch(1);
-    auto* emptyIcon = new QLabel(empty);
-    emptyIcon->setAlignment(Qt::AlignCenter);
-    auto refreshEmptyIcon = [emptyIcon] {
-        const ThemeManager& t = ThemeManager::instance();
-        emptyIcon->setPixmap(t.tintedIcon(QStringLiteral("inbox"), t.color(QStringLiteral("textMuted")), QSize(48, 48))
-                                 .pixmap(QSize(48, 48)));
-    };
-    refreshEmptyIcon();
-    connect(&theme, &ThemeManager::themeChanged, emptyIcon, refreshEmptyIcon);
-    emptyLayout->addWidget(emptyIcon);
-    emptyLayout->addSpacing(12);
-    auto* emptyTitle = UiKit::label(tr("Уведомлений нет"), "h3", empty);
-    emptyTitle->setAlignment(Qt::AlignCenter);
+    emptyLayout->setContentsMargins(0, 32, 0, 0);
+    auto* emptyTitle = UiKit::label(tr("Уведомлений нет"), "h2", empty);
     emptyLayout->addWidget(emptyTitle);
     auto* emptyText = UiKit::label(tr("Когда статус заявки изменится, вы увидите это здесь."), "muted", empty);
-    emptyText->setAlignment(Qt::AlignCenter);
     emptyLayout->addWidget(emptyText);
-    emptyLayout->addStretch(2);
+    emptyLayout->addStretch(3);
     m_stack->addWidget(empty);
 
     root->addWidget(m_stack, 1);
@@ -165,48 +131,42 @@ void NotificationsPage::rebuild()
 
 QWidget* NotificationsPage::createCard(const NotificationItem& item)
 {
-    const ThemeManager& theme = ThemeManager::instance();
+    auto* row = new QFrame;
+    row->setObjectName(QStringLiteral("feedRow"));
+    row->setProperty("unread", !item.Source.IsRead);
+    auto* layout = new QHBoxLayout(row);
+    layout->setContentsMargins(item.Source.IsRead ? 0 : 16, 20, 0, 20);
+    layout->setSpacing(32);
 
-    auto* card = UiKit::card();
-    card->setProperty("unread", !item.Source.IsRead);
-    auto* layout = new QHBoxLayout(card);
-    layout->setContentsMargins(18, 16, 18, 16);
-    layout->setSpacing(16);
-
-    auto* icon = new QLabel(card);
-    icon->setObjectName(QStringLiteral("tileIcon"));
-    icon->setFixedSize(44, 44);
-    icon->setAlignment(Qt::AlignCenter);
-    icon->setPixmap(theme.tintedIcon(iconForType(item.Source.Type), theme.color(QStringLiteral("accent")), QSize(22, 22))
-                        .pixmap(QSize(22, 22)));
-    layout->addWidget(icon, 0, Qt::AlignTop);
+    // Date column: day set in the display face, month and time underneath.
+    auto* date = new QVBoxLayout;
+    date->setSpacing(2);
+    if (item.Source.Date.isValid()) {
+        const QLocale kLocale;
+        date->addWidget(UiKit::label(kLocale.toString(item.Source.Date, QStringLiteral("d MMM")), "h2", row));
+        date->addWidget(UiKit::label(kLocale.toString(item.Source.Date, QStringLiteral("yyyy, HH:mm")), "caption", row));
+    }
+    date->addStretch(1);
+    auto* dateHost = new QWidget(row);
+    dateHost->setFixedWidth(120);
+    dateHost->setLayout(date);
+    date->setContentsMargins(0, 0, 0, 0);
+    layout->addWidget(dateHost, 0, Qt::AlignTop);
 
     auto* text = new QVBoxLayout;
-    text->setSpacing(4);
-    auto* titleRow = new QHBoxLayout;
-    titleRow->setSpacing(10);
-    titleRow->addWidget(UiKit::label(item.Title, "h3", card));
-    titleRow->addWidget(UiKit::badge(item.StatusText, static_cast<UiKit::Tone>(item.StatusTone), card));
-    titleRow->addStretch(1);
-    text->addLayout(titleRow);
-
-    auto* subtitle = UiKit::label(item.Subtitle, "muted", card);
+    text->setSpacing(6);
+    text->addWidget(UiKit::badge(item.StatusText, static_cast<UiKit::Tone>(item.StatusTone), row));
+    text->addWidget(UiKit::label(item.Title, "h3", row));
+    auto* subtitle = UiKit::label(item.Subtitle, "muted", row);
     subtitle->setWordWrap(true);
     text->addWidget(subtitle);
-
-    if (item.Source.Date.isValid()) {
-        text->addWidget(UiKit::label(QLocale().toString(item.Source.Date, QStringLiteral("d MMMM yyyy, HH:mm")),
-                                     "caption", card));
-    }
     layout->addLayout(text, 1);
 
     if (item.CanDownloadContract) {
-        auto* download = UiKit::button(tr("Договор"), nullptr, card);
-        download->setIconSize(QSize(16, 16));
-        const_cast<ThemeManager&>(theme).bindIcon(download, QStringLiteral("file_text"), QStringLiteral("text"));
+        auto* download = UiKit::button(tr("Скачать договор"), "link", row);
         const Notification kSource = item.Source;
         connect(download, &QPushButton::clicked, this, [this, kSource] { emit contractRequested(kSource); });
-        layout->addWidget(download, 0, Qt::AlignVCenter);
+        layout->addWidget(download, 0, Qt::AlignTop);
     }
-    return card;
+    return row;
 }

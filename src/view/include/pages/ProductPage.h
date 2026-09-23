@@ -48,6 +48,7 @@ private:
     QPushButton* m_prev = nullptr;
     QPushButton* m_next = nullptr;
     QLabel* m_counter = nullptr;
+    QLabel* m_type = nullptr;
     QLabel* m_name = nullptr;
     QLabel* m_availability = nullptr;
     QLabel* m_price = nullptr;

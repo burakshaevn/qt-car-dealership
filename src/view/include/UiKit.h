@@ -3,7 +3,9 @@
 #ifndef UI_KIT_H
 #define UI_KIT_H
 
+#include <QColor>
 #include <QDialog>
+#include <QIcon>
 #include <QString>
 #include <functional>
 
@@ -27,7 +29,12 @@ QLabel* label(const QString& text, const char* role = nullptr, QWidget* parent =
 QPushButton* button(const QString& text, const char* type = nullptr, QWidget* parent = nullptr);
 QFrame* card(QWidget* parent = nullptr);
 QFrame* divider(QWidget* parent = nullptr);
+/// Status marker: small caps text with a short coloured rule on the left.
 QLabel* badge(const QString& text, Tone tone, QWidget* parent = nullptr);
+/// Small, letter-spaced upper-case caption above headings ("КАБРИОЛЕТ").
+QLabel* overline(const QString& text, QWidget* parent = nullptr);
+/// Applies small-caps styling (upper case + tracking) to an existing label.
+void makeOverline(QLabel* label);
 
 void setRole(QWidget* widget, const char* role);
 void setType(QWidget* widget, const char* type);
@@ -36,11 +43,11 @@ void setTone(QLabel* badge, Tone tone);
 /// Caption + input stacked vertically.
 QWidget* field(const QString& caption, QWidget* input, QWidget* parent = nullptr);
 
-/// Adds a drop shadow suitable for floating surfaces.
-void elevate(QWidget* widget, int blurRadius = 32, int offsetY = 8);
+/// Russian plural form: plural(5, "автомобиль", "автомобиля", "автомобилей").
+QString plural(qint64 count, const QString& one, const QString& few, const QString& many);
 
-/// Two-letter monogram for avatars.
-QString initials(const QString& fullName);
+/// Square paint sample used next to colour names; empty icon for an invalid colour.
+QIcon swatchIcon(const QColor& color, int size = 14);
 
 } // namespace UiKit
 

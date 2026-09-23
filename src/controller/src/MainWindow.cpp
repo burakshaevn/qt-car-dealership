@@ -15,8 +15,10 @@
 #include "pages/NotificationsPage.h"
 #include "pages/ProductPage.h"
 #include "pages/ProfilePage.h"
+#include "pages/TopBar.h"
 
 #include <QHBoxLayout>
+#include <QVBoxLayout>
 #include <QMessageBox>
 #include <QStackedWidget>
 
@@ -32,7 +34,7 @@ MainWindow::MainWindow(AppServices& services, QWidget* parent)
     , m_auth(new AuthController(services))
     , m_requests(new RequestController(services))
 {
-    setWindowTitle(tr("Mercedes-Benz — автосалон"));
+    setWindowTitle(tr("Mercedes-Benz. Автосалон"));
     setWindowIcon(ThemeManager::instance().icon(QStringLiteral("logo")));
     setMinimumSize(1100, 720);
     resize(1320, 840);
@@ -104,6 +106,7 @@ void MainWindow::onLogout()
     }
     m_workspace = nullptr;
     m_sidebar = nullptr;
+    m_topBar = nullptr;
     m_pages = nullptr;
     m_catalogPage = nullptr;
     m_productPage = nullptr;
@@ -117,17 +120,16 @@ void MainWindow::startCustomerSession()
     const UserSession& session = m_services.session();
 
     m_workspace = new QWidget(m_root);
-    auto* layout = new QHBoxLayout(m_workspace);
+    auto* layout = new QVBoxLayout(m_workspace);
     layout->setContentsMargins(0, 0, 0, 0);
     layout->setSpacing(0);
 
-    m_sidebar = new NavigationSidebar(m_workspace);
-    m_sidebar->addCaption(tr("Меню"));
-    m_sidebar->addSection(Section::kCatalog, tr("Каталог"), QStringLiteral("grid"));
-    m_sidebar->addSection(Section::kProfile, tr("Личный кабинет"), QStringLiteral("user"));
-    m_sidebar->addSection(Section::kNotifications, tr("Уведомления"), QStringLiteral("bell"));
-    m_sidebar->setUser(session.name(), session.email());
-    layout->addWidget(m_sidebar);
+    m_topBar = new TopBar(m_workspace);
+    m_topBar->addSection(Section::kCatalog, tr("Модельный ряд"));
+    m_topBar->addSection(Section::kProfile, tr("Личный кабинет"));
+    m_topBar->addSection(Section::kNotifications, tr("Уведомления"));
+    m_topBar->setUser(session.name(), session.email());
+    layout->addWidget(m_topBar);
 
     m_pages = new QStackedWidget(m_workspace);
     m_catalogPage = new CatalogPage(m_pages);
@@ -144,12 +146,12 @@ void MainWindow::startCustomerSession()
     m_notifications.reset(new NotificationsController(m_services, m_notificationsPage));
     m_profilePage->setPurchasedModel(&m_purchasedModel);
 
-    connect(m_sidebar, &NavigationSidebar::sectionSelected, this, &MainWindow::navigate);
-    connect(m_sidebar, &NavigationSidebar::settingsRequested, this, &MainWindow::openSettings);
-    connect(m_sidebar, &NavigationSidebar::logoutRequested, this, &MainWindow::onLogout);
+    connect(m_topBar, &TopBar::sectionSelected, this, &MainWindow::navigate);
+    connect(m_topBar, &TopBar::settingsRequested, this, &MainWindow::openSettings);
+    connect(m_topBar, &TopBar::logoutRequested, this, &MainWindow::onLogout);
     connect(m_catalog.get(), &CatalogController::productSelected, this, &MainWindow::showProduct);
     connect(m_notifications.get(), &NotificationsController::unreadCountChanged, this,
-            [this](const int count) { m_sidebar->setBadge(Section::kNotifications, count); });
+            [this](const int count) { m_topBar->setBadge(Section::kNotifications, count); });
 
     connect(m_productPage, &ProductPage::backRequested, this, [this] { navigate(Section::kCatalog); });
     connect(m_productPage, &ProductPage::checkoutRequested, this,
@@ -192,11 +194,10 @@ void MainWindow::startAdminSession()
     // Sections come from sys_admin_tables: requests first, then reference data.
     const QList<AdminTableInfo> kTables = m_admin->tables();
     for (const bool kRequests : {true, false}) {
-        m_sidebar->addCaption(kRequests ? tr("Заявки") : tr("Данные"));
+        m_sidebar->addCaption(kRequests ? tr("Заявки") : tr("Справочники"));
         for (const AdminTableInfo& info : kTables) {
             if (info.IsRequest == kRequests) {
-                m_sidebar->addSection(info.TableName, info.DisplayName,
-                                      kRequests ? QStringLiteral("inbox") : QStringLiteral("table"));
+                m_sidebar->addSection(info.TableName, info.DisplayName, QString());
             }
         }
     }
@@ -219,7 +220,7 @@ void MainWindow::navigate(const QString& section)
     if (!m_pages) {
         return;
     }
-    m_sidebar->setCurrentSection(section);
+    m_topBar->setCurrentSection(section);
     if (section == Section::kCatalog) {
         m_pages->setCurrentWidget(m_catalogPage);
     } else if (section == Section::kProfile) {
@@ -242,7 +243,7 @@ void MainWindow::showProduct(const ProductInfo& product)
         }
     }
     m_productPage->setVariants(kVariants.isEmpty() ? QList<ProductInfo>{product} : kVariants, current);
-    m_sidebar->setCurrentSection(Section::kCatalog);
+    m_topBar->setCurrentSection(Section::kCatalog);
     m_pages->setCurrentWidget(m_productPage);
 }
 
@@ -264,8 +265,8 @@ void MainWindow::refreshProfile()
 
 void MainWindow::refreshBadges()
 {
-    if (m_sidebar && m_notifications) {
-        m_sidebar->setBadge(Section::kNotifications, m_notifications->unreadCount());
+    if (m_topBar && m_notifications) {
+        m_topBar->setBadge(Section::kNotifications, m_notifications->unreadCount());
     }
 }
 
@@ -273,7 +274,12 @@ void MainWindow::openSettings()
 {
     SettingsForm form(m_services, this);
     connect(&form, &SettingsForm::profileSaved, this, [this](const QString& fullName, const QString& email) {
-        m_sidebar->setUser(fullName, email);
+        if (m_topBar) {
+            m_topBar->setUser(fullName, email);
+        }
+        if (m_sidebar) {
+            m_sidebar->setUser(fullName, email);
+        }
         if (m_profilePage) {
             m_profilePage->setUser(fullName, email);
         }

@@ -20,99 +20,101 @@ LoginPage::LoginPage(QWidget* parent)
     root->setContentsMargins(0, 0, 0, 0);
     root->setSpacing(0);
 
-    // ---- Hero panel
+    // ---- Left: the car on a plain plate with an editorial caption.
     auto* heroPanel = new QFrame(this);
-    heroPanel->setObjectName(QStringLiteral("loginHero"));
+    heroPanel->setObjectName(QStringLiteral("plate"));
     auto* heroLayout = new QVBoxLayout(heroPanel);
     heroLayout->setContentsMargins(56, 48, 56, 48);
     heroLayout->setSpacing(0);
 
     auto* wordmark = new QLabel(heroPanel);
     wordmark->setObjectName(QStringLiteral("wordmark"));
-    wordmark->setPixmap(ThemeManager::instance().icon(QStringLiteral("mercedez_benz")).pixmap(QSize(230, 27)));
     heroLayout->addWidget(wordmark, 0, Qt::AlignLeft);
     heroLayout->addStretch(1);
 
     m_hero = new QLabel(heroPanel);
     m_hero->setAlignment(Qt::AlignCenter);
-    m_hero->setMinimumHeight(220);
+    m_hero->setMinimumHeight(240);
     m_hero->setSizePolicy(QSizePolicy::Ignored, QSizePolicy::Expanding);
     m_hero->installEventFilter(this);
-    heroLayout->addWidget(m_hero, 3);
-    heroLayout->addSpacing(24);
-
-    auto* heroTitle = UiKit::label(tr("Автомобиль мечты —\nв несколько кликов"), "h1", heroPanel);
-    heroLayout->addWidget(heroTitle);
-    heroLayout->addSpacing(10);
-    auto* heroText = UiKit::label(
-        tr("Каталог в наличии и под заказ, кредит, аренда, страхование и тест-драйв — всё в одном месте."),
-        "subtitle", heroPanel);
-    heroText->setWordWrap(true);
-    heroText->setMaximumWidth(520);
-    heroLayout->addWidget(heroText);
+    heroLayout->addWidget(m_hero, 4);
     heroLayout->addStretch(1);
+
+    auto* caption = new QHBoxLayout;
+    caption->setSpacing(0);
+    auto* heroTitle = UiKit::label(tr("Автосалон\nMercedes-Benz"), "display", heroPanel);
+    caption->addWidget(heroTitle, 0, Qt::AlignBottom);
+    caption->addStretch(1);
+    auto* heroText = UiKit::label(tr("Автомобили в наличии и под заказ.\nКредит, аренда, страхование, тест-драйв."),
+                                  "muted", heroPanel);
+    heroText->setAlignment(Qt::AlignRight | Qt::AlignBottom);
+    caption->addWidget(heroText, 0, Qt::AlignBottom);
+    heroLayout->addLayout(caption);
 
     root->addWidget(heroPanel, 3);
 
-    // ---- Form panel
+    // ---- Right: form without a card, aligned to a fixed column.
     auto* formPanel = new QWidget(this);
     auto* formOuter = new QVBoxLayout(formPanel);
-    formOuter->setContentsMargins(40, 40, 40, 40);
+    formOuter->setContentsMargins(64, 48, 64, 48);
     formOuter->addStretch(1);
 
-    auto* card = UiKit::card(formPanel);
-    card->setObjectName(QStringLiteral("loginCard"));
-    card->setMinimumWidth(380);
-    card->setMaximumWidth(420);
-    auto* form = new QVBoxLayout(card);
-    form->setContentsMargins(36, 36, 36, 32);
+    auto* column = new QWidget(formPanel);
+    column->setFixedWidth(340);
+    auto* form = new QVBoxLayout(column);
+    form->setContentsMargins(0, 0, 0, 0);
     form->setSpacing(0);
 
-    form->addWidget(UiKit::label(tr("Вход"), "h2", card));
-    form->addSpacing(6);
-    form->addWidget(UiKit::label(tr("Войдите по email или логину администратора"), "muted", card));
-    form->addSpacing(28);
+    form->addWidget(UiKit::overline(tr("Личный кабинет"), column));
+    form->addSpacing(10);
+    form->addWidget(UiKit::label(tr("Вход"), "h1", column));
+    form->addSpacing(32);
 
-    m_login = new QLineEdit(card);
+    m_login = new QLineEdit(column);
     m_login->setObjectName(QStringLiteral("lineEdit_login"));
-    m_login->setPlaceholderText(tr("name@example.com"));
     m_login->setClearButtonEnabled(true);
-    form->addWidget(UiKit::field(tr("Email или логин"), m_login, card));
-    form->addSpacing(16);
+    form->addWidget(UiKit::field(tr("Email или логин"), m_login, column));
+    form->addSpacing(18);
 
-    m_password = new QLineEdit(card);
+    m_password = new QLineEdit(column);
     m_password->setObjectName(QStringLiteral("lineEdit_password"));
     m_password->setEchoMode(QLineEdit::Password);
-    m_password->setPlaceholderText(tr("Пароль"));
-    form->addWidget(UiKit::field(tr("Пароль"), m_password, card));
+    form->addWidget(UiKit::field(tr("Пароль"), m_password, column));
 
-    m_error = UiKit::label({}, "error", card);
+    m_error = UiKit::label({}, "error", column);
     m_error->setWordWrap(true);
     m_error->hide();
     form->addSpacing(12);
     form->addWidget(m_error);
-    form->addSpacing(12);
+    form->addSpacing(16);
 
-    m_submit = UiKit::button(tr("Войти"), "primary", card);
+    m_submit = UiKit::button(tr("Войти"), "primary", column);
     m_submit->setObjectName(QStringLiteral("pushButton_login"));
-    m_submit->setMinimumHeight(44);
+    m_submit->setMinimumHeight(46);
     m_submit->setDefault(true);
     form->addWidget(m_submit);
-    form->addSpacing(18);
+    form->addSpacing(28);
+    form->addWidget(UiKit::divider(column));
+    form->addSpacing(16);
 
     auto* registerRow = new QHBoxLayout;
-    registerRow->setSpacing(4);
-    registerRow->addStretch(1);
-    registerRow->addWidget(UiKit::label(tr("Нет аккаунта?"), "muted", card));
-    auto* registerButton = UiKit::button(tr("Зарегистрироваться"), "link", card);
+    registerRow->setSpacing(8);
+    registerRow->addWidget(UiKit::label(tr("Впервые у нас?"), "muted", column));
+    auto* registerButton = UiKit::button(tr("Создать аккаунт"), "link", column);
     registerButton->setObjectName(QStringLiteral("pushButton_registration"));
     registerRow->addWidget(registerButton);
     registerRow->addStretch(1);
     form->addLayout(registerRow);
 
-    formOuter->addWidget(card, 0, Qt::AlignHCenter);
+    formOuter->addWidget(column, 0, Qt::AlignLeft);
     formOuter->addStretch(1);
     root->addWidget(formPanel, 2);
+
+    const auto refreshWordmark = [wordmark] {
+        wordmark->setPixmap(ThemeManager::instance().icon(QStringLiteral("mercedez_benz")).pixmap(QSize(200, 24)));
+    };
+    refreshWordmark();
+    connect(&ThemeManager::instance(), &ThemeManager::themeChanged, wordmark, refreshWordmark);
 
     connect(m_submit, &QPushButton::clicked, this, &LoginPage::submit);
     connect(m_login, &QLineEdit::returnPressed, m_password, qOverload<>(&QWidget::setFocus));
@@ -120,9 +122,6 @@ LoginPage::LoginPage(QWidget* parent)
     connect(registerButton, &QPushButton::clicked, this, &LoginPage::registrationRequested);
     connect(m_login, &QLineEdit::textChanged, this, [this] { showError({}); });
     connect(m_password, &QLineEdit::textChanged, this, [this] { showError({}); });
-    connect(&ThemeManager::instance(), &ThemeManager::themeChanged, this, [wordmark] {
-        wordmark->setPixmap(ThemeManager::instance().icon(QStringLiteral("mercedez_benz")).pixmap(QSize(230, 27)));
-    });
 }
 
 QString LoginPage::login() const
@@ -149,7 +148,7 @@ void LoginPage::updateHero()
         return;
     }
     const qreal kDpr = devicePixelRatioF();
-    const QSize kBox = QSize(qMin(m_hero->width(), 760), qMin(m_hero->height(), 420)) * kDpr;
+    const QSize kBox = QSize(qMin(m_hero->width(), 900), qMin(m_hero->height(), 480)) * kDpr;
     QPixmap scaled = kSource.scaled(kBox, Qt::KeepAspectRatio, Qt::SmoothTransformation);
     scaled.setDevicePixelRatio(kDpr);
     m_hero->setPixmap(scaled);

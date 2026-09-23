@@ -36,7 +36,7 @@ protected:
     bool eventFilter(QObject* watched, QEvent* event) override;
 
 private:
-    void addServiceTile(QGridLayout* grid, int column, PurchaseMethod method,
+    void addServiceTile(QGridLayout* grid, int row, PurchaseMethod method,
                         const QString& icon, const QString& title, const QString& text);
     void updatePurchasedHeight();
 

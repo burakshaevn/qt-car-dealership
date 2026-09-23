@@ -71,15 +71,18 @@ QString ProductRepository::resolveImagePath(const QString& storedPath)
 
 ProductInfo ProductRepository::fromRow(const QVariantMap& row)
 {
-    return ProductInfo(row.value("id").toInt(),
-                       row.value("name").toString(),
-                       row.value("color").toString(),
-                       row.value("price").toLongLong(),
-                       row.value("description").toString(),
-                       resolveImagePath(row.value("image_url").toString()),
-                       row.value("type_id").toInt(),
-                       row.value("trim").toString(),
-                       row.value("stock_qty").toInt());
+    ProductInfo info(row.value("id").toInt(),
+                     row.value("name").toString(),
+                     row.value("color").toString(),
+                     row.value("price").toLongLong(),
+                     row.value("description").toString(),
+                     resolveImagePath(row.value("image_url").toString()),
+                     row.value("type_id").toInt(),
+                     row.value("trim").toString(),
+                     row.value("stock_qty").toInt());
+    info.TypeName = row.value("type_name").toString();
+    info.ColorHex = row.value("color_hex").toString();
+    return info;
 }
 
 void ProductRepository::clear()

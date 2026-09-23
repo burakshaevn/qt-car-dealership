@@ -52,7 +52,7 @@ void AdminController::reload()
     const AdminTableInfo& info = m_model->info();
     QString summary;
     if (info.TableName == QLatin1String("purchases")) {
-        summary = tr("Сумма продаж: %1 ₽").arg(formatPrice(m_services.admin().salesTotal()));
+        summary = tr("%1 ₽").arg(formatPrice(m_services.admin().salesTotal()));
     }
     m_model->select();
     m_page->setHeader(info.DisplayName, info.Description, summary);

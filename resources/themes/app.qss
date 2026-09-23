@@ -1,10 +1,13 @@
 /*
  * Application stylesheet.
  * Colour tokens (@name) come from :/themes/<theme>.json, $icons is the icon set,
- * $font is the bundled UI font. Widgets choose variants with dynamic properties:
- *   QPushButton[type="primary" | "secondary" | "ghost" | "danger" | "link" | "icon" | "nav" | "chip"]
- *   QLabel[role="h1" | "h2" | "h3" | "subtitle" | "muted" | "caption" | "price" | "badge" | "error"]
- *   QFrame[card="true"]
+ * $font / $display are the text and heading families of the theme.
+ *
+ * Visual language: monochrome, square corners, hairline rules instead of cards,
+ * serif display type for names and prices. Variants are chosen with dynamic properties:
+ *   QPushButton[type="primary" | "secondary" | "ghost" | "danger" | "link" | "tab" | "index" | "swatch" | "square"]
+ *   QLabel[role="display" | "h1" | "h2" | "h3" | "lead" | "muted" | "caption" | "overline" | "price" | "status" | "error"]
+ *   QFrame[card="true"], QFrame#rule
  */
 
 * {
@@ -23,11 +26,10 @@ QWidget {
 }
 
 QToolTip {
-    background-color: @surface;
-    color: @text;
-    border: 1px solid @border;
-    border-radius: 6px;
-    padding: 6px 8px;
+    background-color: @text;
+    color: @window;
+    border: none;
+    padding: 5px 8px;
 }
 
 /* ---------------------------------------------------------------- Pages */
@@ -37,7 +39,50 @@ QScrollArea#pageScroll, QScrollArea#pageScroll > QWidget > QWidget {
     background-color: @window;
 }
 
-/* ---------------------------------------------------------------- Sidebar */
+/* ---------------------------------------------------------------- Top bar (customer) */
+
+QFrame#topbar {
+    background-color: @window;
+    border: none;
+    border-bottom: 1px solid @border;
+}
+
+QPushButton[type="tab"] {
+    background: transparent;
+    border: none;
+    border-bottom: 2px solid transparent;
+    border-radius: 0;
+    color: @textSecondary;
+    font-weight: 500;
+    padding: 8px 0 7px 0;
+    margin: 0;
+    min-height: 0;
+}
+QPushButton[type="tab"]:hover {
+    color: @text;
+}
+QPushButton[type="tab"]:checked {
+    color: @text;
+    border-bottom: 2px solid @text;
+}
+QFrame#topbar QPushButton[type="tab"] {
+    padding: 21px 0 19px 0;
+}
+
+QLabel#navCount {
+    background-color: @text;
+    color: @window;
+    font-size: 8pt;
+    font-weight: 600;
+    padding: 1px 5px;
+    min-width: 8px;
+}
+
+QLabel#topbarUser {
+    color: @textSecondary;
+}
+
+/* ---------------------------------------------------------------- Index (admin sidebar) */
 
 QFrame#sidebar {
     background-color: @sidebar;
@@ -45,108 +90,53 @@ QFrame#sidebar {
     border-right: 1px solid @border;
 }
 
-QLabel#sidebarBrand {
-    font-size: 13pt;
-    font-weight: 700;
-    color: @text;
-}
-
-QLabel#sidebarCaption {
-    color: @textMuted;
-    font-size: 8.5pt;
-    font-weight: 600;
-    letter-spacing: 1px;
-    padding: 10px 12px 4px 12px;
-}
-
-QPushButton[type="nav"] {
+QPushButton[type="index"] {
     background: transparent;
     border: none;
-    border-radius: 10px;
+    border-left: 2px solid transparent;
+    border-radius: 0;
     color: @textSecondary;
-    font-weight: 500;
     text-align: left;
-    padding: 10px 12px;
-    min-height: 20px;
+    padding: 7px 12px;
+    min-height: 0;
+    font-weight: 400;
 }
-QPushButton[type="nav"]:hover {
-    background-color: @surfaceHover;
+QPushButton[type="index"]:hover {
     color: @text;
 }
-QPushButton[type="nav"]:checked {
-    background-color: @accentSoft;
-    color: @accent;
+QPushButton[type="index"]:checked {
+    color: @text;
+    border-left: 2px solid @text;
     font-weight: 600;
-}
-
-QLabel#avatar {
-    background-color: @accentSoft;
-    color: @accent;
-    border-radius: 18px;
-    font-weight: 700;
-    font-size: 10pt;
-}
-
-QLabel#avatarLarge {
-    background-color: @accentSoft;
-    color: @accent;
-    border-radius: 32px;
-    font-weight: 700;
-    font-size: 17pt;
-}
-
-QLabel#tileIcon {
-    background-color: @accentSoft;
-    border-radius: 12px;
-}
-
-QFrame#serviceTile:hover {
-    border-color: @accent;
-    background-color: @surface;
-}
-
-QFrame#loginHero {
-    background-color: @surfaceAlt;
-    border: none;
-}
-
-QLabel#sidebarUserName {
-    font-weight: 600;
-}
-
-QLabel#sidebarUserEmail {
-    color: @textMuted;
-    font-size: 9pt;
-}
-
-QLabel#notificationBadge {
-    background-color: @danger;
-    color: @onAccent;
-    border-radius: 9px;
-    font-size: 8pt;
-    font-weight: 700;
-    padding: 0 6px;
 }
 
 /* ---------------------------------------------------------------- Typography */
 
+QLabel[role="display"] {
+    font-family: "$display";
+    font-size: 34pt;
+    font-weight: 400;
+    color: @text;
+}
 QLabel[role="h1"] {
-    font-size: 22pt;
-    font-weight: 700;
+    font-family: "$display";
+    font-size: 27pt;
+    font-weight: 400;
     color: @text;
 }
 QLabel[role="h2"] {
-    font-size: 15pt;
-    font-weight: 700;
+    font-family: "$display";
+    font-size: 18pt;
+    font-weight: 500;
     color: @text;
 }
 QLabel[role="h3"] {
-    font-size: 12pt;
+    font-size: 11pt;
     font-weight: 600;
     color: @text;
 }
-QLabel[role="subtitle"] {
-    font-size: 11pt;
+QLabel[role="lead"] {
+    font-size: 12pt;
     color: @textSecondary;
 }
 QLabel[role="muted"] {
@@ -155,74 +145,110 @@ QLabel[role="muted"] {
 QLabel[role="caption"] {
     color: @textMuted;
     font-size: 9pt;
+}
+QLabel[role="overline"] {
+    color: @textMuted;
+    font-size: 8.5pt;
     font-weight: 600;
 }
 QLabel[role="price"] {
-    font-size: 20pt;
-    font-weight: 700;
+    font-family: "$display";
+    font-size: 22pt;
+    font-weight: 400;
     color: @text;
 }
 QLabel[role="error"] {
     color: @danger;
 }
+QLabel[role="index"] {
+    font-family: "$display";
+    font-size: 13pt;
+    color: @textMuted;
+}
 
-QLabel[role="badge"] {
-    border-radius: 11px;
-    padding: 3px 10px;
-    font-size: 9pt;
+/* Status: coloured uppercase text with a short rule on the left. */
+QLabel[role="status"] {
+    background: transparent;
+    border: none;
+    border-left: 2px solid @textMuted;
+    padding: 0 0 0 7px;
+    font-size: 8.5pt;
     font-weight: 600;
-    background-color: @surfaceAlt;
     color: @textSecondary;
 }
-QLabel[role="badge"][tone="success"] { background-color: @successSoft; color: @success; }
-QLabel[role="badge"][tone="warning"] { background-color: @warningSoft; color: @warning; }
-QLabel[role="badge"][tone="danger"]  { background-color: @dangerSoft;  color: @danger;  }
-QLabel[role="badge"][tone="accent"]  { background-color: @accentSoft;  color: @accent;  }
+QLabel[role="status"][tone="success"] { border-left-color: @success; color: @success; }
+QLabel[role="status"][tone="warning"] { border-left-color: @warning; color: @warning; }
+QLabel[role="status"][tone="danger"]  { border-left-color: @danger;  color: @danger;  }
+QLabel[role="status"][tone="accent"]  { border-left-color: @text;    color: @text;    }
 
-/* ---------------------------------------------------------------- Cards */
+/* ---------------------------------------------------------------- Surfaces */
 
 QFrame[card="true"] {
     background-color: @surface;
     border: 1px solid @border;
-    border-radius: 16px;
+    border-radius: 0;
 }
-QFrame[card="true"][unread="true"] {
-    border: 1px solid @accent;
-}
-QFrame#imageStage {
-    background-color: @imageBackdrop;
+QFrame#plate, QFrame#imageStage {
+    background-color: @plate;
     border: none;
-    border-radius: 20px;
+    border-radius: 0;
 }
-QFrame#divider {
+QFrame#rule {
     background-color: @border;
     border: none;
     max-height: 1px;
     min-height: 1px;
 }
+QFrame#ruleStrong {
+    background-color: @text;
+    border: none;
+    max-height: 1px;
+    min-height: 1px;
+}
+
+QFrame#serviceRow {
+    background: transparent;
+    border: none;
+    border-bottom: 1px solid @border;
+}
+QFrame#serviceRow:hover {
+    background-color: @surfaceAlt;
+}
+
+QFrame#feedRow {
+    background: transparent;
+    border: none;
+    border-bottom: 1px solid @border;
+}
+QFrame#feedRow[unread="true"] {
+    border-left: 2px solid @text;
+}
+
+QLabel#loginImage {
+    background-color: @plate;
+}
 
 /* ---------------------------------------------------------------- Buttons */
 
 QPushButton {
-    background-color: @surface;
+    background-color: transparent;
     color: @text;
-    border: 1px solid @border;
-    border-radius: 10px;
-    padding: 9px 16px;
-    font-weight: 600;
+    border: 1px solid @text;
+    border-radius: 0;
+    padding: 10px 20px;
+    font-weight: 500;
     min-height: 20px;
 }
 QPushButton:hover {
     background-color: @surfaceHover;
-    border-color: @borderStrong;
 }
 QPushButton:pressed {
-    background-color: @surfaceAlt;
+    background-color: @plateHover;
 }
 QPushButton:disabled {
     color: @textMuted;
-    background-color: @surfaceAlt;
     border-color: @border;
+    background-color: transparent;
 }
 
 QPushButton[type="primary"] {
@@ -239,85 +265,72 @@ QPushButton[type="primary"]:pressed {
     border-color: @accentPressed;
 }
 QPushButton[type="primary"]:disabled {
-    background-color: @surfaceAlt;
+    background-color: @plate;
     color: @textMuted;
-    border-color: @border;
+    border-color: @plate;
 }
 
 QPushButton[type="danger"] {
-    background-color: @surface;
     color: @danger;
-    border: 1px solid @border;
+    border: 1px solid @danger;
 }
 QPushButton[type="danger"]:hover {
     background-color: @dangerSoft;
-    border-color: @danger;
 }
 
 QPushButton[type="ghost"] {
     background: transparent;
-    border: 1px solid transparent;
+    border: none;
     color: @textSecondary;
+    padding: 8px 2px;
 }
 QPushButton[type="ghost"]:hover {
-    background-color: @surfaceHover;
+    background: transparent;
     color: @text;
+    text-decoration: underline;
 }
 
 QPushButton[type="link"] {
     background: transparent;
     border: none;
-    color: @accent;
-    padding: 4px 2px;
-    font-weight: 600;
+    color: @link;
+    padding: 2px 0;
+    font-weight: 500;
 }
 QPushButton[type="link"]:hover {
-    color: @accentHover;
+    background: transparent;
     text-decoration: underline;
 }
 
-QPushButton[type="icon"] {
-    background-color: transparent;
-    border: 1px solid transparent;
-    border-radius: 10px;
-    padding: 6px;
-    min-width: 24px;
-    min-height: 24px;
-}
-QPushButton[type="icon"]:hover {
-    background-color: @surfaceHover;
-}
-
-QPushButton[type="round"] {
-    background-color: @surface;
-    border: 1px solid @border;
-    border-radius: 22px;
+QPushButton[type="square"] {
+    border: 1px solid @borderStrong;
     padding: 0;
-    min-width: 44px; max-width: 44px;
-    min-height: 44px; max-height: 44px;
+    min-width: 38px; max-width: 38px;
+    min-height: 38px; max-height: 38px;
+    font-size: 13pt;
 }
-QPushButton[type="round"]:hover {
-    border-color: @borderStrong;
-    background-color: @surfaceHover;
+QPushButton[type="square"]:hover {
+    border-color: @text;
+    background: transparent;
 }
 
-QPushButton[type="chip"] {
-    background-color: @surface;
+QPushButton[type="swatch"] {
+    background: transparent;
     border: 1px solid @border;
-    border-radius: 16px;
-    padding: 6px 14px;
-    font-weight: 500;
+    padding: 7px 12px 7px 10px;
+    text-align: left;
+    font-weight: 400;
     color: @textSecondary;
 }
-QPushButton[type="chip"]:hover {
+QPushButton[type="swatch"]:hover {
     border-color: @borderStrong;
     color: @text;
+    background: transparent;
 }
-QPushButton[type="chip"]:checked {
-    background-color: @accentSoft;
-    border-color: @accent;
-    color: @accent;
-    font-weight: 600;
+QPushButton[type="swatch"]:checked {
+    border: 1px solid @text;
+    color: @text;
+    font-weight: 500;
 }
 
 /* ---------------------------------------------------------------- Inputs */
@@ -325,44 +338,51 @@ QPushButton[type="chip"]:checked {
 QLineEdit, QComboBox, QSpinBox, QDoubleSpinBox, QTimeEdit, QDateEdit, QDateTimeEdit {
     background-color: @surface;
     color: @text;
-    border: 1px solid @border;
-    border-radius: 10px;
-    padding: 8px 12px;
+    border: 1px solid @borderStrong;
+    border-radius: 0;
+    padding: 8px 10px;
     min-height: 20px;
-    selection-background-color: @selection;
-    selection-color: @text;
+    selection-background-color: @text;
+    selection-color: @window;
 }
 QLineEdit:hover, QComboBox:hover, QSpinBox:hover, QDoubleSpinBox:hover,
 QTimeEdit:hover, QDateEdit:hover, QDateTimeEdit:hover {
-    border-color: @borderStrong;
+    border-color: @textSecondary;
 }
 QLineEdit:focus, QComboBox:focus, QSpinBox:focus, QDoubleSpinBox:focus,
 QTimeEdit:focus, QDateEdit:focus, QDateTimeEdit:focus {
-    border: 1px solid @accent;
+    border: 1px solid @text;
 }
 QLineEdit:read-only {
     background-color: @surfaceAlt;
     color: @textSecondary;
+    border-color: @border;
 }
 QLineEdit[invalid="true"] {
     border: 1px solid @danger;
 }
+
+/* Search: a single underline, no box. */
 QLineEdit#searchField {
-    padding-left: 36px;
+    background-color: transparent;
+    border: none;
+    border-bottom: 1px solid @borderStrong;
+    padding: 6px 4px 6px 26px;
     background-image: url(:/icons/$icons/search_small.svg);
     background-repeat: no-repeat;
     background-position: left center;
-    background-origin: padding;
-    padding-left: 34px;
+}
+QLineEdit#searchField:focus {
+    border-bottom: 1px solid @text;
 }
 
 QComboBox {
-    padding-right: 32px;
+    padding-right: 30px;
 }
 QComboBox::drop-down {
     subcontrol-origin: padding;
     subcontrol-position: center right;
-    width: 30px;
+    width: 28px;
     border: none;
     background: transparent;
 }
@@ -371,20 +391,27 @@ QComboBox::down-arrow {
     width: 12px;
     height: 12px;
 }
+QComboBox#plainCombo {
+    background: transparent;
+    border: none;
+    border-bottom: 1px solid @borderStrong;
+    padding: 6px 28px 6px 2px;
+}
+QComboBox#plainCombo:focus {
+    border-bottom: 1px solid @text;
+}
 QComboBox QAbstractItemView {
     background-color: @surface;
     color: @text;
-    border: 1px solid @border;
-    border-radius: 10px;
-    padding: 4px;
-    selection-background-color: @accentSoft;
-    selection-color: @accent;
+    border: 1px solid @text;
+    padding: 0;
+    selection-background-color: @text;
+    selection-color: @window;
     outline: none;
 }
 QComboBox QAbstractItemView::item {
     min-height: 30px;
-    padding: 0 8px;
-    border-radius: 6px;
+    padding: 0 10px;
 }
 
 QSpinBox::up-button, QDoubleSpinBox::up-button, QTimeEdit::up-button, QDateEdit::up-button,
@@ -398,21 +425,30 @@ QCheckBox, QRadioButton {
     color: @text;
 }
 QCheckBox::indicator, QRadioButton::indicator {
-    width: 18px;
-    height: 18px;
-    border: 1px solid @borderStrong;
+    width: 16px;
+    height: 16px;
+    border: 1px solid @textSecondary;
     background-color: @surface;
 }
 QCheckBox::indicator {
-    border-radius: 5px;
+    border-radius: 0;
 }
 QRadioButton::indicator {
     border-radius: 9px;
 }
-QCheckBox::indicator:checked, QRadioButton::indicator:checked {
-    background-color: @accent;
-    border-color: @accent;
-    image: url(:/icons/common/check_white.svg);
+QCheckBox::indicator:hover, QRadioButton::indicator:hover {
+    border-color: @text;
+}
+QCheckBox::indicator:checked {
+    background-color: @text;
+    border-color: @text;
+    image: url(:/icons/$icons/check_mark.svg);
+}
+QRadioButton::indicator:checked {
+    border: 5px solid @text;
+    width: 8px;
+    height: 8px;
+    background-color: @surface;
 }
 
 /* ---------------------------------------------------------------- Calendar */
@@ -420,20 +456,16 @@ QCheckBox::indicator:checked, QRadioButton::indicator:checked {
 QCalendarWidget {
     background-color: @surface;
     border: 1px solid @border;
-    border-radius: 12px;
 }
 QCalendarWidget QWidget#qt_calendar_navigationbar {
     background-color: @surface;
     border-bottom: 1px solid @border;
-    border-top-left-radius: 12px;
-    border-top-right-radius: 12px;
     padding: 4px;
 }
 QCalendarWidget QToolButton {
     color: @text;
     background: transparent;
     border: none;
-    border-radius: 8px;
     padding: 6px 10px;
     font-weight: 600;
 }
@@ -455,8 +487,8 @@ QCalendarWidget QSpinBox {
 QCalendarWidget QAbstractItemView:enabled {
     background-color: @surface;
     color: @text;
-    selection-background-color: @accent;
-    selection-color: @onAccent;
+    selection-background-color: @text;
+    selection-color: @window;
     border: none;
 }
 QCalendarWidget QAbstractItemView:disabled {
@@ -474,53 +506,42 @@ QListView::item, QListWidget::item {
     background: transparent;
 }
 
-QListWidget#adminTableList {
-    background: transparent;
-}
-QListWidget#adminTableList::item {
-    color: @textSecondary;
-    border-radius: 10px;
-    padding: 9px 12px;
-    margin: 1px 0;
-}
-QListWidget#adminTableList::item:hover {
-    background-color: @surfaceHover;
-    color: @text;
-}
-QListWidget#adminTableList::item:selected {
-    background-color: @accentSoft;
-    color: @accent;
-    font-weight: 600;
-}
-
 QTableView {
-    background-color: @surface;
-    alternate-background-color: @surfaceAlt;
+    background-color: @window;
+    alternate-background-color: @window;
     color: @text;
-    border: 1px solid @border;
-    border-radius: 12px;
-    gridline-color: transparent;
-    selection-background-color: @selection;
-    selection-color: @text;
+    border: none;
+    border-top: 1px solid @text;
+    gridline-color: @border;
+    selection-background-color: @text;
+    selection-color: @window;
 }
 QTableView::item {
-    padding: 6px 10px;
+    padding: 4px 10px;
     border: none;
+    border-bottom: 1px solid @border;
+}
+QTableView::item:selected {
+    background-color: @text;
+    color: @window;
 }
 QHeaderView {
     background-color: transparent;
 }
 QHeaderView::section {
-    background-color: @surface;
-    color: @textSecondary;
+    background-color: @window;
+    color: @textMuted;
     font-weight: 600;
-    font-size: 9.5pt;
+    font-size: 8.5pt;
     border: none;
-    border-bottom: 1px solid @border;
+    border-bottom: 1px solid @borderStrong;
     padding: 10px;
 }
+QHeaderView::section:hover {
+    color: @text;
+}
 QTableCornerButton::section {
-    background-color: @surface;
+    background-color: @window;
     border: none;
 }
 
@@ -535,28 +556,27 @@ QScrollArea > QWidget > QWidget {
 }
 QScrollBar:vertical {
     background: transparent;
-    width: 12px;
-    margin: 4px 2px;
+    width: 10px;
+    margin: 0;
 }
 QScrollBar:horizontal {
     background: transparent;
-    height: 12px;
-    margin: 2px 4px;
+    height: 10px;
+    margin: 0;
 }
 QScrollBar::handle:vertical, QScrollBar::handle:horizontal {
-    background-color: @borderStrong;
-    border-radius: 4px;
-    min-height: 32px;
-    min-width: 32px;
+    background-color: @border;
+    min-height: 40px;
+    min-width: 40px;
 }
 QScrollBar::handle:vertical {
-    margin: 0 2px;
+    margin: 0 3px;
 }
 QScrollBar::handle:horizontal {
-    margin: 2px 0;
+    margin: 3px 0;
 }
 QScrollBar::handle:hover {
-    background-color: @textMuted;
+    background-color: @borderStrong;
 }
 QScrollBar::add-line, QScrollBar::sub-line,
 QScrollBar::add-page, QScrollBar::sub-page {
@@ -570,17 +590,15 @@ QScrollBar::add-page, QScrollBar::sub-page {
 
 QMenu {
     background-color: @surface;
-    border: 1px solid @border;
-    border-radius: 10px;
-    padding: 4px;
+    border: 1px solid @text;
+    padding: 0;
 }
 QMenu::item {
-    padding: 8px 16px;
-    border-radius: 6px;
+    padding: 8px 18px;
 }
 QMenu::item:selected {
-    background-color: @accentSoft;
-    color: @accent;
+    background-color: @text;
+    color: @window;
 }
 
 QGroupBox {
@@ -592,9 +610,6 @@ QGroupBox {
 
 /* ---------------------------------------------------------------- Dialogs */
 
-QDialog QLabel[role="h2"] {
-    padding-bottom: 2px;
-}
 QDialogButtonBox QPushButton {
     min-width: 96px;
 }

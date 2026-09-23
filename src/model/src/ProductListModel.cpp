@@ -40,6 +40,10 @@ QVariant ProductListModel::data(const QModelIndex& index, int role) const
         return info.Trim;
     case StockQtyRole:
         return info.StockQty;
+    case TypeNameRole:
+        return info.TypeName;
+    case ColorHexRole:
+        return info.ColorHex;
     case IdRole:
         return info.Id;
     default:
@@ -59,6 +63,8 @@ QHash<int, QByteArray> ProductListModel::roleNames() const
     roles[TypeIdRole] = "typeId";
     roles[TrimRole] = "trim";
     roles[StockQtyRole] = "stockQty";
+    roles[TypeNameRole] = "typeName";
+    roles[ColorHexRole] = "colorHex";
     return roles;
 }
 

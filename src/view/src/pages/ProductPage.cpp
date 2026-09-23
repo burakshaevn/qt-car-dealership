@@ -1,7 +1,6 @@
 #include "pages/ProductPage.h"
 
 #include "PriceFormatter.h"
-#include "ThemeManager.h"
 #include "UiKit.h"
 
 #include "FlowLayout.h"
@@ -21,14 +20,11 @@ QWidget* specRow(const QString& caption, QLabel*& value, QWidget* parent)
 {
     auto* row = new QWidget(parent);
     auto* layout = new QHBoxLayout(row);
-    layout->setContentsMargins(0, 10, 0, 10);
+    layout->setContentsMargins(0, 11, 0, 11);
     layout->addWidget(UiKit::label(caption, "muted", row));
     layout->addStretch(1);
     value = new QLabel(row);
     value->setAlignment(Qt::AlignRight | Qt::AlignVCenter);
-    QFont font = value->font();
-    font.setWeight(QFont::DemiBold);
-    value->setFont(font);
     layout->addWidget(value);
     return row;
 }
@@ -40,7 +36,6 @@ ProductPage::ProductPage(QWidget* parent)
     , m_swatchGroup(new QButtonGroup(this))
 {
     setObjectName(QStringLiteral("productPage"));
-    ThemeManager& theme = ThemeManager::instance();
 
     auto* scroll = new QScrollArea(this);
     scroll->setObjectName(QStringLiteral("pageScroll"));
@@ -54,114 +49,117 @@ ProductPage::ProductPage(QWidget* parent)
     auto* content = new QWidget(scroll);
     scroll->setWidget(content);
     auto* root = new QVBoxLayout(content);
-    root->setContentsMargins(36, 26, 36, 32);
+    root->setContentsMargins(56, 28, 56, 40);
     root->setSpacing(0);
 
-    auto* back = UiKit::button(tr("Каталог"), "ghost", content);
+    auto* back = UiKit::button(tr("← Модельный ряд"), "ghost", content);
     back->setObjectName(QStringLiteral("pushButton_back"));
-    back->setIconSize(QSize(18, 18));
-    theme.bindIcon(back, QStringLiteral("arrow_left"), QStringLiteral("textSecondary"));
     root->addWidget(back, 0, Qt::AlignLeft);
-    root->addSpacing(14);
+    root->addSpacing(20);
 
     auto* columns = new QHBoxLayout;
-    columns->setSpacing(28);
+    columns->setSpacing(56);
     root->addLayout(columns, 1);
 
-    // ---- Left: image stage
+    // ---- Left: photo on a plain plate, pager underneath
+    auto* left = new QVBoxLayout;
+    left->setSpacing(0);
     auto* stage = new QFrame(content);
     stage->setObjectName(QStringLiteral("imageStage"));
-    stage->setMinimumHeight(440);
-    auto* stageLayout = new QGridLayout(stage);
-    stageLayout->setContentsMargins(20, 20, 20, 20);
-
+    stage->setMinimumHeight(460);
+    auto* stageLayout = new QVBoxLayout(stage);
+    stageLayout->setContentsMargins(32, 32, 32, 32);
     m_image = new QLabel(stage);
     m_image->setObjectName(QStringLiteral("label_car_image"));
     m_image->setAlignment(Qt::AlignCenter);
     m_image->setSizePolicy(QSizePolicy::Ignored, QSizePolicy::Ignored);
     m_image->installEventFilter(this);
-    stageLayout->addWidget(m_image, 0, 0, 3, 3);
+    stageLayout->addWidget(m_image);
+    left->addWidget(stage, 1);
+    left->addSpacing(14);
 
-    m_prev = UiKit::button(QString(), "round", stage);
+    auto* pager = new QHBoxLayout;
+    pager->setSpacing(8);
+    m_counter = UiKit::label(QString(), "index", content);
+    pager->addWidget(m_counter, 0, Qt::AlignVCenter);
+    pager->addStretch(1);
+    m_prev = UiKit::button(QStringLiteral("←"), "square", content);
     m_prev->setObjectName(QStringLiteral("pushButton_next_left"));
-    m_prev->setIconSize(QSize(20, 20));
-    theme.bindIcon(m_prev, QStringLiteral("chevron_left"), QStringLiteral("text"));
-    m_next = UiKit::button(QString(), "round", stage);
+    m_prev->setToolTip(tr("Предыдущий цвет"));
+    m_next = UiKit::button(QStringLiteral("→"), "square", content);
     m_next->setObjectName(QStringLiteral("pushButton_next_right"));
-    m_next->setIconSize(QSize(20, 20));
-    theme.bindIcon(m_next, QStringLiteral("chevron_right"), QStringLiteral("text"));
-    stageLayout->addWidget(m_prev, 1, 0, Qt::AlignLeft | Qt::AlignVCenter);
-    stageLayout->addWidget(m_next, 1, 2, Qt::AlignRight | Qt::AlignVCenter);
+    m_next->setToolTip(tr("Следующий цвет"));
+    pager->addWidget(m_prev);
+    pager->addWidget(m_next);
+    left->addLayout(pager);
+    columns->addLayout(left, 3);
 
-    m_counter = UiKit::badge(QString(), UiKit::Tone::Neutral, stage);
-    stageLayout->addWidget(m_counter, 2, 1, Qt::AlignHCenter | Qt::AlignBottom);
-    stageLayout->setRowStretch(0, 1);
-    stageLayout->setRowStretch(2, 1);
-    stageLayout->setColumnStretch(1, 1);
-
-    columns->addWidget(stage, 3);
-
-    // ---- Right: details card
-    auto* details = UiKit::card(content);
-    details->setMinimumWidth(360);
-    details->setMaximumWidth(460);
+    // ---- Right: typographic column, no card
+    auto* details = new QWidget(content);
+    details->setMinimumWidth(340);
+    details->setMaximumWidth(420);
     auto* info = new QVBoxLayout(details);
-    info->setContentsMargins(28, 28, 28, 28);
+    info->setContentsMargins(0, 4, 0, 0);
     info->setSpacing(0);
 
-    m_availability = UiKit::badge(QString(), UiKit::Tone::Success, details);
-    info->addWidget(m_availability, 0, Qt::AlignLeft);
-    info->addSpacing(12);
+    m_type = UiKit::overline(QString(), details);
+    info->addWidget(m_type);
+    info->addSpacing(10);
 
     m_name = UiKit::label(QString(), "h1", details);
     m_name->setObjectName(QStringLiteral("label_name"));
     m_name->setWordWrap(true);
     info->addWidget(m_name);
-    info->addSpacing(8);
+    info->addSpacing(14);
 
+    auto* priceRow = new QHBoxLayout;
     m_price = UiKit::label(QString(), "price", details);
     m_price->setObjectName(QStringLiteral("label_price"));
-    info->addWidget(m_price);
-    info->addSpacing(16);
+    priceRow->addWidget(m_price, 0, Qt::AlignBottom);
+    priceRow->addStretch(1);
+    m_availability = UiKit::badge(QString(), UiKit::Tone::Success, details);
+    priceRow->addWidget(m_availability, 0, Qt::AlignVCenter);
+    info->addLayout(priceRow);
+    info->addSpacing(20);
 
     m_description = UiKit::label(QString(), "muted", details);
     m_description->setWordWrap(true);
     info->addWidget(m_description);
-    info->addSpacing(20);
+    info->addSpacing(28);
 
-    info->addWidget(UiKit::label(tr("Цвет"), "caption", details));
+    info->addWidget(UiKit::overline(tr("Цвет кузова"), details));
     info->addSpacing(10);
-    m_swatches = new FlowLayout(nullptr, 8);
+    m_swatches = new FlowLayout(nullptr, 6);
     info->addLayout(m_swatches);
-    info->addSpacing(18);
+    info->addSpacing(28);
 
-    info->addWidget(UiKit::divider(details));
-    info->addWidget(specRow(tr("Цвет кузова"), m_colorValue, details));
+    auto* rule = new QFrame(details);
+    rule->setObjectName(QStringLiteral("ruleStrong"));
+    info->addWidget(rule);
+    info->addWidget(specRow(tr("Цвет"), m_colorValue, details));
     info->addWidget(UiKit::divider(details));
     info->addWidget(specRow(tr("Комплектация"), m_trimValue, details));
     info->addWidget(UiKit::divider(details));
     info->addWidget(specRow(tr("На складе"), m_stockValue, details));
     info->addWidget(UiKit::divider(details));
-    info->addSpacing(24);
+    info->addSpacing(28);
     info->addStretch(1);
 
     m_checkout = UiKit::button(tr("Оформить заявку"), "primary", details);
     m_checkout->setObjectName(QStringLiteral("pushButton_to_pay"));
-    m_checkout->setMinimumHeight(46);
-    m_order = UiKit::button(tr("Заказать автомобиль"), "primary", details);
+    m_checkout->setMinimumHeight(48);
+    m_order = UiKit::button(tr("Заказать в этой комплектации"), "primary", details);
     m_order->setObjectName(QStringLiteral("pushButton_order"));
-    m_order->setMinimumHeight(46);
+    m_order->setMinimumHeight(48);
     m_testDrive = UiKit::button(tr("Записаться на тест-драйв"), nullptr, details);
     m_testDrive->setObjectName(QStringLiteral("pushButton_test_drive"));
-    m_testDrive->setMinimumHeight(46);
-    m_testDrive->setIconSize(QSize(18, 18));
-    theme.bindIcon(m_testDrive, QStringLiteral("steering"), QStringLiteral("text"));
+    m_testDrive->setMinimumHeight(48);
     info->addWidget(m_checkout);
     info->addWidget(m_order);
-    info->addSpacing(10);
+    info->addSpacing(8);
     info->addWidget(m_testDrive);
 
-    columns->addWidget(details, 2);
+    columns->addWidget(details, 2, Qt::AlignTop);
 
     connect(back, &QPushButton::clicked, this, &ProductPage::backRequested);
     connect(m_prev, &QPushButton::clicked, this, [this] { step(-1); });
@@ -181,8 +179,11 @@ void ProductPage::setVariants(const QList<ProductInfo>& variants, const int curr
     }
     m_swatches->clear();
     for (int i = 0; i < m_variants.size(); ++i) {
-        auto* swatch = UiKit::button(m_variants.at(i).Color, "chip", this);
+        const ProductInfo& variant = m_variants.at(i);
+        auto* swatch = UiKit::button(variant.Color, "swatch", this);
         swatch->setCheckable(true);
+        swatch->setIcon(UiKit::swatchIcon(QColor::fromString(variant.ColorHex)));
+        swatch->setIconSize(QSize(14, 14));
         m_swatchGroup->addButton(swatch, i);
         m_swatches->addWidget(swatch);
     }
@@ -221,14 +222,18 @@ void ProductPage::select(const int index)
     if (QAbstractButton* swatch = m_swatchGroup->button(index)) {
         swatch->setChecked(true);
     }
-    m_counter->setText(QStringLiteral("%1 / %2").arg(index + 1).arg(m_variants.size()));
+    m_counter->setText(QStringLiteral("%1 / %2")
+                           .arg(index + 1, 2, 10, QLatin1Char('0'))
+                           .arg(m_variants.size(), 2, 10, QLatin1Char('0')));
+    m_type->setText(product.TypeName.toUpper());
+    m_type->setVisible(!product.TypeName.isEmpty());
     m_name->setText(product.Name);
     m_price->setText(formatPrice(product.Price) + QStringLiteral(" ₽"));
     m_description->setText(product.Description);
     m_description->setVisible(!product.Description.isEmpty());
     m_colorValue->setText(product.Color);
     m_trimValue->setText(product.Trim.isEmpty() ? QStringLiteral("—") : product.Trim);
-    m_stockValue->setText(kInStock ? tr("%1 шт.").arg(product.StockQty) : tr("Нет"));
+    m_stockValue->setText(kInStock ? tr("%1 шт.").arg(product.StockQty) : tr("нет, под заказ"));
 
     m_availability->setText(kInStock ? tr("В наличии") : tr("Под заказ"));
     UiKit::setTone(m_availability, kInStock ? UiKit::Tone::Success : UiKit::Tone::Warning);
@@ -247,7 +252,7 @@ void ProductPage::updateImage()
         return;
     }
     const qreal kDpr = devicePixelRatioF();
-    const QSize kBox = QSize(qMax(1, m_image->width() - 120), qMax(1, m_image->height() - 40)) * kDpr;
+    const QSize kBox = QSize(qMax(1, m_image->width()), qMax(1, m_image->height())) * kDpr;
     QPixmap scaled = kSource.scaled(kBox, Qt::KeepAspectRatio, Qt::SmoothTransformation);
     scaled.setDevicePixelRatio(kDpr);
     m_image->setPixmap(scaled);

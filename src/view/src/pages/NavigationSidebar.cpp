@@ -7,116 +7,95 @@
 #include <QHBoxLayout>
 #include <QLabel>
 #include <QPushButton>
+#include <QScrollArea>
 #include <QVBoxLayout>
-
-namespace {
-const QString kNavIconToken = QStringLiteral("textSecondary");
-const QString kNavIconCheckedToken = QStringLiteral("accent");
-} // namespace
 
 NavigationSidebar::NavigationSidebar(QWidget* parent)
     : QFrame(parent)
     , m_group(new QButtonGroup(this))
 {
     setObjectName(QStringLiteral("sidebar"));
-    setFixedWidth(272);
+    setFixedWidth(264);
     m_group->setExclusive(true);
 
     auto* root = new QVBoxLayout(this);
-    root->setContentsMargins(16, 22, 16, 18);
+    root->setContentsMargins(28, 30, 20, 24);
     root->setSpacing(0);
 
-    // Brand
-    auto* brand = new QHBoxLayout;
-    brand->setContentsMargins(8, 0, 0, 0);
-    brand->setSpacing(10);
-    auto* logo = new QLabel(this);
-    logo->setPixmap(ThemeManager::instance().icon(QStringLiteral("logo")).pixmap(QSize(30, 30)));
-    brand->addWidget(logo);
-    auto* brandText = new QVBoxLayout;
-    brandText->setSpacing(0);
-    auto* title = new QLabel(tr("Mercedes-Benz"), this);
-    title->setObjectName(QStringLiteral("sidebarBrand"));
-    brandText->addWidget(title);
-    brandText->addWidget(UiKit::label(tr("Автосалон"), "muted", this));
-    brand->addLayout(brandText);
-    brand->addStretch(1);
-    root->addLayout(brand);
-    root->addSpacing(26);
+    // Brand: wordmark + product line, no logo tile.
+    auto* wordmark = new QLabel(this);
+    const auto refreshWordmark = [wordmark] {
+        wordmark->setPixmap(ThemeManager::instance().icon(QStringLiteral("mercedez_benz")).pixmap(QSize(150, 18)));
+    };
+    refreshWordmark();
+    connect(&ThemeManager::instance(), &ThemeManager::themeChanged, wordmark, refreshWordmark);
+    root->addWidget(wordmark, 0, Qt::AlignLeft);
+    root->addSpacing(6);
+    root->addWidget(UiKit::overline(tr("Администрирование"), this));
+    root->addSpacing(22);
 
-    m_sections = new QVBoxLayout;
-    m_sections->setSpacing(2);
-    root->addLayout(m_sections);
-    root->addStretch(1);
+    // Sections scroll when the list is taller than the window.
+    auto* scroll = new QScrollArea(this);
+    scroll->setWidgetResizable(true);
+    scroll->setFrameShape(QFrame::NoFrame);
+    scroll->setHorizontalScrollBarPolicy(Qt::ScrollBarAlwaysOff);
+    auto* host = new QWidget(scroll);
+    m_sections = new QVBoxLayout(host);
+    m_sections->setContentsMargins(0, 0, 0, 0);
+    m_sections->setSpacing(0);
+    m_sections->addStretch(1);
+    scroll->setWidget(host);
+    root->addWidget(scroll, 1);
 
-    // User card
+    root->addSpacing(16);
     root->addWidget(UiKit::divider(this));
     root->addSpacing(14);
-    auto* user = new QHBoxLayout;
-    user->setContentsMargins(4, 0, 0, 0);
-    user->setSpacing(10);
-    m_avatar = new QLabel(this);
-    m_avatar->setObjectName(QStringLiteral("avatar"));
-    m_avatar->setFixedSize(36, 36);
-    m_avatar->setAlignment(Qt::AlignCenter);
-    user->addWidget(m_avatar);
 
-    auto* userText = new QVBoxLayout;
-    userText->setSpacing(1);
-    m_userName = new QLabel(this);
+    m_userName = UiKit::label(QString(), "h3", this);
     m_userName->setObjectName(QStringLiteral("sidebarUserName"));
-    m_userSubtitle = new QLabel(this);
+    m_userSubtitle = UiKit::label(QString(), "caption", this);
     m_userSubtitle->setObjectName(QStringLiteral("sidebarUserEmail"));
-    userText->addWidget(m_userName);
-    userText->addWidget(m_userSubtitle);
-    user->addLayout(userText, 1);
-    root->addLayout(user);
-    root->addSpacing(12);
+    root->addWidget(m_userName);
+    root->addWidget(m_userSubtitle);
+    root->addSpacing(10);
 
     auto* actions = new QHBoxLayout;
-    actions->setSpacing(6);
+    actions->setSpacing(18);
     auto* settings = UiKit::button(tr("Настройки"), "ghost", this);
     settings->setObjectName(QStringLiteral("pushButton_settings"));
-    settings->setIconSize(QSize(18, 18));
-    ThemeManager::instance().bindIcon(settings, QStringLiteral("settings"), kNavIconToken);
-    auto* logout = UiKit::button(QString(), "icon", this);
+    auto* logout = UiKit::button(tr("Выйти"), "ghost", this);
     logout->setObjectName(QStringLiteral("pushButton_logout"));
-    logout->setToolTip(tr("Выйти"));
-    logout->setIconSize(QSize(18, 18));
-    ThemeManager::instance().bindIcon(logout, QStringLiteral("logout"), QStringLiteral("danger"));
-    actions->addWidget(settings, 1);
+    actions->addWidget(settings);
     actions->addWidget(logout);
+    actions->addStretch(1);
     root->addLayout(actions);
 
     connect(settings, &QPushButton::clicked, this, &NavigationSidebar::settingsRequested);
     connect(logout, &QPushButton::clicked, this, &NavigationSidebar::logoutRequested);
-    connect(&ThemeManager::instance(), &ThemeManager::themeChanged, this, [logo] {
-        logo->setPixmap(ThemeManager::instance().icon(QStringLiteral("logo")).pixmap(QSize(30, 30)));
-    });
 }
 
 void NavigationSidebar::addCaption(const QString& text)
 {
-    auto* caption = new QLabel(text.toUpper(), this);
-    caption->setObjectName(QStringLiteral("sidebarCaption"));
-    m_sections->addWidget(caption);
+    if (m_sections->count() > 1) {
+        m_sections->insertSpacing(m_sections->count() - 1, 18);
+    }
+    auto* caption = UiKit::overline(text, this);
+    caption->setContentsMargins(0, 0, 0, 6);
+    m_sections->insertWidget(m_sections->count() - 1, caption);
 }
 
 void NavigationSidebar::addSection(const QString& id, const QString& title, const QString& icon)
 {
-    auto* button = UiKit::button(title, "nav", this);
+    Q_UNUSED(icon); // the index is typographic, icons are intentionally not shown
+    auto* button = UiKit::button(title, "index", this);
     button->setObjectName(QStringLiteral("nav_") + id);
     button->setCheckable(true);
-    button->setIconSize(QSize(20, 20));
-    ThemeManager::instance().bindIcon(button, icon, kNavIconToken, kNavIconCheckedToken);
 
-    // Badge lives inside the button, aligned right.
     auto* badgeLayout = new QHBoxLayout(button);
-    badgeLayout->setContentsMargins(0, 0, 10, 0);
+    badgeLayout->setContentsMargins(0, 0, 4, 0);
     badgeLayout->addStretch(1);
     auto* badge = new QLabel(button);
-    badge->setObjectName(QStringLiteral("notificationBadge"));
-    badge->setMinimumSize(18, 18);
+    badge->setObjectName(QStringLiteral("navCount"));
     badge->setAlignment(Qt::AlignCenter);
     badge->setAttribute(Qt::WA_TransparentForMouseEvents);
     badge->hide();
@@ -125,7 +104,7 @@ void NavigationSidebar::addSection(const QString& id, const QString& title, cons
     m_group->addButton(button);
     m_buttons.insert(id, button);
     m_badges.insert(id, badge);
-    m_sections->addWidget(button);
+    m_sections->insertWidget(m_sections->count() - 1, button);
 
     connect(button, &QPushButton::clicked, this, [this, id] { emit sectionSelected(id); });
 }
@@ -151,7 +130,6 @@ void NavigationSidebar::setBadge(const QString& id, const int count)
 
 void NavigationSidebar::setUser(const QString& name, const QString& subtitle)
 {
-    m_avatar->setText(UiKit::initials(name));
     m_userName->setText(name);
     m_userSubtitle->setText(subtitle);
     m_userSubtitle->setVisible(!subtitle.isEmpty());

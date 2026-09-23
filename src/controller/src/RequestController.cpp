@@ -2,6 +2,7 @@
 
 #include "AppServices.h"
 #include "PriceFormatter.h"
+#include "ThemeManager.h"
 #include "UiKit.h"
 
 #include <QButtonGroup>
@@ -23,13 +24,14 @@ enum class PaymentKind { Purchase, Credit, Rental };
 /// Compact summary card of the selected car shown at the top of forms.
 QWidget* carSummary(const ProductInfo& product, QWidget* parent)
 {
-    auto* card = UiKit::card(parent);
+    auto* card = new QFrame(parent);
+    card->setObjectName(QStringLiteral("plate"));
     auto* layout = new QHBoxLayout(card);
-    layout->setContentsMargins(16, 14, 16, 14);
-    layout->setSpacing(14);
+    layout->setContentsMargins(14, 12, 20, 12);
+    layout->setSpacing(16);
 
     auto* image = new QLabel(card);
-    image->setFixedSize(96, 56);
+    image->setFixedSize(112, 60);
     image->setAlignment(Qt::AlignCenter);
     const QPixmap kPixmap(product.ImagePath);
     if (!kPixmap.isNull()) {
@@ -45,11 +47,14 @@ QWidget* carSummary(const ProductInfo& product, QWidget* parent)
     text->addWidget(UiKit::label(product.Name, "h3", card));
     QString details = product.Color;
     if (!product.Trim.isEmpty()) {
-        details += QStringLiteral("  ·  ") + product.Trim;
+        details += QStringLiteral(", ") + product.Trim.toLower();
     }
     text->addWidget(UiKit::label(details, "muted", card));
+    auto* price = UiKit::label(formatPrice(product.Price) + QStringLiteral(" ₽"), nullptr, card);
+    price->setFont(ThemeManager::instance().displayFont(13));
+    text->addSpacing(4);
+    text->addWidget(price);
     layout->addLayout(text, 1);
-    layout->addWidget(UiKit::label(formatPrice(product.Price) + QStringLiteral(" ₽"), "h3", card));
     return card;
 }
 
@@ -141,7 +146,7 @@ bool RequestController::checkout(QWidget* parent, const ProductInfo& product)
     paymentLayout->setContentsMargins(0, 0, 0, 0);
     paymentLayout->setSpacing(10);
     auto* payment = new QButtonGroup(paymentBox);
-    auto* purchase = new QRadioButton(tr("Покупка — полная оплата"));
+    auto* purchase = new QRadioButton(tr("Покупка, полная оплата"));
     auto* credit = new QRadioButton(tr("Кредит"));
     auto* rental = new QRadioButton(tr("Аренда"));
     payment->addButton(purchase, static_cast<int>(PaymentKind::Purchase));

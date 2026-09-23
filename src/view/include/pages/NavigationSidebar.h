@@ -39,7 +39,6 @@ private:
     QButtonGroup* m_group = nullptr;
     QHash<QString, QPushButton*> m_buttons;
     QHash<QString, QLabel*> m_badges;
-    QLabel* m_avatar = nullptr;
     QLabel* m_userName = nullptr;
     QLabel* m_userSubtitle = nullptr;
 };

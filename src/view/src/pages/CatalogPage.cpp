@@ -17,7 +17,7 @@
 #include <QVBoxLayout>
 
 namespace {
-constexpr int kCardSpacing = 20;
+constexpr int kCardSpacing = 32;
 constexpr int kAllTypes = -1;
 } // namespace
 
@@ -29,41 +29,43 @@ CatalogPage::CatalogPage(QWidget* parent)
     setObjectName(QStringLiteral("catalogPage"));
 
     auto* root = new QVBoxLayout(this);
-    root->setContentsMargins(36, 30, 36, 0);
+    root->setContentsMargins(56, 40, 56, 0);
     root->setSpacing(0);
 
-    // Header
+    // Header: title with the result count set beside it, search on the right.
     auto* header = new QHBoxLayout;
-    auto* titles = new QVBoxLayout;
-    titles->setSpacing(4);
-    titles->addWidget(UiKit::label(tr("Каталог"), "h1", this));
-    m_count = UiKit::label({}, "muted", this);
-    titles->addWidget(m_count);
-    header->addLayout(titles);
+    header->setSpacing(0);
+    header->addWidget(UiKit::label(tr("Модельный ряд"), "h1", this), 0, Qt::AlignBottom);
+    header->addSpacing(16);
+    m_count = UiKit::label({}, "index", this);
+    header->addWidget(m_count, 0, Qt::AlignBottom);
     header->addStretch(1);
 
     m_search = new QLineEdit(this);
     m_search->setObjectName(QStringLiteral("searchField"));
-    m_search->setPlaceholderText(tr("Поиск по модели или цвету"));
+    m_search->setPlaceholderText(tr("Модель или цвет"));
     m_search->setClearButtonEnabled(true);
-    m_search->setMinimumWidth(320);
-    header->addWidget(m_search, 0, Qt::AlignVCenter);
+    m_search->setFixedWidth(280);
+    header->addWidget(m_search, 0, Qt::AlignBottom);
     root->addLayout(header);
-    root->addSpacing(22);
+    root->addSpacing(28);
 
-    // Filters
+    // Filters: body types as text tabs on a rule, colour as an underlined select.
     auto* filters = new QHBoxLayout;
-    filters->setSpacing(8);
+    filters->setSpacing(0);
     m_chips = new QHBoxLayout;
-    m_chips->setSpacing(8);
+    m_chips->setSpacing(28);
     filters->addLayout(m_chips);
     filters->addStretch(1);
-    filters->addWidget(UiKit::label(tr("Цвет"), "muted", this));
+    filters->addWidget(UiKit::overline(tr("Цвет"), this), 0, Qt::AlignVCenter);
+    filters->addSpacing(12);
     m_color = new QComboBox(this);
-    m_color->setMinimumWidth(190);
-    filters->addWidget(m_color);
+    m_color->setObjectName(QStringLiteral("plainCombo"));
+    m_color->setMinimumWidth(200);
+    filters->addWidget(m_color, 0, Qt::AlignVCenter);
     root->addLayout(filters);
-    root->addSpacing(20);
+    root->addWidget(UiKit::divider(this));
+    root->addSpacing(32);
 
     // Grid / empty state
     m_content = new QStackedWidget(this);
@@ -76,7 +78,7 @@ CatalogPage::CatalogPage(QWidget* parent)
     m_view->setResizeMode(QListView::Adjust);
     m_view->setMovement(QListView::Static);
     m_view->setUniformItemSizes(true);
-    m_view->setSpacing(kCardSpacing / 2);
+    m_view->setSpacing(0);
     m_view->setProperty("cardSpacing", kCardSpacing);
     m_view->setSelectionMode(QAbstractItemView::NoSelection);
     m_view->setVerticalScrollMode(QAbstractItemView::ScrollPerPixel);
@@ -92,14 +94,14 @@ CatalogPage::CatalogPage(QWidget* parent)
     auto* empty = new QWidget(m_content);
     auto* emptyLayout = new QVBoxLayout(empty);
     emptyLayout->addStretch(1);
-    auto* emptyTitle = UiKit::label(tr("Ничего не найдено"), "h3", empty);
+    auto* emptyTitle = UiKit::label(tr("Ничего не найдено"), "h2", empty);
     emptyTitle->setAlignment(Qt::AlignCenter);
     emptyLayout->addWidget(emptyTitle);
     auto* emptyText = UiKit::label(tr("Попробуйте изменить запрос или сбросить фильтры."), "muted", empty);
     emptyText->setAlignment(Qt::AlignCenter);
     emptyLayout->addWidget(emptyText);
     emptyLayout->addSpacing(12);
-    auto* reset = UiKit::button(tr("Сбросить фильтры"), nullptr, empty);
+    auto* reset = UiKit::button(tr("Сбросить фильтры"), "link", empty);
     emptyLayout->addWidget(reset, 0, Qt::AlignHCenter);
     emptyLayout->addStretch(2);
     m_content->addWidget(empty);
@@ -137,13 +139,13 @@ void CatalogPage::setTypes(const QList<TypeOption>& types)
     }
 
     auto addChip = [this](const int id, const QString& title) {
-        auto* chip = UiKit::button(title, "chip", this);
+        auto* chip = UiKit::button(title, "tab", this);
         chip->setCheckable(true);
         m_typeGroup->addButton(chip, id);
         m_chips->addWidget(chip);
         return chip;
     };
-    addChip(kAllTypes, tr("Все"))->setChecked(true);
+    addChip(kAllTypes, tr("Все кузова"))->setChecked(true);
     for (const auto& [id, name] : types) {
         addChip(id, name);
     }
@@ -164,7 +166,8 @@ void CatalogPage::setColors(const QStringList& colors, const QString& current)
 
 void CatalogPage::setResultCount(const int count)
 {
-    m_count->setText(tr("%n автомобил(ей)", nullptr, count));
+    m_count->setText(QStringLiteral("%1 %2").arg(count).arg(
+        UiKit::plural(count, tr("автомобиль"), tr("автомобиля"), tr("автомобилей"))));
     m_content->setCurrentIndex(count > 0 ? 0 : 1);
 }
 

@@ -63,6 +63,7 @@ set(VIEW_SOURCES
     ${CMAKE_CURRENT_SOURCE_DIR}/src/view/src/pages/NotificationsPage.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/src/view/src/pages/ProductPage.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/src/view/src/pages/ProfilePage.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/src/view/src/pages/TopBar.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/src/view/include/FlowLayout.h
     ${CMAKE_CURRENT_SOURCE_DIR}/src/view/include/ProductCardDelegate.h
     ${CMAKE_CURRENT_SOURCE_DIR}/src/view/include/RecordEditDialog.h
@@ -75,6 +76,7 @@ set(VIEW_SOURCES
     ${CMAKE_CURRENT_SOURCE_DIR}/src/view/include/pages/NotificationsPage.h
     ${CMAKE_CURRENT_SOURCE_DIR}/src/view/include/pages/ProductPage.h
     ${CMAKE_CURRENT_SOURCE_DIR}/src/view/include/pages/ProfilePage.h
+    ${CMAKE_CURRENT_SOURCE_DIR}/src/view/include/pages/TopBar.h
 )
 
 add_library(view STATIC ${VIEW_SOURCES})

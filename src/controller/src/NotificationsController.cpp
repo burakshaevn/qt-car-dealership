@@ -104,20 +104,20 @@ NotificationItem NotificationsController::present(const Notification& n) const
         item.Subtitle = n.AdditionalInfo;
     } else if (n.Type == QLatin1String("loan")) {
         item.Title = tr("Кредит");
-        item.Subtitle = tr("%1 ₽ · %2").arg(formatPrice(n.AdditionalInfo.toLongLong()), car);
+        item.Subtitle = tr("%1 ₽, %2").arg(formatPrice(n.AdditionalInfo.toLongLong()), car);
     } else if (n.Type == QLatin1String("insurance")) {
         item.Title = tr("Страхование");
-        item.Subtitle = QStringLiteral("%1 · %2").arg(n.AdditionalInfo, car);
+        item.Subtitle = QStringLiteral("%1, %2").arg(n.AdditionalInfo, car);
     } else if (n.Type == QLatin1String("rental")) {
         item.Title = tr("Аренда");
-        item.Subtitle = tr("%1 дн. с %2 · %3")
+        item.Subtitle = tr("%1 дн. с %2, %3")
                             .arg(n.AdditionalInfo, kLocale.toString(n.Date.date(), QLocale::ShortFormat), car);
     } else if (n.Type == QLatin1String("test_drive")) {
         item.Title = tr("Тест-драйв");
         item.Subtitle = car;
     } else if (n.Type == QLatin1String("service")) {
         item.Title = tr("Сервисное обслуживание");
-        item.Subtitle = QStringLiteral("%1 · %2").arg(n.AdditionalInfo, car);
+        item.Subtitle = QStringLiteral("%1, %2").arg(n.AdditionalInfo, car);
     } else {
         item.Title = n.Type;
         item.Subtitle = car;

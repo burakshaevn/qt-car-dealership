@@ -4,6 +4,7 @@
 #define THEME_MANAGER_H
 
 #include <QColor>
+#include <QFont>
 #include <QHash>
 #include <QIcon>
 #include <QObject>
@@ -40,6 +41,9 @@ public:
 
     [[nodiscard]] QColor color(const QString& token) const;
     [[nodiscard]] QString fontFamily() const;
+    /// Serif family used for headings, model names and prices.
+    [[nodiscard]] QString displayFamily() const;
+    [[nodiscard]] QFont displayFont(qreal pointSize, QFont::Weight weight = QFont::Normal) const;
 
     /// Icon from the theme's icon set.
     [[nodiscard]] QIcon icon(const QString& name) const;
@@ -76,6 +80,7 @@ private:
     QString m_iconSet;
     QHash<QString, QColor> m_colors;
     QString m_fontFamily;
+    QString m_displayFamily;
     QApplication* m_app = nullptr;
 };
 

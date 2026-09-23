@@ -17,26 +17,26 @@ AdminPage::AdminPage(QWidget* parent)
     , m_proxy(new QSortFilterProxyModel(this))
 {
     setObjectName(QStringLiteral("adminPage"));
-    ThemeManager& theme = ThemeManager::instance();
 
     auto* root = new QVBoxLayout(this);
-    root->setContentsMargins(36, 30, 36, 30);
+    root->setContentsMargins(48, 36, 48, 32);
     root->setSpacing(0);
 
     auto* header = new QHBoxLayout;
     auto* titles = new QVBoxLayout;
-    titles->setSpacing(4);
+    titles->setSpacing(8);
     m_title = UiKit::label(QString(), "h1", this);
+    m_title->setWordWrap(true);
     m_description = UiKit::label(QString(), "muted", this);
     m_description->setWordWrap(true);
     titles->addWidget(m_title);
     titles->addWidget(m_description);
     header->addLayout(titles, 1);
-    m_summary = UiKit::badge(QString(), UiKit::Tone::Accent, this);
+    m_summary = UiKit::label(QString(), "price", this);
     m_summary->hide();
-    header->addWidget(m_summary, 0, Qt::AlignTop);
+    header->addWidget(m_summary, 0, Qt::AlignBottom);
     root->addLayout(header);
-    root->addSpacing(22);
+    root->addSpacing(28);
 
     // Toolbar
     auto* toolbar = new QHBoxLayout;
@@ -45,31 +45,24 @@ AdminPage::AdminPage(QWidget* parent)
     m_search->setObjectName(QStringLiteral("searchField"));
     m_search->setPlaceholderText(tr("Поиск по таблице"));
     m_search->setClearButtonEnabled(true);
-    m_search->setMaximumWidth(340);
-    toolbar->addWidget(m_search, 1);
+    m_search->setFixedWidth(300);
+    toolbar->addWidget(m_search, 0, Qt::AlignVCenter);
     toolbar->addStretch(1);
 
-    auto makeButton = [&](const QString& text, const char* type, const QString& icon,
-                          const QString& token, const QString& objectName) {
+    auto makeButton = [&](const QString& text, const char* type, const QString& objectName) {
         auto* button = UiKit::button(text, type, this);
         button->setObjectName(objectName);
-        button->setIconSize(QSize(16, 16));
-        theme.bindIcon(button, icon, token);
         toolbar->addWidget(button);
         return button;
     };
-    m_approve = makeButton(tr("Одобрить"), nullptr, QStringLiteral("check"), QStringLiteral("success"),
-                           QStringLiteral("approve_button"));
-    m_reject = makeButton(tr("Отклонить"), nullptr, QStringLiteral("x"), QStringLiteral("danger"),
-                          QStringLiteral("reject_button"));
-    m_edit = makeButton(tr("Изменить"), nullptr, QStringLiteral("edit"), QStringLiteral("text"),
-                        QStringLiteral("edit_button"));
-    m_delete = makeButton(tr("Удалить"), "danger", QStringLiteral("trash"), QStringLiteral("danger"),
-                          QStringLiteral("delete_button"));
-    m_add = makeButton(tr("Добавить"), "primary", QStringLiteral("plus"), QStringLiteral("onAccent"),
-                       QStringLiteral("add_button"));
+    m_delete = makeButton(tr("Удалить"), "ghost", QStringLiteral("delete_button"));
+    toolbar->addSpacing(16);
+    m_reject = makeButton(tr("Отклонить"), nullptr, QStringLiteral("reject_button"));
+    m_edit = makeButton(tr("Изменить"), nullptr, QStringLiteral("edit_button"));
+    m_approve = makeButton(tr("Одобрить"), "primary", QStringLiteral("approve_button"));
+    m_add = makeButton(tr("Новая запись"), "primary", QStringLiteral("add_button"));
     root->addLayout(toolbar);
-    root->addSpacing(16);
+    root->addSpacing(20);
 
     m_proxy->setFilterCaseSensitivity(Qt::CaseInsensitive);
     m_proxy->setFilterKeyColumn(-1);
@@ -78,7 +71,7 @@ AdminPage::AdminPage(QWidget* parent)
     m_table = new QTableView(this);
     m_table->setModel(m_proxy);
     m_table->setSortingEnabled(true);
-    m_table->setAlternatingRowColors(true);
+    m_table->setAlternatingRowColors(false);
     m_table->setShowGrid(false);
     m_table->setSelectionBehavior(QAbstractItemView::SelectRows);
     m_table->setSelectionMode(QAbstractItemView::SingleSelection);
@@ -87,7 +80,7 @@ AdminPage::AdminPage(QWidget* parent)
     m_table->setHorizontalScrollMode(QAbstractItemView::ScrollPerPixel);
     m_table->setVerticalScrollMode(QAbstractItemView::ScrollPerPixel);
     m_table->verticalHeader()->hide();
-    m_table->verticalHeader()->setDefaultSectionSize(40);
+    m_table->verticalHeader()->setDefaultSectionSize(38);
     m_table->horizontalHeader()->setHighlightSections(false);
     m_table->horizontalHeader()->setDefaultAlignment(Qt::AlignLeft | Qt::AlignVCenter);
     m_table->horizontalHeader()->setStretchLastSection(true);

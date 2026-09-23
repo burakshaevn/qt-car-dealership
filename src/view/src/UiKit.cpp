@@ -3,9 +3,9 @@
 #include "ThemeManager.h"
 
 #include <QFrame>
-#include <QGraphicsDropShadowEffect>
 #include <QHBoxLayout>
 #include <QLabel>
+#include <QPainter>
 #include <QPushButton>
 #include <QVBoxLayout>
 
@@ -52,7 +52,7 @@ QFrame* card(QWidget* parent)
 QFrame* divider(QWidget* parent)
 {
     auto* result = new QFrame(parent);
-    result->setObjectName(QStringLiteral("divider"));
+    result->setObjectName(QStringLiteral("rule"));
     result->setFrameShape(QFrame::NoFrame);
     return result;
 }
@@ -64,9 +64,25 @@ void setTone(QLabel* badge, const Tone tone)
     ThemeManager::repolish(badge);
 }
 
+void makeOverline(QLabel* label)
+{
+    label->setText(label->text().toUpper());
+    QFont font = label->font();
+    font.setLetterSpacing(QFont::AbsoluteSpacing, 1.1);
+    label->setFont(font);
+}
+
+QLabel* overline(const QString& text, QWidget* parent)
+{
+    auto* result = label(text, "overline", parent);
+    makeOverline(result);
+    return result;
+}
+
 QLabel* badge(const QString& text, const Tone tone, QWidget* parent)
 {
-    auto* result = label(text, "badge", parent);
+    auto* result = label(text, "status", parent);
+    makeOverline(result);
     result->setSizePolicy(QSizePolicy::Maximum, QSizePolicy::Fixed);
     setTone(result, tone);
     return result;
@@ -84,26 +100,40 @@ QWidget* field(const QString& caption, QWidget* input, QWidget* parent)
     return container;
 }
 
-void elevate(QWidget* widget, const int blurRadius, const int offsetY)
+QString plural(const qint64 count, const QString& one, const QString& few, const QString& many)
 {
-    auto* shadow = new QGraphicsDropShadowEffect(widget);
-    shadow->setBlurRadius(blurRadius);
-    shadow->setOffset(0, offsetY);
-    shadow->setColor(ThemeManager::instance().color(QStringLiteral("shadow")));
-    widget->setGraphicsEffect(shadow);
+    const qint64 kMod100 = count % 100;
+    const qint64 kMod10 = count % 10;
+    if (kMod100 >= 11 && kMod100 <= 14) {
+        return many;
+    }
+    if (kMod10 == 1) {
+        return one;
+    }
+    if (kMod10 >= 2 && kMod10 <= 4) {
+        return few;
+    }
+    return many;
 }
 
-QString initials(const QString& fullName)
+QIcon swatchIcon(const QColor& color, const int size)
 {
-    QString result;
-    const QStringList kParts = fullName.split(QLatin1Char(' '), Qt::SkipEmptyParts);
-    for (const QString& part : kParts) {
-        result += part.front().toUpper();
-        if (result.size() == 2) {
-            break;
-        }
+    if (!color.isValid()) {
+        return {};
     }
-    return result.isEmpty() ? QStringLiteral("?") : result;
+    QIcon icon;
+    for (const qreal kScale : {1.0, 2.0}) {
+        QPixmap pixmap(QSize(size, size) * kScale);
+        pixmap.setDevicePixelRatio(kScale);
+        pixmap.fill(Qt::transparent);
+        QPainter painter(&pixmap);
+        painter.setPen(QPen(color.lightnessF() > 0.85 ? QColor(0, 0, 0, 60) : color.darker(120), 1));
+        painter.setBrush(color);
+        painter.drawRect(QRectF(0.5, 0.5, size - 1, size - 1));
+        painter.end();
+        icon.addPixmap(pixmap);
+    }
+    return icon;
 }
 
 } // namespace UiKit
@@ -116,7 +146,7 @@ FormDialog::FormDialog(const QString& title, const QString& subtitle, QWidget* p
     setMinimumWidth(460);
 
     auto* root = new QVBoxLayout(this);
-    root->setContentsMargins(28, 26, 28, 24);
+    root->setContentsMargins(32, 28, 32, 26);
     root->setSpacing(0);
 
     root->addWidget(UiKit::label(title, "h2", this));
@@ -126,6 +156,8 @@ FormDialog::FormDialog(const QString& title, const QString& subtitle, QWidget* p
         sub->setWordWrap(true);
         root->addWidget(sub);
     }
+    root->addSpacing(18);
+    root->addWidget(UiKit::divider(this));
     root->addSpacing(20);
 
     m_body = new QVBoxLayout;
@@ -141,7 +173,7 @@ FormDialog::FormDialog(const QString& title, const QString& subtitle, QWidget* p
     root->addSpacing(12);
 
     auto* footer = new QHBoxLayout;
-    footer->setSpacing(10);
+    footer->setSpacing(18);
     footer->addStretch(1);
     m_cancel = UiKit::button(tr("Отмена"), "ghost", this);
     m_accept = UiKit::button(tr("Сохранить"), "primary", this);

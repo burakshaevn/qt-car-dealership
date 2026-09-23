@@ -1,7 +1,6 @@
 #include "pages/ProfilePage.h"
 
 #include "ProductCardDelegate.h"
-#include "ThemeManager.h"
 #include "UiKit.h"
 
 #include <QEvent>
@@ -16,25 +15,8 @@
 #include <QVBoxLayout>
 
 namespace {
-constexpr int kCardSpacing = 20;
+constexpr int kCardSpacing = 32;
 const char* const kMethodProperty = "purchaseMethod";
-
-/// Tile icon: tinted glyph on a soft accent square.
-QLabel* tileIcon(const QString& name, QWidget* parent)
-{
-    auto* icon = new QLabel(parent);
-    icon->setObjectName(QStringLiteral("tileIcon"));
-    icon->setFixedSize(44, 44);
-    icon->setAlignment(Qt::AlignCenter);
-    auto refresh = [icon, name] {
-        const ThemeManager& theme = ThemeManager::instance();
-        icon->setPixmap(theme.tintedIcon(name, theme.color(QStringLiteral("accent")), QSize(22, 22))
-                            .pixmap(QSize(22, 22)));
-    };
-    refresh();
-    QObject::connect(&ThemeManager::instance(), &ThemeManager::themeChanged, icon, refresh);
-    return icon;
-}
 } // namespace
 
 ProfilePage::ProfilePage(QWidget* parent)
@@ -54,68 +36,67 @@ ProfilePage::ProfilePage(QWidget* parent)
     auto* content = new QWidget(scroll);
     scroll->setWidget(content);
     auto* root = new QVBoxLayout(content);
-    root->setContentsMargins(36, 30, 36, 32);
+    root->setContentsMargins(56, 40, 56, 48);
     root->setSpacing(0);
 
-    // ---- Profile header card
-    auto* header = UiKit::card(content);
-    auto* headerLayout = new QHBoxLayout(header);
-    headerLayout->setContentsMargins(24, 22, 24, 22);
-    headerLayout->setSpacing(18);
-
-    m_avatar = new QLabel(header);
-    m_avatar->setObjectName(QStringLiteral("avatarLarge"));
-    m_avatar->setFixedSize(64, 64);
-    m_avatar->setAlignment(Qt::AlignCenter);
-    headerLayout->addWidget(m_avatar);
-
-    auto* identity = new QVBoxLayout;
-    identity->setSpacing(4);
-    m_name = UiKit::label(QString(), "h2", header);
+    // ---- Header: name set large, contact and edit link underneath
+    m_avatar = new QLabel(content); // API compatibility; monograms are not used in this design
+    m_avatar->hide();
+    root->addWidget(UiKit::overline(tr("Личный кабинет"), content));
+    root->addSpacing(10);
+    m_name = UiKit::label(QString(), "h1", content);
     m_name->setObjectName(QStringLiteral("label_clientname"));
-    m_email = UiKit::label(QString(), "muted", header);
-    identity->addStretch(1);
-    identity->addWidget(m_name);
-    identity->addWidget(m_email);
-    identity->addStretch(1);
-    headerLayout->addLayout(identity, 1);
+    root->addWidget(m_name);
+    root->addSpacing(8);
+    auto* contact = new QHBoxLayout;
+    contact->setSpacing(20);
+    m_email = UiKit::label(QString(), "muted", content);
+    contact->addWidget(m_email);
+    auto* edit = UiKit::button(tr("Изменить данные"), "link", content);
+    contact->addWidget(edit);
+    contact->addStretch(1);
+    root->addLayout(contact);
+    root->addSpacing(48);
 
-    auto* edit = UiKit::button(tr("Редактировать профиль"), nullptr, header);
-    edit->setIconSize(QSize(16, 16));
-    ThemeManager::instance().bindIcon(edit, QStringLiteral("edit"), QStringLiteral("text"));
-    headerLayout->addWidget(edit, 0, Qt::AlignVCenter);
-    root->addWidget(header);
-    root->addSpacing(32);
+    // ---- Two columns: services (numbered list) | purchased cars
+    auto* columns = new QHBoxLayout;
+    columns->setSpacing(64);
 
-    // ---- Services
-    root->addWidget(UiKit::label(tr("Услуги"), "h2", content));
-    root->addSpacing(4);
-    root->addWidget(UiKit::label(tr("Выберите, как вы хотите получить автомобиль"), "muted", content));
-    root->addSpacing(16);
-
+    auto* servicesColumn = new QVBoxLayout;
+    servicesColumn->setSpacing(0);
+    servicesColumn->addWidget(UiKit::label(tr("Услуги"), "h2", content));
+    servicesColumn->addSpacing(14);
+    auto* top = new QFrame(content);
+    top->setObjectName(QStringLiteral("ruleStrong"));
+    servicesColumn->addWidget(top);
     auto* services = new QGridLayout;
-    services->setHorizontalSpacing(16);
-    services->setVerticalSpacing(16);
-    addServiceTile(services, 0, PurchaseMethod::Standart, QStringLiteral("cart"),
-                   tr("Покупка"), tr("Автомобиль из наличия по полной стоимости"));
-    addServiceTile(services, 1, PurchaseMethod::Credit, QStringLiteral("wallet"),
-                   tr("Кредит"), tr("Выгодный автокредит на срок до 5 лет"));
-    addServiceTile(services, 2, PurchaseMethod::Rental, QStringLiteral("key"),
-                   tr("Аренда"), tr("Долгосрочная аренда от одного месяца"));
-    addServiceTile(services, 3, PurchaseMethod::TestDrive, QStringLiteral("steering"),
-                   tr("Тест-драйв"), tr("Запишитесь на удобные дату и время"));
-    root->addLayout(services);
-    root->addSpacing(36);
+    services->setSpacing(0);
+    addServiceTile(services, 0, PurchaseMethod::Standart, QString(), tr("Покупка"),
+                   tr("Автомобиль из наличия по полной стоимости"));
+    addServiceTile(services, 1, PurchaseMethod::Credit, QString(), tr("Кредит"),
+                   tr("Автокредит на срок до пяти лет"));
+    addServiceTile(services, 2, PurchaseMethod::Rental, QString(), tr("Аренда"),
+                   tr("Долгосрочная аренда от одного месяца"));
+    addServiceTile(services, 3, PurchaseMethod::TestDrive, QString(), tr("Тест-драйв"),
+                   tr("Поездка в удобные дату и время"));
+    servicesColumn->addLayout(services);
+    servicesColumn->addStretch(1);
+    columns->addLayout(servicesColumn, 2);
 
-    // ---- Purchased cars
+    auto* garageColumn = new QVBoxLayout;
+    garageColumn->setSpacing(0);
     auto* purchasedHeader = new QHBoxLayout;
-    purchasedHeader->addWidget(UiKit::label(tr("Мои автомобили"), "h2", content));
-    purchasedHeader->addSpacing(8);
-    m_purchasedCount = UiKit::badge(QStringLiteral("0"), UiKit::Tone::Neutral, content);
-    purchasedHeader->addWidget(m_purchasedCount, 0, Qt::AlignVCenter);
+    purchasedHeader->setSpacing(12);
+    purchasedHeader->addWidget(UiKit::label(tr("Мои автомобили"), "h2", content), 0, Qt::AlignBottom);
+    m_purchasedCount = UiKit::label(QStringLiteral("0"), "index", content);
+    purchasedHeader->addWidget(m_purchasedCount, 0, Qt::AlignBottom);
     purchasedHeader->addStretch(1);
-    root->addLayout(purchasedHeader);
-    root->addSpacing(16);
+    garageColumn->addLayout(purchasedHeader);
+    garageColumn->addSpacing(14);
+    auto* garageRule = new QFrame(content);
+    garageRule->setObjectName(QStringLiteral("ruleStrong"));
+    garageColumn->addWidget(garageRule);
+    garageColumn->addSpacing(24);
 
     m_purchasedStack = new QStackedWidget(content);
 
@@ -126,7 +107,7 @@ ProfilePage::ProfilePage(QWidget* parent)
     m_purchased->setResizeMode(QListView::Adjust);
     m_purchased->setMovement(QListView::Static);
     m_purchased->setUniformItemSizes(true);
-    m_purchased->setSpacing(kCardSpacing / 2);
+    m_purchased->setSpacing(0);
     m_purchased->setProperty("cardSpacing", kCardSpacing);
     m_purchased->setSelectionMode(QAbstractItemView::NoSelection);
     m_purchased->setVerticalScrollBarPolicy(Qt::ScrollBarAlwaysOff);
@@ -138,18 +119,18 @@ ProfilePage::ProfilePage(QWidget* parent)
     m_purchased->viewport()->installEventFilter(this);
     m_purchasedStack->addWidget(m_purchased);
 
-    auto* empty = UiKit::card(m_purchasedStack);
+    auto* empty = new QWidget(m_purchasedStack);
     auto* emptyLayout = new QVBoxLayout(empty);
-    emptyLayout->setContentsMargins(24, 32, 24, 32);
-    auto* emptyTitle = UiKit::label(tr("Пока нет покупок"), "h3", empty);
-    emptyTitle->setAlignment(Qt::AlignCenter);
-    auto* emptyText = UiKit::label(tr("Оформленные покупки появятся здесь."), "muted", empty);
-    emptyText->setAlignment(Qt::AlignCenter);
-    emptyLayout->addWidget(emptyTitle);
-    emptyLayout->addWidget(emptyText);
+    emptyLayout->setContentsMargins(0, 0, 0, 0);
+    emptyLayout->addWidget(UiKit::label(tr("Покупок пока нет."), "muted", empty));
+    emptyLayout->addStretch(1);
     m_purchasedStack->addWidget(empty);
 
-    root->addWidget(m_purchasedStack);
+    garageColumn->addWidget(m_purchasedStack);
+    garageColumn->addStretch(1);
+    columns->addLayout(garageColumn, 3);
+
+    root->addLayout(columns);
     root->addStretch(1);
 
     connect(edit, &QPushButton::clicked, this, &ProfilePage::editProfileRequested);
@@ -157,42 +138,41 @@ ProfilePage::ProfilePage(QWidget* parent)
 }
 
 void ProfilePage::addServiceTile(QGridLayout* grid,
-                                 const int column,
+                                 const int row,
                                  const PurchaseMethod method,
                                  const QString& icon,
                                  const QString& title,
                                  const QString& text)
 {
-    auto* tile = UiKit::card(this);
-    tile->setObjectName(QStringLiteral("serviceTile"));
+    Q_UNUSED(icon);
+    auto* tile = new QFrame(this);
+    tile->setObjectName(QStringLiteral("serviceRow"));
     tile->setProperty(kMethodProperty, static_cast<int>(method));
     tile->setCursor(Qt::PointingHandCursor);
-    tile->setMinimumHeight(150);
     tile->installEventFilter(this);
 
-    auto* layout = new QVBoxLayout(tile);
-    layout->setContentsMargins(20, 20, 20, 20);
-    layout->setSpacing(0);
-    layout->addWidget(tileIcon(icon, tile));
-    layout->addSpacing(16);
-    auto* titleLabel = UiKit::label(title, "h3", tile);
-    layout->addWidget(titleLabel);
-    layout->addSpacing(4);
-    auto* textLabel = UiKit::label(text, "muted", tile);
-    textLabel->setWordWrap(true);
-    layout->addWidget(textLabel);
-    layout->addStretch(1);
+    auto* layout = new QHBoxLayout(tile);
+    layout->setContentsMargins(0, 18, 0, 18);
+    layout->setSpacing(20);
+    layout->addWidget(UiKit::label(QStringLiteral("%1").arg(row + 1, 2, 10, QLatin1Char('0')), "index", tile),
+                      0, Qt::AlignTop);
+    auto* text_ = new QVBoxLayout;
+    text_->setSpacing(3);
+    text_->addWidget(UiKit::label(title, "h3", tile));
+    auto* description = UiKit::label(text, "muted", tile);
+    description->setWordWrap(true);
+    text_->addWidget(description);
+    layout->addLayout(text_, 1);
+    layout->addWidget(UiKit::label(QStringLiteral("→"), "muted", tile), 0, Qt::AlignVCenter);
 
     for (QLabel* child : tile->findChildren<QLabel*>()) {
         child->setAttribute(Qt::WA_TransparentForMouseEvents);
     }
-    grid->addWidget(tile, 0, column);
-    grid->setColumnStretch(column, 1);
+    grid->addWidget(tile, row, 0);
 }
 
 void ProfilePage::setUser(const QString& fullName, const QString& email)
 {
-    m_avatar->setText(UiKit::initials(fullName));
     m_name->setText(fullName);
     m_email->setText(email);
 }
@@ -238,5 +218,5 @@ void ProfilePage::updatePurchasedHeight()
     const int kCount = m_purchased->model() ? m_purchased->model()->rowCount() : 0;
     const int kColumns = qMax(1, kWidth / kCell.width());
     const int kRows = qMax(1, (kCount + kColumns - 1) / kColumns);
-    m_purchasedStack->setFixedHeight(kCount > 0 ? kRows * kCell.height() + 4 : 140);
+    m_purchasedStack->setFixedHeight(kCount > 0 ? kRows * kCell.height() + 4 : 60);
 }

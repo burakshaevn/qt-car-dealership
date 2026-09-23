@@ -44,6 +44,8 @@ struct ProductInfo
     int TypeId = 0;
     QString Trim;
     int StockQty = 0;
+    QString TypeName;      ///< Body type caption (car_types.name)
+    QString ColorHex;      ///< Paint swatch colour (car_colors.hex), may be empty
     PurchaseMethod PurchasMethod = PurchaseMethod::Unknown;
 };
 

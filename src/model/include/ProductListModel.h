@@ -23,7 +23,9 @@ public:
         ImagePathRole,
         TypeIdRole,
         TrimRole,
-        StockQtyRole
+        StockQtyRole,
+        TypeNameRole,
+        ColorHexRole
     };
 
     explicit ProductListModel(QObject* parent = nullptr);

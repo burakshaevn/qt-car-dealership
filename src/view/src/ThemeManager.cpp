@@ -41,17 +41,10 @@ void ThemeManager::initialize(QApplication& app)
 
     QDirIterator fonts(kFontsRoot, {QStringLiteral("*.ttf"), QStringLiteral("*.otf")}, QDir::Files);
     while (fonts.hasNext()) {
-        const int kId = QFontDatabase::addApplicationFont(fonts.next());
-        const QStringList kFamilies = QFontDatabase::applicationFontFamilies(kId);
-        if (m_fontFamily.isEmpty() && !kFamilies.isEmpty()) {
-            m_fontFamily = kFamilies.first();
+        const QString kPath = fonts.next();
+        if (QFontDatabase::addApplicationFont(kPath) < 0) {
+            qCWarning(lcTheme) << "Cannot load font" << kPath;
         }
-    }
-    if (!m_fontFamily.isEmpty()) {
-        QFont font(m_fontFamily);
-        font.setPointSizeF(10.5);
-        font.setHintingPreference(QFont::PreferNoHinting);
-        app.setFont(font);
     }
 
     const QString kSaved = QSettings().value(kSettingsKey, kDefaultTheme).toString();
@@ -83,6 +76,19 @@ bool ThemeManager::isDark() const
 QString ThemeManager::fontFamily() const
 {
     return m_fontFamily;
+}
+
+QString ThemeManager::displayFamily() const
+{
+    return m_displayFamily;
+}
+
+QFont ThemeManager::displayFont(const qreal pointSize, const QFont::Weight weight) const
+{
+    QFont font(m_displayFamily.isEmpty() ? QApplication::font().family() : m_displayFamily);
+    font.setPointSizeF(pointSize);
+    font.setWeight(weight);
+    return font;
 }
 
 void ThemeManager::setTheme(const QString& name)
@@ -118,6 +124,17 @@ bool ThemeManager::loadPalette(const QString& name)
     }
     m_theme = name;
     m_iconSet = kRoot.value(QStringLiteral("icons")).toString(name);
+
+    // Font families are part of the theme; fall back to the platform font when unavailable.
+    const QJsonObject kFonts = kRoot.value(QStringLiteral("fonts")).toObject();
+    const auto resolve = [](const QString& family) {
+        return QFontDatabase::hasFamily(family) ? family : QString();
+    };
+    m_fontFamily = resolve(kFonts.value(QStringLiteral("ui")).toString());
+    m_displayFamily = resolve(kFonts.value(QStringLiteral("display")).toString());
+    if (m_displayFamily.isEmpty()) {
+        m_displayFamily = m_fontFamily;
+    }
     return true;
 }
 
@@ -135,6 +152,13 @@ void ThemeManager::apply()
 {
     if (!m_app) {
         return;
+    }
+
+    if (!m_fontFamily.isEmpty()) {
+        QFont font(m_fontFamily);
+        font.setPointSizeF(10.5);
+        font.setHintingPreference(QFont::PreferNoHinting);
+        m_app->setFont(font);
     }
 
     QPalette palette = m_app->palette();
@@ -178,6 +202,7 @@ void ThemeManager::apply()
         qss.replace(QLatin1Char('@') + token, kValue);
     }
     qss.replace(QStringLiteral("$icons"), m_iconSet);
+    qss.replace(QStringLiteral("$display"), m_displayFamily.isEmpty() ? m_app->font().family() : m_displayFamily);
     qss.replace(QStringLiteral("$font"), m_fontFamily.isEmpty() ? m_app->font().family() : m_fontFamily);
 
     static const QRegularExpression kUnresolved(QStringLiteral("@[A-Za-z]+"));

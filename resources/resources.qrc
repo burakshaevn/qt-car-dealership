@@ -1,13 +1,19 @@
 <RCC>
     <qresource prefix="/">
         <file>contracts/document.html</file>
-        <file>fonts/Inter-LICENSE.txt</file>
-        <file>fonts/InterVariable.ttf</file>
-        <file>icons/common/check_white.svg</file>
+        <file>fonts/GolosText-OFL.txt</file>
+        <file>fonts/GolosText-Variable.ttf</file>
+        <file>fonts/Spectral-Italic.ttf</file>
+        <file>fonts/Spectral-Medium.ttf</file>
+        <file>fonts/Spectral-OFL.txt</file>
+        <file>fonts/Spectral-Regular.ttf</file>
+        <file>fonts/Spectral-SemiBold.ttf</file>
+        <file>icons/dark/check_mark.svg</file>
         <file>icons/dark/combo_down.svg</file>
         <file>icons/dark/logo.svg</file>
         <file>icons/dark/mercedez_benz.svg</file>
         <file>icons/dark/search_small.svg</file>
+        <file>icons/light/check_mark.svg</file>
         <file>icons/light/combo_down.svg</file>
         <file>icons/light/logo.svg</file>
         <file>icons/light/mercedez_benz.svg</file>

@@ -21,6 +21,7 @@ class NotificationsPage;
 class ProductPage;
 class ProfilePage;
 class QStackedWidget;
+class TopBar;
 class RequestController;
 
 /*!
@@ -54,7 +55,8 @@ private:
     QStackedWidget* m_root = nullptr;      ///< login | workspace
     LoginPage* m_loginPage = nullptr;
     QWidget* m_workspace = nullptr;
-    NavigationSidebar* m_sidebar = nullptr;
+    NavigationSidebar* m_sidebar = nullptr; ///< admin index
+    TopBar* m_topBar = nullptr;             ///< customer navigation
     QStackedWidget* m_pages = nullptr;
     CatalogPage* m_catalogPage = nullptr;
     ProductPage* m_productPage = nullptr;
