@@ -1,4 +1,0 @@
-QListView {
-    background: transparent;
-    border: none;
-}

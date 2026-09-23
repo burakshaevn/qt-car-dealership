@@ -1,72 +1,46 @@
 <RCC>
     <qresource prefix="/">
-        <file alias="more_horiz.svg">icons/light/more_horiz.svg</file>
-        <file alias="navigate_next.svg">icons/light/navigate_next.svg</file>
-        <file alias="person.svg">icons/light/person.svg</file>
-        <file alias="logo.svg">icons/light/logo.svg</file>
-        <file alias="mercedez_benz.svg">icons/light/mercedez_benz.svg</file>
-        <file alias="directions_car.svg">icons/light/directions_car.svg</file>
-        <file alias="search.svg">icons/light/search.svg</file>
-        <file alias="navigate_before.svg">icons/light/navigate_before.svg</file>
-        <file alias="add.svg">icons/light/add.svg</file>
-        <file alias="delete.svg">icons/light/delete.svg</file>
-        <file alias="edit.svg">icons/light/edit.svg</file>
-        <file alias="color_swatch_02.svg">icons/light/color_swatch_02.svg</file>
-        <file alias="information_circle_contained.svg">icons/light/information_circle_contained.svg</file>
-        <file alias="check.svg">icons/light/check.svg</file>
-        <file alias="close.svg">icons/light/close.svg</file>
-        <file alias="done_all.svg">icons/light/done_all.svg</file>
-        <file alias="settings.svg">icons/light/settings.svg</file>
-        <file alias="file_text.svg">icons/light/file_text.svg</file>
-        <file alias="inbox.svg">icons/light/inbox.svg</file>
-        <file>styles/light/DialogForm.qss</file>
-        <file>styles/dark/DialogForm.qss</file>
-        <file>styles/light/ListViewTransparent.qss</file>
-        <file>styles/dark/ListViewTransparent.qss</file>
-        <file>styles/light/FloatingWidget.qss</file>
-        <file>styles/dark/FloatingWidget.qss</file>
-        <file>styles/light/IconButton.qss</file>
-        <file>styles/dark/IconButton.qss</file>
-        <file>styles/light/AdminTableSelector.qss</file>
-        <file>styles/dark/AdminTableSelector.qss</file>
-        <file>styles/light/AdminDescription.qss</file>
-        <file>styles/dark/AdminDescription.qss</file>
-        <file>styles/light/AdminTableView.qss</file>
-        <file>styles/dark/AdminTableView.qss</file>
-        <file>styles/light/AdminFloatingMenu.qss</file>
-        <file>styles/dark/AdminFloatingMenu.qss</file>
-        <file>styles/light/NotificationTitle.qss</file>
-        <file>styles/dark/NotificationTitle.qss</file>
-        <file>styles/light/NotificationMessage.qss</file>
-        <file>styles/dark/NotificationMessage.qss</file>
-        <file>styles/light/NotificationItem.qss</file>
-        <file>styles/dark/NotificationItem.qss</file>
-        <file>styles/light/NotificationEmpty.qss</file>
-        <file>styles/dark/NotificationEmpty.qss</file>
-        <file>styles/light/NotificationsDialog.qss</file>
-        <file>styles/dark/NotificationsDialog.qss</file>
-        <file>styles/light/MainShell.qss</file>
-        <file>styles/dark/MainShell.qss</file>
-        <file>icons/light/combo_down.svg</file>
+        <file>contracts/document.html</file>
+        <file>fonts/Inter-LICENSE.txt</file>
+        <file>fonts/InterVariable.ttf</file>
+        <file>icons/common/check_white.svg</file>
         <file>icons/dark/combo_down.svg</file>
-        <file>icons/dark/add.svg</file>
-        <file>icons/dark/check.svg</file>
-        <file>icons/dark/close.svg</file>
-        <file>icons/dark/color_swatch_02.svg</file>
-        <file>icons/dark/delete.svg</file>
-        <file>icons/dark/directions_car.svg</file>
-        <file>icons/dark/done_all.svg</file>
-        <file>icons/dark/edit.svg</file>
-        <file>icons/dark/file_text.svg</file>
-        <file>icons/dark/inbox.svg</file>
-        <file>icons/dark/information_circle_contained.svg</file>
         <file>icons/dark/logo.svg</file>
         <file>icons/dark/mercedez_benz.svg</file>
-        <file>icons/dark/more_horiz.svg</file>
-        <file>icons/dark/navigate_before.svg</file>
-        <file>icons/dark/navigate_next.svg</file>
-        <file>icons/dark/person.svg</file>
-        <file>icons/dark/search.svg</file>
-        <file>icons/dark/settings.svg</file>
+        <file>icons/dark/search_small.svg</file>
+        <file>icons/light/combo_down.svg</file>
+        <file>icons/light/logo.svg</file>
+        <file>icons/light/mercedez_benz.svg</file>
+        <file>icons/light/search_small.svg</file>
+        <file>icons/ui/arrow_left.svg</file>
+        <file>icons/ui/bell.svg</file>
+        <file>icons/ui/calendar.svg</file>
+        <file>icons/ui/car.svg</file>
+        <file>icons/ui/cart.svg</file>
+        <file>icons/ui/check.svg</file>
+        <file>icons/ui/chevron_left.svg</file>
+        <file>icons/ui/chevron_right.svg</file>
+        <file>icons/ui/done_all.svg</file>
+        <file>icons/ui/edit.svg</file>
+        <file>icons/ui/file_text.svg</file>
+        <file>icons/ui/grid.svg</file>
+        <file>icons/ui/inbox.svg</file>
+        <file>icons/ui/key.svg</file>
+        <file>icons/ui/logout.svg</file>
+        <file>icons/ui/moon.svg</file>
+        <file>icons/ui/plus.svg</file>
+        <file>icons/ui/search.svg</file>
+        <file>icons/ui/settings.svg</file>
+        <file>icons/ui/shield.svg</file>
+        <file>icons/ui/sort.svg</file>
+        <file>icons/ui/steering.svg</file>
+        <file>icons/ui/table.svg</file>
+        <file>icons/ui/trash.svg</file>
+        <file>icons/ui/user.svg</file>
+        <file>icons/ui/wallet.svg</file>
+        <file>icons/ui/x.svg</file>
+        <file>themes/app.qss</file>
+        <file>themes/dark.json</file>
+        <file>themes/light.json</file>
     </qresource>
 </RCC>

@@ -1,0 +1,31 @@
+{
+    "name": "light",
+    "title": "Светлая",
+    "icons": "light",
+    "colors": {
+        "window":          "#F4F5F7",
+        "surface":         "#FFFFFF",
+        "surfaceAlt":      "#F0F2F5",
+        "surfaceHover":    "#E9ECF1",
+        "sidebar":         "#FFFFFF",
+        "border":          "#E1E4EA",
+        "borderStrong":    "#C9CED8",
+        "text":            "#12151C",
+        "textSecondary":   "#5B6272",
+        "textMuted":       "#8C93A3",
+        "accent":          "#0A66E4",
+        "accentHover":     "#0853BA",
+        "accentPressed":   "#06449A",
+        "accentSoft":      "#E6F0FD",
+        "onAccent":        "#FFFFFF",
+        "success":         "#1E8E4E",
+        "successSoft":     "#E3F4EA",
+        "warning":         "#B26A00",
+        "warningSoft":     "#FDF1DC",
+        "danger":          "#D0342C",
+        "dangerSoft":      "#FCE8E7",
+        "imageBackdrop":   "#F0F2F5",
+        "shadow":          "#1A12151C",
+        "selection":       "#D5E5FC"
+    }
+}

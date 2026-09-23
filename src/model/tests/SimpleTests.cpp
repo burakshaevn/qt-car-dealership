@@ -1,380 +1,311 @@
-#include <QSqlDatabase>
-#include <QSqlQuery>
-#include <QSqlError>
-#include <QDateTime>
-#include <QDebug>
-#include <QTest>
-#include <QObject>
-#include <QSharedPointer>
-#include "../include/DatabaseHandler.h"
-#include "../../controller/include/NotificationsHandler.h"
+#include "AdminRepository.h"
+#include "AppServices.h"
+#include "AuthController.h"
+#include "ClientRepository.h"
+#include "ContractTemplates.h"
+#include "DatabaseHandler.h"
+#include "ProductRepository.h"
+#include "RequestRepository.h"
+#include "SqlQueries.h"
+#include "SqlQueryStore.h"
+#include "UserRole.h"
 
-class SimpleTests : public QObject
+#include <QDate>
+#include <QRegularExpression>
+#include <QSqlQuery>
+#include <QTemporaryDir>
+#include <QTest>
+
+/*!
+ * Integration tests against a freshly migrated temporary SQLite database.
+ */
+class DealershipTests final : public QObject
 {
     Q_OBJECT
 
 private slots:
     void initTestCase();
-    void cleanupTestCase();
-    void testDatabaseConnection();
-    void testServiceRequestCreation();
-    void testInsuranceRequestCreation();
-    void testLoanRequestCreation();
-    void testTestDriveRequestCreation();
-    void testRentalRequestCreation();
-    void testPurchaseRequestCreation();
-    void testOrderRequestCreation();
-    void testNotificationSystem();
-    void testRentalRequestWithUnavailableCar();
+    void init();
+    void cleanup();
+
+    void everyQueryPrepares();
+    void everyQueryHasResource();
+    void migrationsAreIdempotent();
+
+    void authenticatesClientAndAdmin();
+    void rejectsWrongPassword();
+    void registersClientAndDetectsDuplicates();
+
+    void loadsCatalog();
+    void filtersCatalog();
+    void findsVariants();
+
+    void createsRequestsAndNotifications();
+    void approvingPurchaseDecrementsStock();
+    void rendersContract();
+
+    void adminTablesExist();
+
+    void validatesProfile_data();
+    void validatesProfile();
+    void normalizesPhone();
 
 private:
-    QSharedPointer<DatabaseHandler> m_databaseHandler;
-    NotificationsHandler* m_notificationsHandler;
-    int m_testClientId = 999999;  // Тестовый ID, который никогда не пересечется с реальными
-    int m_testCarId = 999999;     // Тестовый ID для автомобиля
+    QTemporaryDir m_dir;
+    QScopedPointer<AppServices> m_services;
+    int m_runs = 0;
 };
 
-void SimpleTests::initTestCase()
+void DealershipTests::initTestCase()
 {
-    // Создаем DatabaseHandler и подключаемся к реальной базе
-    m_databaseHandler = QSharedPointer<DatabaseHandler>::create();
-    m_databaseHandler->loadDefault();
-
-    if (!m_databaseHandler->open()) {
-        QFAIL("Не удалось подключиться к базе данных");
-    }
-
-    // Создаем тестового клиента
-    QString createClientQuery = QString("INSERT INTO clients (id, first_name, last_name, phone, email, password) "
-                                       "VALUES (%1, 'Тест', 'Тестов', '+79123456789', 'test@example.com', 'password123') "
-                                       "ON CONFLICT (id) DO NOTHING").arg(m_testClientId);
-    m_databaseHandler->executeQuery(createClientQuery);
-
-    // Создаем тестовый автомобиль
-    QString createCarQuery = QString("INSERT INTO cars (id, name, color, price, description, type_id, stock_qty) "
-                                    "VALUES (%1, 'Тестовый автомобиль', 'Черный', 1000000, 'Для тестов', 1, 5) "
-                                    "ON CONFLICT (id) DO NOTHING").arg(m_testCarId);
-    m_databaseHandler->executeQuery(createCarQuery);
-
-    // Создаем NotificationsHandler
-    m_notificationsHandler = new NotificationsHandler(m_databaseHandler);
+    QVERIFY(m_dir.isValid());
 }
 
-void SimpleTests::cleanupTestCase()
+void DealershipTests::init()
 {
-    // Очищаем тестовые данные
-    QString cleanupQueries[] = {
-        "DELETE FROM service_requests WHERE client_id = " + QString::number(m_testClientId),
-        "DELETE FROM insurance_requests WHERE client_id = " + QString::number(m_testClientId),
-        "DELETE FROM loan_requests WHERE client_id = " + QString::number(m_testClientId),
-        "DELETE FROM test_drives WHERE client_id = " + QString::number(m_testClientId),
-        "DELETE FROM rental_requests WHERE client_id = " + QString::number(m_testClientId),
-        "DELETE FROM purchase_requests WHERE client_id = " + QString::number(m_testClientId),
-        "DELETE FROM order_requests WHERE client_id = " + QString::number(m_testClientId),
-        "DELETE FROM clients WHERE id = " + QString::number(m_testClientId),
-        "DELETE FROM cars WHERE id = " + QString::number(m_testCarId)
+    m_services.reset(new AppServices);
+    const QString kPath = m_dir.filePath(QStringLiteral("test_%1.db").arg(++m_runs));
+    QVERIFY2(m_services->initialize(kPath), qPrintable(m_services->errorString()));
+}
+
+void DealershipTests::cleanup()
+{
+    m_services.reset();
+}
+
+void DealershipTests::everyQueryPrepares()
+{
+    const QSqlDatabase kDb = m_services->database()->database();
+    for (const SqlQuery::Name name : SqlQuery::kAll) {
+        const QString kSql = SqlQueryStore::query(name);
+        QVERIFY2(!kSql.isEmpty(), qPrintable(QStringLiteral("empty: ") + name));
+        QSqlQuery query(kDb);
+        QVERIFY2(query.prepare(kSql), qPrintable(QString(name) + QStringLiteral(": ") + query.lastError().text()));
+    }
+}
+
+void DealershipTests::everyQueryHasResource()
+{
+    // Every .sql file under :/sql/queries is referenced from SqlQueries.h and vice versa.
+    QStringList declared;
+    for (const SqlQuery::Name name : SqlQuery::kAll) {
+        declared.append(name);
+    }
+    QStringList bundled = SqlQueryStore::queryNames();
+    declared.sort();
+    bundled.sort();
+    QCOMPARE(bundled, declared);
+}
+
+void DealershipTests::migrationsAreIdempotent()
+{
+    // Re-opening an already migrated database must not re-apply anything.
+    const QString kPath = m_services->database()->databasePath();
+    m_services.reset();
+    AppServices again;
+    QVERIFY2(again.initialize(kPath), qPrintable(again.errorString()));
+    const int kLatest = static_cast<int>(SqlQueryStore::migrations().size());
+    QCOMPARE(again.database()->rows(SqlQuery::System::kSelectAppliedMigrations).size(), kLatest);
+}
+
+void DealershipTests::authenticatesClientAndAdmin()
+{
+    const auto kClient = m_services->clients().authenticate(QStringLiteral("nb@example.com"),
+                                                            QStringLiteral("password123"));
+    QVERIFY(kClient.has_value());
+    QCOMPARE(kClient->Role, Role::User);
+    QVERIFY(!kClient->FullName.isEmpty());
+
+    const auto kAdmin = m_services->clients().authenticate(QStringLiteral("admin1"), QStringLiteral("password123"));
+    QVERIFY(kAdmin.has_value());
+    QCOMPARE(kAdmin->Role, Role::Admin);
+}
+
+void DealershipTests::rejectsWrongPassword()
+{
+    QVERIFY(!m_services->clients().authenticate(QStringLiteral("nb@example.com"), QStringLiteral("nope")));
+    QVERIFY(!m_services->clients().authenticate(QStringLiteral("unknown@example.com"), QStringLiteral("x")));
+    // SQL injection attempts are plain values thanks to bound parameters.
+    QVERIFY(!m_services->clients().authenticate(QStringLiteral("' OR 1=1 --"), QStringLiteral("x")));
+}
+
+void DealershipTests::registersClientAndDetectsDuplicates()
+{
+    ClientProfile profile{QStringLiteral("Иван"), QStringLiteral("Петров"), QStringLiteral("ivan@test.ru"),
+                          QStringLiteral("79990001122")};
+    QVERIFY(!m_services->clients().isEmailOrPhoneTaken(profile.Email, profile.Phone));
+    QString error;
+    QVERIFY2(m_services->clients().registerClient(profile, QStringLiteral("secret123"), &error), qPrintable(error));
+    QVERIFY(m_services->clients().isEmailOrPhoneTaken(profile.Email, QStringLiteral("70000000000")));
+
+    const auto kUser = m_services->clients().authenticate(profile.Email, QStringLiteral("secret123"));
+    QVERIFY(kUser.has_value());
+    QCOMPARE(kUser->FullName, QStringLiteral("Иван Петров"));
+
+    // Unique constraint is reported as a human readable message.
+    QVERIFY(!m_services->clients().registerClient(profile, QStringLiteral("secret123"), &error));
+    QVERIFY(!error.isEmpty());
+}
+
+void DealershipTests::loadsCatalog()
+{
+    ProductRepository& products = m_services->products();
+    products.pullProducts();
+    const QList<ProductInfo> kAll = products.products();
+    QVERIFY(kAll.size() > 10);
+    for (const ProductInfo& p : kAll) {
+        QVERIFY(p.Id > 0);
+        QVERIFY(!p.Name.isEmpty());
+        QVERIFY(p.Price > 0);
+    }
+}
+
+void DealershipTests::filtersCatalog()
+{
+    ProductRepository& products = m_services->products();
+    products.pullProducts();
+    const QList<ProductInfo> kRed = products.filter(std::nullopt, QStringLiteral("Красный"));
+    QVERIFY(!kRed.isEmpty());
+    for (const ProductInfo& p : kRed) {
+        QCOMPARE(p.Color, QStringLiteral("Красный"));
+    }
+    const QList<ProductInfo> kSuv = products.filter(2, QString());
+    QVERIFY(!kSuv.isEmpty());
+    for (const ProductInfo& p : kSuv) {
+        QCOMPARE(p.TypeId, 2);
+    }
+    QVERIFY(products.availableColors().contains(QStringLiteral("Белый")));
+}
+
+void DealershipTests::findsVariants()
+{
+    ProductRepository& products = m_services->products();
+    products.pullProducts();
+    const QList<ProductInfo> kVariants = products.variantsOf(QStringLiteral("Mercedes-AMG G 63"));
+    QVERIFY(kVariants.size() > 1);
+    for (const ProductInfo& p : kVariants) {
+        QCOMPARE(p.Name, QStringLiteral("Mercedes-AMG G 63"));
+    }
+}
+
+void DealershipTests::createsRequestsAndNotifications()
+{
+    RequestRepository& requests = m_services->requests();
+    const int kClient = 8;
+    const int kBefore = static_cast<int>(requests.notifications(kClient, NotificationFilter::All).size());
+
+    QString error;
+    QVERIFY2(requests.createPurchase(kClient, 16, &error), qPrintable(error));
+    QVERIFY2(requests.createLoan(kClient, 16, 1'000'000, 24, &error), qPrintable(error));
+    QVERIFY2(requests.createRental(kClient, 16, 30, QDate::currentDate().addDays(1), &error), qPrintable(error));
+    QVERIFY2(requests.createInsurance(kClient, 16, QStringLiteral("КАСКО"), &error), qPrintable(error));
+    QVERIFY2(requests.createTestDrive(kClient, 16, QDateTime::currentDateTime().addDays(2), &error),
+             qPrintable(error));
+
+    // Freshly created requests are pending, so they are not yet notifications for the client.
+    const QList<Notification> kAll = requests.notifications(kClient, NotificationFilter::All);
+    QVERIFY(kAll.size() >= kBefore);
+
+    // Invalid foreign key must be rejected by the database, not crash.
+    QVERIFY(!requests.createPurchase(kClient, 999'999, &error));
+    QVERIFY(!error.isEmpty());
+}
+
+void DealershipTests::approvingPurchaseDecrementsStock()
+{
+    const QSharedPointer<DatabaseHandler> kDb = m_services->database();
+    RequestRepository& requests = m_services->requests();
+    ProductRepository& products = m_services->products();
+
+    products.pullProducts();
+    const auto stockOf = [&](const int carId) {
+        products.pullProducts();
+        for (const ProductInfo& p : products.products()) {
+            if (p.Id == carId) {
+                return p.StockQty;
+            }
+        }
+        return -1;
     };
-    
-    for (const QString& query : cleanupQueries) {
-        m_databaseHandler->executeQuery(query);
+    const int kStock = stockOf(16);
+    QVERIFY(kStock > 0);
+
+    QString error;
+    QVERIFY2(requests.createPurchase(8, 16, &error), qPrintable(error));
+    const int kId = kDb->lastInsertId().toInt();
+    QVERIFY(kId > 0);
+
+    const QString kApproved = kDb->string(QStringLiteral("status"), QStringLiteral("approved"));
+    QVERIFY(!kApproved.isEmpty());
+    QVERIFY2(requests.updateStatus({QStringLiteral("purchase_requests"), kId}, kApproved, &error), qPrintable(error));
+    QCOMPARE(stockOf(16), kStock - 1);
+    QVERIFY(requests.unreadCount(8) > 0);
+
+    QVERIFY(requests.markAllRead(8));
+    QCOMPARE(requests.unreadCount(8), 0);
+}
+
+void DealershipTests::rendersContract()
+{
+    const ContractRenderer kRenderer(m_services->database());
+    const QString kHtml = kRenderer.render(QStringLiteral("purchase"),
+                                           {{QStringLiteral("car_name"), QStringLiteral("G 63")},
+                                            {QStringLiteral("car_color"), QStringLiteral("Белый")},
+                                            {QStringLiteral("car_price"), QStringLiteral("1 000 ₽")}});
+    QVERIFY(kHtml.contains(QStringLiteral("G 63")));
+    QVERIFY(kHtml.contains(QStringLiteral("1 000 ₽")));
+    // No placeholder may remain unresolved.
+    static const QRegularExpression kPlaceholder(QStringLiteral(R"(\{\{\s*[a-z_]+\s*\}\})"));
+    QVERIFY2(!kPlaceholder.match(kHtml).hasMatch(), qPrintable(kPlaceholder.match(kHtml).captured(0)));
+}
+
+void DealershipTests::adminTablesExist()
+{
+    const QStringList kKnown = m_services->database()->database().tables(QSql::AllTables);
+    const QList<AdminTableInfo> kTables = m_services->admin().tables();
+    QVERIFY(!kTables.isEmpty());
+    for (const AdminTableInfo& info : kTables) {
+        QVERIFY2(kKnown.contains(info.TableName), qPrintable(info.TableName));
+        QVERIFY2(kKnown.contains(info.ViewName), qPrintable(info.ViewName));
+        if (info.isEditable()) {
+            QVERIFY2(!m_services->admin().columnLabels(info.TableName).isEmpty(), qPrintable(info.TableName));
+        }
     }
-    
-    delete m_notificationsHandler;
-    m_databaseHandler->close();
+    QVERIFY(m_services->admin().salesTotal() >= 0);
 }
 
-
-void SimpleTests::testDatabaseConnection()
+void DealershipTests::validatesProfile_data()
 {
-    // Проверяем, что соединение уже открыто (открыто в initTestCase)
-    QVERIFY(m_databaseHandler != nullptr);
-    QVERIFY(m_databaseHandler->getLastError().isEmpty()); // Нет ошибок
+    QTest::addColumn<QString>("first");
+    QTest::addColumn<QString>("last");
+    QTest::addColumn<QString>("email");
+    QTest::addColumn<QString>("phone");
+    QTest::addColumn<bool>("valid");
+
+    QTest::newRow("ok") << "Иван" << "Петров" << "ivan@test.ru" << "+7 (999) 000-11-22" << true;
+    QTest::newRow("no first name") << "" << "Петров" << "ivan@test.ru" << "79990001122" << false;
+    QTest::newRow("bad email") << "Иван" << "Петров" << "ivan@" << "79990001122" << false;
+    QTest::newRow("short phone") << "Иван" << "Петров" << "ivan@test.ru" << "12345" << false;
 }
 
-void SimpleTests::testServiceRequestCreation()
+void DealershipTests::validatesProfile()
 {
-    // Сначала получаем количество заявок до создания
-    QString countQueryBefore = QString("SELECT COUNT(*) FROM service_requests WHERE client_id = %1").arg(m_testClientId);
-    QVariant resultBefore = m_databaseHandler->executeSelectQuery(countQueryBefore);
-    QSqlQuery queryResultBefore = resultBefore.value<QSqlQuery>();
-    queryResultBefore.next();
-    int countBefore = queryResultBefore.value(0).toInt();
-    
-    // Создаем заявку
-    QString query = QString("INSERT INTO service_requests (client_id, car_id, service_type, scheduled_date, status) "
-                           "VALUES (%1, %2, 'Диагностика', '%3', 'не обработано')")
-                   .arg(m_testClientId)
-                   .arg(m_testCarId)
-                   .arg(QDateTime::currentDateTime().addDays(1).toString("yyyy-MM-dd hh:mm:ss"));
-
-    QVERIFY(m_databaseHandler->executeQuery(query));
-
-    // Проверяем, что заявка создана
-    QString countQueryAfter = QString("SELECT COUNT(*) FROM service_requests WHERE client_id = %1").arg(m_testClientId);
-    QVariant resultAfter = m_databaseHandler->executeSelectQuery(countQueryAfter);
-    QVERIFY(resultAfter.isValid());
-    
-    QSqlQuery queryResultAfter = resultAfter.value<QSqlQuery>();
-    QVERIFY(queryResultAfter.next());
-    int countAfter = queryResultAfter.value(0).toInt();
-    
-    QCOMPARE(countAfter, countBefore + 1);
+    QFETCH(QString, first);
+    QFETCH(QString, last);
+    QFETCH(QString, email);
+    QFETCH(QString, phone);
+    QFETCH(bool, valid);
+    QCOMPARE(AuthController::validateProfile(first, last, email, phone).isEmpty(), valid);
 }
 
-void SimpleTests::testInsuranceRequestCreation()
+void DealershipTests::normalizesPhone()
 {
-    // Сначала получаем количество заявок до создания
-    QString countQueryBefore = QString("SELECT COUNT(*) FROM insurance_requests WHERE client_id = %1").arg(m_testClientId);
-    QVariant resultBefore = m_databaseHandler->executeSelectQuery(countQueryBefore);
-    QSqlQuery queryResultBefore = resultBefore.value<QSqlQuery>();
-    queryResultBefore.next();
-    int countBefore = queryResultBefore.value(0).toInt();
-    
-    // Создаем заявку
-    QString query = QString("INSERT INTO insurance_requests (client_id, car_id, insurance_type, status) "
-                           "VALUES (%1, %2, 'КАСКО', 'не обработано')").arg(m_testClientId).arg(m_testCarId);
-
-    QVERIFY(m_databaseHandler->executeQuery(query));
-
-    // Проверяем, что заявка создана
-    QString countQueryAfter = QString("SELECT COUNT(*) FROM insurance_requests WHERE client_id = %1").arg(m_testClientId);
-    QVariant resultAfter = m_databaseHandler->executeSelectQuery(countQueryAfter);
-    QVERIFY(resultAfter.isValid());
-    
-    QSqlQuery queryResultAfter = resultAfter.value<QSqlQuery>();
-    QVERIFY(queryResultAfter.next());
-    int countAfter = queryResultAfter.value(0).toInt();
-    
-    QCOMPARE(countAfter, countBefore + 1);
+    QCOMPARE(AuthController::normalizePhone(QStringLiteral("+7 (999) 000-11-22")), QStringLiteral("79990001122"));
+    QCOMPARE(AuthController::normalizePhone(QStringLiteral("8 999 000 11 22")), QStringLiteral("79990001122"));
+    QVERIFY(!AuthController::validatePassword(QStringLiteral("short"), QStringLiteral("short")).isEmpty());
+    QVERIFY(!AuthController::validatePassword(QStringLiteral("longenough1"), QStringLiteral("different1")).isEmpty());
+    QVERIFY(AuthController::validatePassword(QStringLiteral("longenough1"), QStringLiteral("longenough1")).isEmpty());
 }
 
-void SimpleTests::testLoanRequestCreation()
-{
-    // Сначала получаем количество заявок до создания
-    QString countQueryBefore = QString("SELECT COUNT(*) FROM loan_requests WHERE client_id = %1").arg(m_testClientId);
-    QVariant resultBefore = m_databaseHandler->executeSelectQuery(countQueryBefore);
-    QSqlQuery queryResultBefore = resultBefore.value<QSqlQuery>();
-    queryResultBefore.next();
-    int countBefore = queryResultBefore.value(0).toInt();
-    
-    // Создаем заявку
-    QString query = QString("INSERT INTO loan_requests (client_id, car_id, loan_amount, loan_term_months, status) "
-                           "VALUES (%1, %2, 10000000, 36, 'не обработано')").arg(m_testClientId).arg(m_testCarId);
-
-    QVERIFY(m_databaseHandler->executeQuery(query));
-
-    // Проверяем, что заявка создана
-    QString countQueryAfter = QString("SELECT COUNT(*) FROM loan_requests WHERE client_id = %1").arg(m_testClientId);
-    QVariant resultAfter = m_databaseHandler->executeSelectQuery(countQueryAfter);
-    QVERIFY(resultAfter.isValid());
-    
-    QSqlQuery queryResultAfter = resultAfter.value<QSqlQuery>();
-    QVERIFY(queryResultAfter.next());
-    int countAfter = queryResultAfter.value(0).toInt();
-    
-    QCOMPARE(countAfter, countBefore + 1);
-}
-
-void SimpleTests::testTestDriveRequestCreation()
-{
-    // Сначала получаем количество заявок до создания
-    QString countQueryBefore = QString("SELECT COUNT(*) FROM test_drives WHERE client_id = %1").arg(m_testClientId);
-    QVariant resultBefore = m_databaseHandler->executeSelectQuery(countQueryBefore);
-    QSqlQuery queryResultBefore = resultBefore.value<QSqlQuery>();
-    queryResultBefore.next();
-    int countBefore = queryResultBefore.value(0).toInt();
-    
-    // Создаем заявку
-    QString query = QString("INSERT INTO test_drives (client_id, car_id, scheduled_date, status) "
-                           "VALUES (%1, %2, '%3', 'не обработано')")
-                   .arg(m_testClientId)
-                   .arg(m_testCarId)
-                   .arg(QDateTime::currentDateTime().addDays(2).toString("yyyy-MM-dd hh:mm:ss"));
-
-    QVERIFY(m_databaseHandler->executeQuery(query));
-
-    // Проверяем, что заявка создана
-    QString countQueryAfter = QString("SELECT COUNT(*) FROM test_drives WHERE client_id = %1").arg(m_testClientId);
-    QVariant resultAfter = m_databaseHandler->executeSelectQuery(countQueryAfter);
-    QVERIFY(resultAfter.isValid());
-    
-    QSqlQuery queryResultAfter = resultAfter.value<QSqlQuery>();
-    QVERIFY(queryResultAfter.next());
-    int countAfter = queryResultAfter.value(0).toInt();
-    
-    QCOMPARE(countAfter, countBefore + 1);
-}
-
-void SimpleTests::testRentalRequestCreation()
-{
-    // Сначала получаем количество заявок до создания
-    QString countQueryBefore = QString("SELECT COUNT(*) FROM rental_requests WHERE client_id = %1").arg(m_testClientId);
-    QVariant resultBefore = m_databaseHandler->executeSelectQuery(countQueryBefore);
-    QSqlQuery queryResultBefore = resultBefore.value<QSqlQuery>();
-    queryResultBefore.next();
-    int countBefore = queryResultBefore.value(0).toInt();
-    
-    // Создаем заявку
-    QString query = QString("INSERT INTO rental_requests (client_id, car_id, rental_days, start_date, status) "
-                           "VALUES (%1, %2, 7, '%3', 'не обработано')")
-                   .arg(m_testClientId)
-                   .arg(m_testCarId)
-                   .arg(QDate::currentDate().addDays(3).toString("yyyy-MM-dd"));
-
-    QVERIFY(m_databaseHandler->executeQuery(query));
-
-    // Проверяем, что заявка создана
-    QString countQueryAfter = QString("SELECT COUNT(*) FROM rental_requests WHERE client_id = %1").arg(m_testClientId);
-    QVariant resultAfter = m_databaseHandler->executeSelectQuery(countQueryAfter);
-    QVERIFY(resultAfter.isValid());
-    
-    QSqlQuery queryResultAfter = resultAfter.value<QSqlQuery>();
-    QVERIFY(queryResultAfter.next());
-    int countAfter = queryResultAfter.value(0).toInt();
-    
-    QCOMPARE(countAfter, countBefore + 1);
-}
-
-void SimpleTests::testPurchaseRequestCreation()
-{
-    // Сначала получаем количество заявок до создания
-    QString countQueryBefore = QString("SELECT COUNT(*) FROM purchase_requests WHERE client_id = %1").arg(m_testClientId);
-    QVariant resultBefore = m_databaseHandler->executeSelectQuery(countQueryBefore);
-    QSqlQuery queryResultBefore = resultBefore.value<QSqlQuery>();
-    queryResultBefore.next();
-    int countBefore = queryResultBefore.value(0).toInt();
-    
-    // Создаем заявку
-    QString query = QString("INSERT INTO purchase_requests (client_id, car_id, status) "
-                           "VALUES (%1, %2, 'не обработано')").arg(m_testClientId).arg(m_testCarId);
-
-    QVERIFY(m_databaseHandler->executeQuery(query));
-
-    // Проверяем, что заявка создана
-    QString countQueryAfter = QString("SELECT COUNT(*) FROM purchase_requests WHERE client_id = %1").arg(m_testClientId);
-    QVariant resultAfter = m_databaseHandler->executeSelectQuery(countQueryAfter);
-    QVERIFY(resultAfter.isValid());
-    
-    QSqlQuery queryResultAfter = resultAfter.value<QSqlQuery>();
-    QVERIFY(queryResultAfter.next());
-    int countAfter = queryResultAfter.value(0).toInt();
-    
-    QCOMPARE(countAfter, countBefore + 1);
-}
-
-void SimpleTests::testOrderRequestCreation()
-{
-    // Сначала получаем количество заявок до создания
-    QString countQueryBefore = QString("SELECT COUNT(*) FROM order_requests WHERE client_id = %1").arg(m_testClientId);
-    QVariant resultBefore = m_databaseHandler->executeSelectQuery(countQueryBefore);
-    QSqlQuery queryResultBefore = resultBefore.value<QSqlQuery>();
-    queryResultBefore.next();
-    int countBefore = queryResultBefore.value(0).toInt();
-    
-    // Создаем заявку
-    QString query = QString("INSERT INTO order_requests (client_id, car_name, color, trim, status) "
-                           "VALUES (%1, 'Mercedes-AMG GT 63 S 4MATIC+', 'Красный', 'AMG', 'не обработано')")
-                   .arg(m_testClientId);
-
-    QVERIFY(m_databaseHandler->executeQuery(query));
-
-    // Проверяем, что заявка создана
-    QString countQueryAfter = QString("SELECT COUNT(*) FROM order_requests WHERE client_id = %1").arg(m_testClientId);
-    QVariant resultAfter = m_databaseHandler->executeSelectQuery(countQueryAfter);
-    QVERIFY(resultAfter.isValid());
-    
-    QSqlQuery queryResultAfter = resultAfter.value<QSqlQuery>();
-    QVERIFY(queryResultAfter.next());
-    int countAfter = queryResultAfter.value(0).toInt();
-    
-    QCOMPARE(countAfter, countBefore + 1);
-}
-
-void SimpleTests::testNotificationSystem()
-{
-    // Создаем уведомления
-    QString serviceQuery = QString("INSERT INTO service_requests (client_id, car_id, service_type, scheduled_date, status) "
-                                  "VALUES (%1, %2, 'Диагностика', '%3', 'подтверждено')")
-                          .arg(m_testClientId)
-                          .arg(m_testCarId)
-                          .arg(QDateTime::currentDateTime().addDays(1).toString("yyyy-MM-dd hh:mm:ss"));
-
-    QVERIFY(m_databaseHandler->executeQuery(serviceQuery));
-
-    QString insuranceQuery
-        = QString("INSERT INTO insurance_requests (client_id, car_id, insurance_type, status) "
-                  "VALUES (%1, %2, 'КАСКО', 'одобрено')")
-              .arg(m_testClientId)
-              .arg(m_testCarId);
-
-    QVERIFY(m_databaseHandler->executeQuery(insuranceQuery));
-
-    // Проверяем, что уведомления созданы
-    QString countQuery1 = QString("SELECT COUNT(*) FROM service_requests WHERE client_id = %1 AND status = 'подтверждено'").arg(m_testClientId);
-    QVariant result1 = m_databaseHandler->executeSelectQuery(countQuery1);
-    QVERIFY(result1.isValid());
-    
-    QSqlQuery queryResult1 = result1.value<QSqlQuery>();
-    QVERIFY(queryResult1.next());
-    QVERIFY(queryResult1.value(0).toInt() > 0);
-    
-    QString countQuery2 = QString("SELECT COUNT(*) FROM insurance_requests WHERE client_id = %1 AND status = 'одобрено'").arg(m_testClientId);
-    QVariant result2 = m_databaseHandler->executeSelectQuery(countQuery2);
-    QVERIFY(result2.isValid());
-    
-    QSqlQuery queryResult2 = result2.value<QSqlQuery>();
-    QVERIFY(queryResult2.next());
-    QVERIFY(queryResult2.value(0).toInt() > 0);
-    
-    // Тестируем NotificationsHandler
-    QVERIFY(m_notificationsHandler != nullptr);
-    m_notificationsHandler->loadAndShowNotifications(m_testClientId);
-}
-
-void SimpleTests::testRentalRequestWithUnavailableCar()
-{
-    // Создаем автомобиль с нулевым количеством на складе
-    int unavailableCarId = 999998;
-    QString createUnavailableCarQuery = QString("INSERT INTO cars (id, name, color, price, description, type_id, stock_qty, available_for_rent) "
-                                               "VALUES (%1, 'Недоступный автомобиль', 'Красный', 2000000, 'Нет в наличии', 1, 0, false) "
-                                               "ON CONFLICT (id) DO NOTHING").arg(unavailableCarId);
-    m_databaseHandler->executeQuery(createUnavailableCarQuery);
-
-    // Пытаемся создать заявку на аренду недоступного автомобиля
-    QString rentalQuery = QString("INSERT INTO rental_requests (client_id, car_id, rental_days, start_date, status) "
-                                 "VALUES (%1, %2, 7, '%3', 'не обработано')")
-                         .arg(m_testClientId)
-                         .arg(unavailableCarId)
-                         .arg(QDate::currentDate().addDays(3).toString("yyyy-MM-dd"));
-    
-    // Заявка НЕ должна создаться из-за триггера проверки наличия
-    QString errorMessage;
-    bool insertResult = m_databaseHandler->executeQueryWithUserMessage(rentalQuery, errorMessage);
-
-    // Заявка НЕ должна создаться из-за триггера проверки наличия
-    QVERIFY(!insertResult); // Заявка не должна быть создана
-    
-    // Проверяем, что получено красивое сообщение об ошибке
-    QVERIFY(!errorMessage.isEmpty());
-    QVERIFY(errorMessage.contains("недоступен для аренды"));
-    
-    qDebug() << "Получено сообщение об ошибке:" << errorMessage;
-    
-    // Проверяем, что заявка действительно НЕ создана
-    QString countQuery = QString("SELECT COUNT(*) FROM rental_requests WHERE client_id = %1 AND car_id = %2")
-                        .arg(m_testClientId).arg(unavailableCarId);
-    QVariant result = m_databaseHandler->executeSelectQuery(countQuery);
-    QVERIFY(result.isValid());
-    
-    QSqlQuery queryResult = result.value<QSqlQuery>();
-    QVERIFY(queryResult.next());
-    QCOMPARE(queryResult.value(0).toInt(), 0); // Заявка не должна быть создана
-    
-    // Очищаем тестовый автомобиль
-    QString cleanupCarQuery = QString("DELETE FROM cars WHERE id = %1").arg(unavailableCarId);
-    m_databaseHandler->executeQuery(cleanupCarQuery);
-}
-
-// Регистрируем тесты
-QTEST_MAIN(SimpleTests)
+QTEST_MAIN(DealershipTests)
 #include "SimpleTests.moc"

@@ -1,213 +1,131 @@
-cmake_minimum_required(VERSION 3.16)
+cmake_minimum_required(VERSION 3.19)
 
-project(qt-car-dealership VERSION 0.1 LANGUAGES CXX)
+project(qt-car-dealership VERSION 1.0 LANGUAGES CXX)
 
-set(CMAKE_AUTOUIC ON)
 set(CMAKE_AUTOMOC ON)
 set(CMAKE_AUTORCC ON)
-
-# Указываем Qt, где искать UI файлы
-set(CMAKE_AUTOUIC_SEARCH_PATHS ${CMAKE_CURRENT_SOURCE_DIR}/src/view)
-
 set(CMAKE_CXX_STANDARD 20)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 
-# Find packages
-find_package(QT NAMES Qt6 Qt5 REQUIRED COMPONENTS Widgets Sql)
-find_package(Qt${QT_VERSION_MAJOR} REQUIRED COMPONENTS Widgets Sql)
+find_package(Qt6 6.5 REQUIRED COMPONENTS Widgets Sql)
+qt_standard_project_setup()
 
-# SQL statements and the bundled initial SQLite database are kept in a
-# dedicated target so application code does not contain database dialect text.
+# All SQL (migrations, seed data, queries) lives in system_data/sql and is
+# compiled into Qt resources. C++ code refers to statements by name only.
 add_subdirectory(system_data)
 
-# Model
-set(MODEL_DIR ${CMAKE_CURRENT_SOURCE_DIR}/src/model)
+# --- Model: SQLite access, repositories, item models ------------------------
 set(MODEL_SOURCES
-    ${MODEL_DIR}/src/ContractTemplates.cpp
-    ${MODEL_DIR}/src/AdminTableModel.cpp
-    ${MODEL_DIR}/src/DatabaseHandler.cpp
-    ${MODEL_DIR}/src/AdminRecordEditDialog.cpp
-    ${MODEL_DIR}/src/FloatingNavigationWidget.cpp
-    ${MODEL_DIR}/src/ProductListModel.cpp
-    ${MODEL_DIR}/src/PurchaseMethodListModel.cpp
-    ${MODEL_DIR}/src/ProductRepository.cpp
-    ${MODEL_DIR}/src/AdminTableWidget.cpp
-    ${MODEL_DIR}/src/ThemeStyleProvider.cpp
-)
-set(MODEL_HEADERS
-    ${MODEL_DIR}/include/ContractTemplates.h
-    ${MODEL_DIR}/include/AdminTableModel.h
-    ${MODEL_DIR}/include/DatabaseHandler.h
-    ${MODEL_DIR}/include/UserRole.h
-    ${MODEL_DIR}/include/UserInfo.h
-    ${MODEL_DIR}/include/PriceFormatter.h
-    ${MODEL_DIR}/include/AdminRecordEditDialog.h
-    ${MODEL_DIR}/include/FloatingNavigationWidget.h
-    ${MODEL_DIR}/include/ProductListModel.h
-    ${MODEL_DIR}/include/PurchaseMethod.h
-    ${MODEL_DIR}/include/PurchaseMethodListModel.h
-    ${MODEL_DIR}/include/ProductRepository.h
-    ${MODEL_DIR}/include/AdminTableWidget.h
-    ${MODEL_DIR}/include/ThemeStyleProvider.h
+    ${CMAKE_CURRENT_SOURCE_DIR}/src/model/src/AdminRepository.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/src/model/src/AdminTableModel.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/src/model/src/ClientRepository.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/src/model/src/ContractTemplates.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/src/model/src/DatabaseHandler.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/src/model/src/DatabaseMigrator.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/src/model/src/ProductListModel.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/src/model/src/ProductRepository.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/src/model/src/ReferenceDataRepository.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/src/model/src/RequestRepository.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/src/model/include/AdminRepository.h
+    ${CMAKE_CURRENT_SOURCE_DIR}/src/model/include/AdminTableModel.h
+    ${CMAKE_CURRENT_SOURCE_DIR}/src/model/include/ClientRepository.h
+    ${CMAKE_CURRENT_SOURCE_DIR}/src/model/include/ContractTemplates.h
+    ${CMAKE_CURRENT_SOURCE_DIR}/src/model/include/DatabaseHandler.h
+    ${CMAKE_CURRENT_SOURCE_DIR}/src/model/include/DatabaseMigrator.h
+    ${CMAKE_CURRENT_SOURCE_DIR}/src/model/include/PriceFormatter.h
+    ${CMAKE_CURRENT_SOURCE_DIR}/src/model/include/ProductListModel.h
+    ${CMAKE_CURRENT_SOURCE_DIR}/src/model/include/ProductRepository.h
+    ${CMAKE_CURRENT_SOURCE_DIR}/src/model/include/PurchaseMethod.h
+    ${CMAKE_CURRENT_SOURCE_DIR}/src/model/include/ReferenceDataRepository.h
+    ${CMAKE_CURRENT_SOURCE_DIR}/src/model/include/RequestRepository.h
+    ${CMAKE_CURRENT_SOURCE_DIR}/src/model/include/UserInfo.h
+    ${CMAKE_CURRENT_SOURCE_DIR}/src/model/include/UserRole.h
 )
 
-add_library(model ${MODEL_SOURCES} ${MODEL_HEADERS})
-
+add_library(model STATIC ${MODEL_SOURCES})
+target_include_directories(model PUBLIC ${CMAKE_CURRENT_SOURCE_DIR}/src/model/include)
+target_link_libraries(model PUBLIC Qt6::Core Qt6::Gui Qt6::Widgets Qt6::Sql system_data)
 target_compile_definitions(model PUBLIC
-    PROJECT_ROOT_DIR="${CMAKE_SOURCE_DIR}"
+    CAR_IMAGES_DIR="${CMAKE_CURRENT_SOURCE_DIR}/resources/cars"
 )
 
-target_include_directories(model PUBLIC
-    ${MODEL_DIR}/include
-    ${PostgreSQL_INCLUDE_DIR}
-)
-
-target_link_libraries(model PUBLIC
-    Qt${QT_VERSION_MAJOR}::Core
-    Qt${QT_VERSION_MAJOR}::Widgets
-    Qt${QT_VERSION_MAJOR}::Sql
-    system_data
-    ${PostgreSQL_LIBRARY}
-)
-
-# Controller ---
-set(VIEW_DIR ${CMAKE_CURRENT_SOURCE_DIR}/src/view)
-set(CONTROLLER_DIR ${CMAKE_CURRENT_SOURCE_DIR}/src/controller)
-set(CONTROLLER_SOURCES
-    ${CONTROLLER_DIR}/src/AppServices.cpp
-    ${CONTROLLER_DIR}/src/UserSession.cpp
-    ${CONTROLLER_DIR}/src/MainWindow.cpp
-    ${CONTROLLER_DIR}/src/CatalogController.cpp
-    ${CONTROLLER_DIR}/src/ProfileController.cpp
-    ${CONTROLLER_DIR}/src/AuthController.cpp
-    ${CONTROLLER_DIR}/src/NotificationsController.cpp
-    ${CONTROLLER_DIR}/src/AdminTableController.cpp
-    ${CONTROLLER_DIR}/src/PurchaseMethodsController.cpp
-    ${CONTROLLER_DIR}/src/PurchaseRequestStrategy.cpp
-    ${CONTROLLER_DIR}/src/SelectedCarActionStrategy.cpp
-    ${CONTROLLER_DIR}/src/SettingsForm.cpp
-    ${CONTROLLER_DIR}/src/NotificationsHandler.cpp
-    ${CONTROLLER_DIR}/include/AppServices.h
-    ${CONTROLLER_DIR}/include/UserSession.h
-    ${CONTROLLER_DIR}/include/MainWindow.h
-    ${CONTROLLER_DIR}/include/CatalogController.h
-    ${CONTROLLER_DIR}/include/ProfileController.h
-    ${CONTROLLER_DIR}/include/AuthController.h
-    ${CONTROLLER_DIR}/include/NotificationsController.h
-    ${CONTROLLER_DIR}/include/AdminTableController.h
-    ${CONTROLLER_DIR}/include/PurchaseMethodsController.h
-    ${CONTROLLER_DIR}/include/PurchaseRequestStrategy.h
-    ${CONTROLLER_DIR}/include/SelectedCarActionStrategy.h
-    ${CONTROLLER_DIR}/include/SettingsForm.h
-    ${CONTROLLER_DIR}/include/NotificationsHandler.h
-)
-add_library(controller STATIC ${CONTROLLER_SOURCES})
-target_include_directories(controller PUBLIC
-    ${CONTROLLER_DIR}/include
-    ${MODEL_DIR}/include
-    ${VIEW_DIR}/include
-)
-target_link_libraries(controller PUBLIC
-    Qt${QT_VERSION_MAJOR}::Core
-    Qt${QT_VERSION_MAJOR}::Widgets
-    Qt${QT_VERSION_MAJOR}::Sql
-    model
-    view
-)
-
-# --- View (исходники из папки src/view) ---
+# --- View: theme, reusable widgets and passive pages ------------------------
 set(VIEW_SOURCES
-    ${VIEW_DIR}/MainWindow.ui
-    ${VIEW_DIR}/notifications.ui
-    ${VIEW_DIR}/PurchaseRequestForm.ui
-    ${VIEW_DIR}/RentalRequestForm.ui
-    ${VIEW_DIR}/TestDriveRequestForm.ui
-    ${VIEW_DIR}/CreditRequestForm.ui
-    ${VIEW_DIR}/src/ProductCardDelegate.cpp
-    ${VIEW_DIR}/src/PurchaseMethodCardDelegate.cpp
-)
-set(VIEW_HEADERS
-    ${VIEW_DIR}/include/ProductCardDelegate.h
-    ${VIEW_DIR}/include/PurchaseMethodCardDelegate.h
-)
-add_library(view STATIC ${VIEW_SOURCES} ${VIEW_HEADERS})
-target_include_directories(view PUBLIC
-    ${VIEW_DIR}
-    ${VIEW_DIR}/include
-    ${MODEL_DIR}/include
-)
-target_link_libraries(view PUBLIC
-    Qt${QT_VERSION_MAJOR}::Core
-    Qt${QT_VERSION_MAJOR}::Widgets
-    Qt${QT_VERSION_MAJOR}::Sql
-)
-
-# Add tests (optional - only if testing is enabled)
-option(BUILD_TESTS "Build tests" ON)
-if(BUILD_TESTS)
-    enable_testing()
-    add_subdirectory(src/model/tests)
-endif()
-
-# Main application sources
-set(PROJECT_SOURCES
-  main.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/src/view/src/FlowLayout.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/src/view/src/ProductCardDelegate.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/src/view/src/RecordEditDialog.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/src/view/src/ThemeManager.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/src/view/src/UiKit.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/src/view/src/pages/AdminPage.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/src/view/src/pages/CatalogPage.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/src/view/src/pages/LoginPage.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/src/view/src/pages/NavigationSidebar.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/src/view/src/pages/NotificationsPage.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/src/view/src/pages/ProductPage.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/src/view/src/pages/ProfilePage.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/src/view/include/FlowLayout.h
+    ${CMAKE_CURRENT_SOURCE_DIR}/src/view/include/ProductCardDelegate.h
+    ${CMAKE_CURRENT_SOURCE_DIR}/src/view/include/RecordEditDialog.h
+    ${CMAKE_CURRENT_SOURCE_DIR}/src/view/include/ThemeManager.h
+    ${CMAKE_CURRENT_SOURCE_DIR}/src/view/include/UiKit.h
+    ${CMAKE_CURRENT_SOURCE_DIR}/src/view/include/pages/AdminPage.h
+    ${CMAKE_CURRENT_SOURCE_DIR}/src/view/include/pages/CatalogPage.h
+    ${CMAKE_CURRENT_SOURCE_DIR}/src/view/include/pages/LoginPage.h
+    ${CMAKE_CURRENT_SOURCE_DIR}/src/view/include/pages/NavigationSidebar.h
+    ${CMAKE_CURRENT_SOURCE_DIR}/src/view/include/pages/NotificationsPage.h
+    ${CMAKE_CURRENT_SOURCE_DIR}/src/view/include/pages/ProductPage.h
+    ${CMAKE_CURRENT_SOURCE_DIR}/src/view/include/pages/ProfilePage.h
 )
 
-if(${QT_VERSION_MAJOR} GREATER_EQUAL 6)
-    qt_add_executable(qt-car-dealership
-      MANUAL_FINALIZATION
-      ${PROJECT_SOURCES}
-      resources/resources.qrc
-    )
-# Define target properties for Android with Qt 6 as:
-#    set_property(TARGET qt-car-dealership APPEND PROPERTY QT_ANDROID_PACKAGE_SOURCE_DIR
-#                 ${CMAKE_CURRENT_SOURCE_DIR}/android)
-# For more information, see https://doc.qt.io/qt-6/qt-add-executable.html#target-creation
-else()
-    if(ANDROID)
-        add_library(qt-car-dealership SHARED
-            ${PROJECT_SOURCES}
-        )
-# Define properties for Android with Qt 5 after find_package() calls as:
-#    set(ANDROID_PACKAGE_SOURCE_DIR "${CMAKE_CURRENT_SOURCE_DIR}/android")
-    else()
-        add_executable(qt-car-dealership
-            ${PROJECT_SOURCES}
-        )
-    endif()
-endif()
+add_library(view STATIC ${VIEW_SOURCES})
+target_include_directories(view PUBLIC ${CMAKE_CURRENT_SOURCE_DIR}/src/view/include)
+target_link_libraries(view PUBLIC Qt6::Widgets model)
 
-# Link libraries
-target_link_libraries(qt-car-dealership PRIVATE 
-    Qt${QT_VERSION_MAJOR}::Widgets 
-    Qt${QT_VERSION_MAJOR}::Sql 
-    model
-    controller
-    view
+# --- Controller: composition root and page <-> repository wiring ------------
+set(CONTROLLER_SOURCES
+    ${CMAKE_CURRENT_SOURCE_DIR}/src/controller/src/AdminController.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/src/controller/src/AppServices.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/src/controller/src/AuthController.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/src/controller/src/CatalogController.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/src/controller/src/MainWindow.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/src/controller/src/NotificationsController.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/src/controller/src/RequestController.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/src/controller/src/SettingsForm.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/src/controller/src/UserSession.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/src/controller/include/AdminController.h
+    ${CMAKE_CURRENT_SOURCE_DIR}/src/controller/include/AppServices.h
+    ${CMAKE_CURRENT_SOURCE_DIR}/src/controller/include/AuthController.h
+    ${CMAKE_CURRENT_SOURCE_DIR}/src/controller/include/CatalogController.h
+    ${CMAKE_CURRENT_SOURCE_DIR}/src/controller/include/MainWindow.h
+    ${CMAKE_CURRENT_SOURCE_DIR}/src/controller/include/NotificationsController.h
+    ${CMAKE_CURRENT_SOURCE_DIR}/src/controller/include/RequestController.h
+    ${CMAKE_CURRENT_SOURCE_DIR}/src/controller/include/SettingsForm.h
+    ${CMAKE_CURRENT_SOURCE_DIR}/src/controller/include/UserSession.h
 )
 
-# Qt for iOS sets MACOSX_BUNDLE_GUI_IDENTIFIER automatically since Qt 6.1.
-# If you are developing for iOS or macOS you should consider setting an
-# explicit, fixed bundle identifier manually though.
-if(${QT_VERSION} VERSION_LESS 6.1.0)
-  set(BUNDLE_ID_OPTION MACOSX_BUNDLE_GUI_IDENTIFIER com.example.qt-car-dealership)
-endif()
+add_library(controller STATIC ${CONTROLLER_SOURCES})
+target_include_directories(controller PUBLIC ${CMAKE_CURRENT_SOURCE_DIR}/src/controller/include)
+target_link_libraries(controller PUBLIC Qt6::Widgets Qt6::Sql model view)
+
+# --- Application -------------------------------------------------------------
+qt_add_executable(qt-car-dealership main.cpp resources/resources.qrc)
+target_compile_definitions(qt-car-dealership PRIVATE PROJECT_VERSION="${PROJECT_VERSION}")
+target_link_libraries(qt-car-dealership PRIVATE controller)
 set_target_properties(qt-car-dealership PROPERTIES
-    ${BUNDLE_ID_OPTION}
     MACOSX_BUNDLE_BUNDLE_VERSION ${PROJECT_VERSION}
     MACOSX_BUNDLE_SHORT_VERSION_STRING ${PROJECT_VERSION_MAJOR}.${PROJECT_VERSION_MINOR}
     MACOSX_BUNDLE TRUE
     WIN32_EXECUTABLE TRUE
 )
 
+option(BUILD_TESTS "Build tests" ON)
+if(BUILD_TESTS)
+    enable_testing()
+    add_subdirectory(src/model/tests)
+endif()
+
 include(GNUInstallDirs)
 install(TARGETS qt-car-dealership
     BUNDLE DESTINATION .
-    LIBRARY DESTINATION ${CMAKE_INSTALL_LIBDIR}
     RUNTIME DESTINATION ${CMAKE_INSTALL_BINDIR}
 )
-
-if(QT_VERSION_MAJOR EQUAL 6)
-    qt_finalize_executable(qt-car-dealership)
-endif()

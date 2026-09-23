@@ -1,0 +1,31 @@
+{
+    "name": "dark",
+    "title": "Тёмная",
+    "icons": "dark",
+    "colors": {
+        "window":          "#0F1115",
+        "surface":         "#171A21",
+        "surfaceAlt":      "#1E222B",
+        "surfaceHover":    "#252A35",
+        "sidebar":         "#13161C",
+        "border":          "#2A2F3A",
+        "borderStrong":    "#3A4150",
+        "text":            "#ECEFF4",
+        "textSecondary":   "#A3ABBA",
+        "textMuted":       "#6F7787",
+        "accent":          "#3D8BFF",
+        "accentHover":     "#5A9CFF",
+        "accentPressed":   "#2C74E0",
+        "accentSoft":      "#1B2A42",
+        "onAccent":        "#FFFFFF",
+        "success":         "#43C07A",
+        "successSoft":     "#15301F",
+        "warning":         "#E6A23C",
+        "warningSoft":     "#352812",
+        "danger":          "#F0625A",
+        "dangerSoft":      "#3A1917",
+        "imageBackdrop":   "#1E222B",
+        "shadow":          "#66000000",
+        "selection":       "#233A5E"
+    }
+}

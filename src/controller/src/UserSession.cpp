@@ -27,22 +27,22 @@ bool UserSession::isUser() const
     return m_authorized && m_user.Role == Role::User;
 }
 
-int UserSession::getId() const
+int UserSession::id() const
 {
     return m_user.Id;
 }
 
-const QString& UserSession::getName() const
+const QString& UserSession::name() const
 {
     return m_user.FullName;
 }
 
-const QString& UserSession::getEmail() const
+const QString& UserSession::email() const
 {
     return m_user.Email;
 }
 
-Role UserSession::getRole() const
+Role UserSession::role() const
 {
     return m_user.Role;
 }

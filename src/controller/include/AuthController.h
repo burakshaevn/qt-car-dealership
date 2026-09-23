@@ -4,52 +4,38 @@
 #define AUTH_CONTROLLER_H
 
 #include <QObject>
-#include <QSharedPointer>
+#include <optional>
 
 #include "UserInfo.h"
 
-class DatabaseHandler;
+class AppServices;
 class QWidget;
 
 /*!
- * \brief Класс, предоставляющий сервисы для работы с авторизацией
+ * \brief Sign-in and registration use cases.
  */
-class AuthController : public QObject
+class AuthController final : public QObject
 {
     Q_OBJECT
 public:
-    /*!
-     * \brief Структура, содержащая результат авторизации
-     */
-    struct AuthResult {
-        bool Ok = false;
-        UserInfo User;
-        QString Error;
-    };
+    explicit AuthController(AppServices& services, QObject* parent = nullptr);
 
-    explicit AuthController(QObject* parent = nullptr);
-    
-    /*!
-     * \brief Устанавливает зависимости
-     * \param database - указатель на объект DatabaseHandler
-     */
-    void setDependencies(const QSharedPointer<DatabaseHandler>& database);
-    /*!
-     * \brief Выполняет авторизацию
-     * \param login - логин
-     * \param password - пароль
-     * \returns Результат авторизации
-     */
-    AuthResult login(const QString& login, const QString& password) const;
-    /*!
-     * \brief Выполняет регистрацию
-     * \param parent - владелец диалога регистрации
-     * \returns true, если регистрация выполнена успешно, false - в противном случае
-     */
-    bool runRegistrationDialog(QWidget* parent);
+    /// Validates credentials and opens the session; returns an error text on failure.
+    [[nodiscard]] QString login(const QString& login, const QString& password);
+
+    /// Shows the registration form; returns the registered email on success.
+    std::optional<QString> runRegistrationDialog(QWidget* parent);
+
+    /// Validation rules shared by registration and profile editing.
+    [[nodiscard]] static QString validateProfile(const QString& firstName,
+                                                 const QString& lastName,
+                                                 const QString& email,
+                                                 const QString& phone);
+    [[nodiscard]] static QString normalizePhone(const QString& phone);
+    [[nodiscard]] static QString validatePassword(const QString& password, const QString& confirmation);
 
 private:
-    QSharedPointer<DatabaseHandler> m_database;
+    AppServices& m_services;
 };
 
 #endif // AUTH_CONTROLLER_H
