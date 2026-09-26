@@ -1,7 +1,10 @@
 #include "ThemeManager.h"
 
 #include <QAbstractButton>
+#include <QAbstractItemView>
 #include <QApplication>
+#include <QComboBox>
+#include <QEvent>
 #include <QDirIterator>
 #include <QFile>
 #include <QFileInfo>
@@ -27,6 +30,32 @@ const QString kDefaultTheme = QStringLiteral("light");
 const char* const kIconProperty = "themeIconName";
 const char* const kIconColorProperty = "themeIconColor";
 const char* const kIconCheckedProperty = "themeIconCheckedColor";
+
+/*!
+ * Combo box popups are separate top-level windows, and macOS/Windows give such
+ * windows a system drop shadow. The design is flat (a hairline frame, no
+ * elevation anywhere), so the shadow is switched off for every combo box as it
+ * gets polished.
+ */
+class FlatPopupFilter final : public QObject
+{
+public:
+    using QObject::QObject;
+
+protected:
+    bool eventFilter(QObject* watched, QEvent* event) override
+    {
+        if (event->type() == QEvent::Polish) {
+            if (auto* combo = qobject_cast<QComboBox*>(watched)) {
+                QWidget* popup = combo->view()->window();
+                if (popup != combo->window() && !popup->testAttribute(Qt::WA_WState_Created)) {
+                    popup->setWindowFlag(Qt::NoDropShadowWindowHint, true);
+                }
+            }
+        }
+        return QObject::eventFilter(watched, event);
+    }
+};
 } // namespace
 
 ThemeManager& ThemeManager::instance()
@@ -38,6 +67,7 @@ ThemeManager& ThemeManager::instance()
 void ThemeManager::initialize(QApplication& app)
 {
     m_app = &app;
+    app.installEventFilter(new FlatPopupFilter(this));
 
     QDirIterator fonts(kFontsRoot, {QStringLiteral("*.ttf"), QStringLiteral("*.otf")}, QDir::Files);
     while (fonts.hasNext()) {

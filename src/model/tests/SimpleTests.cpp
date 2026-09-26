@@ -16,6 +16,9 @@
 #include <QTemporaryDir>
 #include <QTest>
 
+#include <algorithm>
+#include <optional>
+
 /*!
  * Integration tests against a freshly migrated temporary SQLite database.
  */
@@ -39,6 +42,7 @@ private slots:
     void loadsCatalog();
     void filtersCatalog();
     void findsVariants();
+    void paletteIgnoresColourFilter();
 
     void createsRequestsAndNotifications();
     void approvingPurchaseDecrementsStock();
@@ -185,6 +189,26 @@ void DealershipTests::findsVariants()
     QVERIFY(kVariants.size() > 1);
     for (const ProductInfo& p : kVariants) {
         QCOMPARE(p.Name, QStringLiteral("Mercedes-AMG G 63"));
+    }
+}
+
+void DealershipTests::paletteIgnoresColourFilter()
+{
+    ProductRepository& products = m_services->products();
+    products.pullProducts();
+    const QString kModel = QStringLiteral("Mercedes-AMG G 63");
+    const QList<ProductInfo> kVariants = products.variantsOf(kModel);
+
+    // Filtering by colour narrows the cards, but each card still carries the
+    // swatches of every colour its model is offered in.
+    const QList<ProductInfo> kWhite = products.filter(std::nullopt, QStringLiteral("Белый"));
+    const auto kCard = std::find_if(kWhite.cbegin(), kWhite.cend(),
+                                    [&](const ProductInfo& p) { return p.Name == kModel; });
+    QVERIFY(kCard != kWhite.cend());
+    QCOMPARE(kCard->Palette.size(), kVariants.size());
+    QVERIFY(kCard->Palette.contains(kCard->ColorHex));
+    for (const ProductInfo& variant : kVariants) {
+        QVERIFY2(kCard->Palette.contains(variant.ColorHex), qPrintable(variant.Color));
     }
 }
 

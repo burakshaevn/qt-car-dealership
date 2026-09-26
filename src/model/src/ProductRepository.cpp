@@ -7,6 +7,7 @@
 #include <QFile>
 #include <QRegularExpression>
 #include <algorithm>
+#include <utility>
 
 namespace Q = SqlQuery;
 
@@ -113,6 +114,19 @@ void ProductRepository::pullProducts()
         m_products.append(std::move(product));
     }
     m_availableColors.sort(Qt::CaseInsensitive);
+
+    // Every card shows the full range of paints for its model, independent of
+    // the filters applied later, so the palette is attached to each variant here.
+    QHash<QString, QStringList> palettes;
+    for (const ProductInfo& product : std::as_const(m_products)) {
+        QStringList& palette = palettes[product.Name];
+        if (!product.ColorHex.isEmpty() && !palette.contains(product.ColorHex)) {
+            palette.append(product.ColorHex);
+        }
+    }
+    for (ProductInfo& product : m_products) {
+        product.Palette = palettes.value(product.Name);
+    }
     emit productsChanged();
 }
 

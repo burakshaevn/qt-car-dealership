@@ -14,6 +14,15 @@ namespace {
 constexpr int kContentInset = 56;
 constexpr QSize kLogoSize(26, 26);
 constexpr QSize kWordmarkSize(150, 18);
+/// Every item of the bar is stretched to this height and centres its text in it,
+/// so tabs, the user name and the account actions share one text line.
+constexpr int kBarHeight = 56;
+
+/// Makes a bar item fill the full bar height instead of keeping its natural size.
+void fillHeight(QWidget* widget)
+{
+    widget->setSizePolicy(widget->sizePolicy().horizontalPolicy(), QSizePolicy::Expanding);
+}
 } // namespace
 
 TopBar::TopBar(QWidget* parent)
@@ -23,6 +32,7 @@ TopBar::TopBar(QWidget* parent)
     setObjectName(QStringLiteral("topbar"));
     m_group->setExclusive(true);
 
+    setFixedHeight(kBarHeight);
     auto* root = new QHBoxLayout(this);
     root->setContentsMargins(kContentInset, 0, kContentInset, 0);
     root->setSpacing(0);
@@ -41,16 +51,20 @@ TopBar::TopBar(QWidget* parent)
 
     m_user = UiKit::label(QString(), nullptr, this);
     m_user->setObjectName(QStringLiteral("topbarUser"));
-    root->addWidget(m_user, 0, Qt::AlignVCenter);
-    root->addSpacing(24);
+    m_user->setAlignment(Qt::AlignLeft | Qt::AlignVCenter);
+    fillHeight(m_user);
+    root->addWidget(m_user);
+    root->addSpacing(28);
 
-    auto* settings = UiKit::button(tr("Настройки"), "ghost", this);
+    auto* settings = UiKit::button(tr("Настройки"), "tab", this);
     settings->setObjectName(QStringLiteral("pushButton_settings"));
-    root->addWidget(settings, 0, Qt::AlignVCenter);
-    root->addSpacing(20);
-    auto* logout = UiKit::button(tr("Выйти"), "ghost", this);
+    fillHeight(settings);
+    root->addWidget(settings);
+    root->addSpacing(28);
+    auto* logout = UiKit::button(tr("Выйти"), "tab", this);
     logout->setObjectName(QStringLiteral("pushButton_logout"));
-    root->addWidget(logout, 0, Qt::AlignVCenter);
+    fillHeight(logout);
+    root->addWidget(logout);
 
     refreshBrand();
     connect(&ThemeManager::instance(), &ThemeManager::themeChanged, this, &TopBar::refreshBrand);
@@ -68,6 +82,7 @@ void TopBar::refreshBrand()
 void TopBar::addSection(const QString& id, const QString& title)
 {
     auto* container = new QWidget(this);
+    fillHeight(container);
     auto* layout = new QHBoxLayout(container);
     layout->setContentsMargins(0, 0, 0, 0);
     layout->setSpacing(6);
@@ -75,6 +90,7 @@ void TopBar::addSection(const QString& id, const QString& title)
     auto* button = UiKit::button(title, "tab", container);
     button->setObjectName(QStringLiteral("nav_") + id);
     button->setCheckable(true);
+    fillHeight(button);
     layout->addWidget(button);
 
     auto* badge = new QLabel(container);

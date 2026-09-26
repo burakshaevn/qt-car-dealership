@@ -6,6 +6,7 @@
 #include <QHash>
 #include <QList>
 #include <QObject>
+#include <QStringList>
 #include <QSharedPointer>
 #include <QString>
 #include <QStringList>
@@ -46,6 +47,7 @@ struct ProductInfo
     int StockQty = 0;
     QString TypeName;      ///< Body type caption (car_types.name)
     QString ColorHex;      ///< Paint swatch colour (car_colors.hex), may be empty
+    QStringList Palette;   ///< Swatches of every colour the model is offered in (catalogue order)
     PurchaseMethod PurchasMethod = PurchaseMethod::Unknown;
 };
 

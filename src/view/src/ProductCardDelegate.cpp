@@ -8,10 +8,13 @@
 #include <QPainter>
 #include <QPainterPath>
 #include <QPixmapCache>
+#include <QStringList>
+#include <utility>
 
 namespace {
 constexpr int kImageHeight = 200;
 constexpr int kSwatch = 10;
+constexpr int kSwatchGap = 8; ///< leaves room for the ring around the current chip
 
 QPixmap scaledImage(const QString& path, const QSize& box, const qreal dpr)
 {
@@ -137,16 +140,35 @@ void ProductCardDelegate::paint(QPainter* painter, const QStyleOptionViewItem& o
     }
     y += kNameMetrics.height() + 4;
 
-    // Paint sample + colour and trim.
+    // Paint range of the model: one chip per available colour, the card's own
+    // colour ringed. Then the colour name and trim of this particular card.
     const QFont kDetailsFont = sized(option.font, 9.5, QFont::Normal);
     const QFontMetricsF kDetailsMetrics(kDetailsFont);
+    QStringList palette = index.data(ProductListModel::PaletteRole).toStringList();
+    if (palette.isEmpty() && kPaint.isValid()) {
+        palette.append(kPaint.name());
+    }
+    const qreal kChipTop = y + (kDetailsMetrics.height() - kSwatch) / 2;
     qreal x = kLeft;
-    if (kPaint.isValid()) {
-        const QRectF kChip(x, y + (kDetailsMetrics.height() - kSwatch) / 2, kSwatch, kSwatch);
-        painter->setPen(QPen(kPaint.lightnessF() > 0.85 ? theme.color(QStringLiteral("borderStrong")) : kPaint, 1));
-        painter->setBrush(kPaint);
+    for (const QString& hex : std::as_const(palette)) {
+        const QColor kChipColor = QColor::fromString(hex);
+        if (!kChipColor.isValid()) {
+            continue;
+        }
+        const QRectF kChip(x, kChipTop, kSwatch, kSwatch);
+        const bool kCurrent = kChipColor == kPaint;
+        if (kCurrent) {
+            painter->setPen(QPen(theme.color(QStringLiteral("text")), 1));
+            painter->setBrush(Qt::NoBrush);
+            painter->drawRect(kChip.adjusted(-2.5, -2.5, 2.5, 2.5));
+        }
+        painter->setPen(QPen(kChipColor.lightnessF() > 0.85 ? theme.color(QStringLiteral("borderStrong")) : kChipColor, 1));
+        painter->setBrush(kChipColor);
         painter->drawRect(kChip.adjusted(0.5, 0.5, -0.5, -0.5));
-        x += kSwatch + 8;
+        x += kSwatch + kSwatchGap;
+    }
+    if (x > kLeft) {
+        x += 10 - kSwatchGap;
     }
     QString details = kColor;
     if (!kTrim.isEmpty()) {

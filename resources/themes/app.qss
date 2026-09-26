@@ -64,10 +64,12 @@ QPushButton[type="tab"]:checked {
     color: @text;
     border-bottom: 2px solid @text;
 }
+/* Items of the top bar fill its whole height (see TopBar.cpp); symmetric zero
+   vertical padding keeps every label centred on the same line. */
 QFrame#topbar QPushButton[type="tab"],
 QFrame#topbar QPushButton[type="tab"]:checked {
-    border-bottom: none;
-    padding: 14px 0 14px 0;
+    border: none;
+    padding: 0 2px;
 }
 
 QLabel#navCount {
@@ -392,14 +394,14 @@ QComboBox::down-arrow {
     width: 12px;
     height: 12px;
 }
-QComboBox#plainCombo {
+/* Text-only dropdown for filter rows: it stands on the row's shared rule,
+   so it has no underline of its own (two stacked lines read as a shadow). */
+QComboBox#plainCombo,
+QComboBox#plainCombo:hover,
+QComboBox#plainCombo:focus {
     background: transparent;
     border: none;
-    border-bottom: 1px solid @borderStrong;
     padding: 6px 28px 6px 2px;
-}
-QComboBox#plainCombo:focus {
-    border-bottom: 1px solid @text;
 }
 QComboBox QAbstractItemView {
     background-color: @surface;

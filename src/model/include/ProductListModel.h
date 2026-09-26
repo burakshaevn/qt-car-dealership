@@ -25,7 +25,8 @@ public:
         TrimRole,
         StockQtyRole,
         TypeNameRole,
-        ColorHexRole
+        ColorHexRole,
+        PaletteRole ///< QStringList of swatch colours of the whole model
     };
 
     explicit ProductListModel(QObject* parent = nullptr);
