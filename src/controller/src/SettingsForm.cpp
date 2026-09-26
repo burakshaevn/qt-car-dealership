@@ -1,160 +1,104 @@
 #include "SettingsForm.h"
 
-#include <QCryptographicHash>
-#include <QHBoxLayout>
-#include <QLabel>
-#include <QLineEdit>
-#include <QMessageBox>
-#include <QPushButton>
-#include <QComboBox>
-#include <QSqlQuery>
-#include <QVBoxLayout>
-
 #include "AppServices.h"
-#include "ThemeStyleProvider.h"
+#include "AuthController.h"
+#include "ThemeManager.h"
 
-SettingsForm::SettingsForm(AppServices* services, QWidget* parent)
-    : QDialog(parent)
+#include <QComboBox>
+#include <QHBoxLayout>
+#include <QLineEdit>
+
+SettingsForm::SettingsForm(AppServices& services, QWidget* parent)
+    : FormDialog(tr("Настройки"), tr("Личные данные и внешний вид приложения."), parent)
     , m_services(services)
+    , m_editProfile(services.session().isUser())
+    , m_initialTheme(ThemeManager::instance().theme())
 {
-    buildUi();
-    loadData();
+    setAcceptText(tr("Сохранить"));
+
+    if (m_editProfile) {
+        m_firstName = new QLineEdit;
+        m_lastName = new QLineEdit;
+        auto* nameRow = new QWidget;
+        auto* nameLayout = new QHBoxLayout(nameRow);
+        nameLayout->setContentsMargins(0, 0, 0, 0);
+        nameLayout->setSpacing(12);
+        nameLayout->addWidget(UiKit::field(tr("Имя"), m_firstName));
+        nameLayout->addWidget(UiKit::field(tr("Фамилия"), m_lastName));
+        addWidget(nameRow);
+
+        m_email = new QLineEdit;
+        addField(tr("Email"), m_email);
+        m_phone = new QLineEdit;
+        addField(tr("Телефон"), m_phone);
+
+        m_password = new QLineEdit;
+        m_password->setEchoMode(QLineEdit::Password);
+        m_password->setPlaceholderText(tr("Оставьте пустым, чтобы не менять"));
+        addField(tr("Новый пароль"), m_password);
+        m_confirmation = new QLineEdit;
+        m_confirmation->setEchoMode(QLineEdit::Password);
+        addField(tr("Повторите пароль"), m_confirmation);
+
+        if (const auto kProfile = m_services.clients().profile(m_services.session().id())) {
+            m_firstName->setText(kProfile->FirstName);
+            m_lastName->setText(kProfile->LastName);
+            m_email->setText(kProfile->Email);
+            m_phone->setText(kProfile->Phone);
+        }
+        addSpacing(6);
+        addWidget(UiKit::divider());
+        addSpacing(6);
+    }
+
+    ThemeManager& theme = ThemeManager::instance();
+    m_theme = new QComboBox;
+    for (const QString& name : theme.availableThemes()) {
+        m_theme->addItem(theme.themeTitle(name), name);
+    }
+    m_theme->setCurrentIndex(m_theme->findData(m_initialTheme));
+    addField(tr("Тема оформления"), m_theme);
+
+    // Live preview; reverted on cancel.
+    connect(m_theme, &QComboBox::currentIndexChanged, this, [this] {
+        ThemeManager::instance().setTheme(m_theme->currentData().toString());
+    });
+    connect(this, &QDialog::rejected, this, [this] { ThemeManager::instance().setTheme(m_initialTheme); });
+
+    setValidator([this] { return save(); });
 }
 
-void SettingsForm::buildUi()
+QString SettingsForm::save()
 {
-    setWindowTitle("Настройки профиля");
-    setFixedSize(450, 600);
-    applyThemeStyle(this, "DialogForm");
-
-    auto* dialogLayout = new QVBoxLayout(this);
-    dialogLayout->setSpacing(10);
-    dialogLayout->setContentsMargins(20, 20, 20, 20);
-
-    auto* titleLabel = new QLabel("Редактирование профиля", this);
-    titleLabel->setProperty("type", "header");
-    titleLabel->setAlignment(Qt::AlignLeft | Qt::AlignVCenter);
-    dialogLayout->addWidget(titleLabel);
-
-    auto addLabeledField = [this, dialogLayout](const QString& label, QLineEdit*& edit) {
-        dialogLayout->addWidget(new QLabel(label, this));
-        edit = new QLineEdit(this);
-        dialogLayout->addWidget(edit);
-    };
-
-    addLabeledField("Имя:", m_firstNameEdit);
-    addLabeledField("Фамилия:", m_lastNameEdit);
-    addLabeledField("Email:", m_emailEdit);
-    addLabeledField("Телефон:", m_phoneEdit);
-    addLabeledField("Пароль:", m_passwordEdit);
-    m_passwordEdit->setEchoMode(QLineEdit::Password);
-    m_passwordEdit->setPlaceholderText("Введите новый пароль или оставьте пустым");
-    dialogLayout->addWidget(new QLabel("Тема:", this));
-    m_themeCombo = new QComboBox(this);
-    m_themeCombo->addItem("Светлая", "light");
-    m_themeCombo->addItem("Тёмная", "dark");
-    dialogLayout->addWidget(m_themeCombo);
-
-    dialogLayout->addStretch();
-
-    auto* buttonLayout = new QHBoxLayout();
-    buttonLayout->setSpacing(15);
-
-    auto* cancelButton = new QPushButton("Отмена", this);
-    cancelButton->setProperty("type", "secondary");
-    auto* saveButton = new QPushButton("Сохранить", this);
-    saveButton->setProperty("type", "primary");
-
-    buttonLayout->addWidget(cancelButton);
-    buttonLayout->addWidget(saveButton);
-    dialogLayout->addLayout(buttonLayout);
-
-    connect(cancelButton, &QPushButton::clicked, this, &QDialog::reject);
-    connect(saveButton, &QPushButton::clicked, this, &SettingsForm::onSaveClicked);
-}
-
-bool SettingsForm::loadData()
-{
-    if (!m_services || !m_services->getDatabase() || !m_services->getUserSession()->isAuthorized()) {
-        return false;
+    if (!m_editProfile) {
+        return {};
     }
 
-    QSqlQuery query;
-    const QString kQueryStr = QString("SELECT first_name, last_name, email, phone "
-                                      "FROM clients WHERE id = %1")
-                                  .arg(m_services->getUserSession()->getId());
+    const QString kFirstName = m_firstName->text().trimmed();
+    const QString kLastName = m_lastName->text().trimmed();
+    const QString kEmail = m_email->text().trimmed();
+    const QString kPhone = AuthController::normalizePhone(m_phone->text());
 
-    if (!query.exec(kQueryStr) || !query.next()) {
-        return false;
+    QString error = AuthController::validateProfile(kFirstName, kLastName, kEmail, kPhone);
+    if (error.isEmpty() && !m_password->text().isEmpty()) {
+        error = AuthController::validatePassword(m_password->text(), m_confirmation->text());
+    }
+    if (!error.isEmpty()) {
+        return error;
     }
 
-    m_firstNameEdit->setText(query.value("first_name").toString());
-    m_lastNameEdit->setText(query.value("last_name").toString());
-    m_emailEdit->setText(query.value("email").toString());
-    m_phoneEdit->setText(query.value("phone").toString());
-    m_passwordEdit->clear();
-    if (m_themeCombo) {
-        const bool kDark = (getCurrentThemeMode() == ThemeMode::Dark);
-        m_themeCombo->setCurrentIndex(kDark ? 1 : 0);
+    const int kClientId = m_services.session().id();
+    if (m_services.clients().isEmailOrPhoneTaken(kEmail, kPhone, kClientId)) {
+        return tr("Этот email или телефон уже используется другим пользователем.");
     }
-    return true;
-}
-
-void SettingsForm::onSaveClicked()
-{
-    if (!m_services || !m_services->getDatabase() || !m_services->getUserSession()->isAuthorized()) {
-        QMessageBox::warning(this, "Ошибка", "Сессия пользователя недоступна.");
-        return;
+    if (!m_services.clients().updateProfile(kClientId, {kFirstName, kLastName, kEmail, kPhone}, m_password->text(),
+                                            &error)) {
+        return error;
     }
 
-    const QString kFirstName = m_firstNameEdit->text().trimmed();
-    const QString kLastName = m_lastNameEdit->text().trimmed();
-    const QString kEmail = m_emailEdit->text().trimmed();
-    const QString kPhone = m_phoneEdit->text().trimmed();
-    const QString kPassword = m_passwordEdit->text();
-
-    if (kFirstName.isEmpty() || kLastName.isEmpty() || kEmail.isEmpty() || kPhone.isEmpty()) {
-        QMessageBox::warning(this, "Ошибка", "Все поля кроме пароля должны быть заполнены.");
-        return;
-    }
-
-    QString updateQuery = QString(
-        "UPDATE clients SET "
-        "first_name = '%1', "
-        "last_name = '%2', "
-        "email = '%3', "
-        "phone = '%4'")
-        .arg(kFirstName)
-        .arg(kLastName)
-        .arg(kEmail)
-        .arg(kPhone);
-
-    if (!kPassword.isEmpty()) {
-        const QString kHashedPassword = QString(QCryptographicHash::hash(
-            kPassword.toUtf8(),
-            QCryptographicHash::Sha256).toHex());
-        updateQuery += QString(", password = '%1'").arg(kHashedPassword);
-    }
-
-    updateQuery += QString(" WHERE id = %1").arg(m_services->getUserSession()->getId());
-
-    if (!m_services->getDatabase()->executeQuery(updateQuery)) {
-        QMessageBox::critical(this,
-                              "Ошибка",
-                              "Не удалось обновить данные профиля: "
-                                  + m_services->getDatabase()->getLastError());
-        return;
-    }
-
-    const QString kFullName = kFirstName + " " + kLastName;
-    m_services->getUserSession()->setName(kFullName);
-    m_services->getUserSession()->setEmail(kEmail);
-    if (m_themeCombo) {
-        const bool kDarkEnabled = m_themeCombo->currentData().toString() == "dark";
-        emit themeChanged(kDarkEnabled);
-    }
-
+    const QString kFullName = kFirstName + QLatin1Char(' ') + kLastName;
+    m_services.session().setName(kFullName);
+    m_services.session().setEmail(kEmail);
     emit profileSaved(kFullName, kEmail);
-    QMessageBox::information(this, "Успех", "Данные профиля обновлены.");
-    accept();
+    return {};
 }

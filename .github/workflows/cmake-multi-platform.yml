@@ -1,46 +1,43 @@
-name: Build Qt + PostgreSQL Project
+name: Build & test
 
 on:
   push:
-    branches: [ "main" ]
+    branches: [ "main", "dev" ]
   pull_request:
-    branches: [ "main" ]
+    branches: [ "main", "dev" ]
 
 env:
   BUILD_TYPE: Release
-  QT_VERSION: 6.8.2  
+  # 6.9.2+ is required on macos-latest: older Qt links the AGL framework,
+  # which the Xcode 26 SDK no longer ships (QTBUG-137687).
+  QT_VERSION: 6.9.3
 
 jobs:
   build:
-    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ ubuntu-latest, windows-latest, macos-latest ]
+    runs-on: ${{ matrix.os }}
 
     steps:
     - uses: actions/checkout@v4
 
-    # Установка Qt
+    # SQLite driver (QSQLITE) ships with Qt, no external database is needed.
     - name: Install Qt
-      uses: jurplel/install-qt-action@v3
+      uses: jurplel/install-qt-action@v4
       with:
         version: ${{ env.QT_VERSION }}
+        cache: true
 
-    # Установка PostgreSQL (libpq)
-    - name: Install PostgreSQL
-      run: |
-        sudo apt-get update
-        sudo apt-get install -y libpq-dev postgresql-client
+    - name: Configure
+      run: cmake -B build -DCMAKE_BUILD_TYPE=${{ env.BUILD_TYPE }} -DBUILD_TESTS=ON
 
-    # Настройка CMake (если у вас есть CMakeLists.txt)
-    - name: Configure CMake
-      run: |
-        cmake -B build \
-          -DCMAKE_BUILD_TYPE=${{ env.BUILD_TYPE }} \
-          -DCMAKE_PREFIX_PATH="${{ env.QT_DIR }}"  # Путь к Qt (автоматически задаётся в install-qt-action)
-
-    # Сборка
     - name: Build
-      run: cmake --build build --config ${{ env.BUILD_TYPE }}
+      run: cmake --build build --config ${{ env.BUILD_TYPE }} --parallel
 
-    # Тесты (если есть)
-    # - name: Test
-    #   working-directory: ./build
-    #   run: ctest -C ${{ env.BUILD_TYPE }}
+    - name: Test
+      working-directory: build
+      env:
+        QT_QPA_PLATFORM: offscreen
+      run: ctest -C ${{ env.BUILD_TYPE }} --output-on-failure

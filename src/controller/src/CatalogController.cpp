@@ -1,127 +1,51 @@
-﻿#include "CatalogController.h"
-#include "ThemeStyleProvider.h"
+#include "CatalogController.h"
 
-#include "ProductListModel.h"
-#include "ProductCardDelegate.h"
-#include "ProductRepository.h"
-#include "DatabaseHandler.h"
+#include "AppServices.h"
+#include "pages/CatalogPage.h"
 
-#include <QAbstractItemView>
-#include <QListView>
-#include <QSqlQuery>
-#include <algorithm>
-
-CatalogController::CatalogController(QObject* parent)
+CatalogController::CatalogController(AppServices& services, CatalogPage* page, QObject* parent)
     : QObject(parent)
+    , m_services(services)
+    , m_page(page)
 {
-}
-
-void CatalogController::setDependencies(const QSharedPointer<ProductRepository>& products,
-                                        const QSharedPointer<DatabaseHandler>& database)
-{
-    m_products = products;
-    m_database = database;
-}
-
-void CatalogController::initialize(QListView* listView)
-{
-    m_listView = listView;
-    if (!m_model) {
-        m_model.reset(new ProductListModel(this));
-    }
-    if (!m_delegate) {
-        m_delegate.reset(new ProductCardDelegate(this));
-    }
-    configureListView();
-}
-
-void CatalogController::configureListView()
-{
-    if (!m_listView || !m_model || !m_delegate) {
-        return;
-    }
-
-    m_listView->setModel(m_model.get());
-    m_listView->setItemDelegate(m_delegate.get());
-    m_listView->setSelectionMode(QAbstractItemView::NoSelection);
-    m_listView->setVerticalScrollMode(QAbstractItemView::ScrollPerPixel);
-    m_listView->setHorizontalScrollBarPolicy(Qt::ScrollBarAlwaysOff);
-    m_listView->setResizeMode(QListView::Adjust);
-    m_listView->setWrapping(false);
-    m_listView->setSpacing(22);
-    m_listView->setUniformItemSizes(false);
-    applyThemeStyle(m_listView, "ListViewTransparent");
-
-    disconnect(m_listView, &QListView::clicked, this, nullptr);
-    connect(m_listView, &QListView::clicked, this, [this](const QModelIndex& index) {
-        if (!index.isValid()) {
-            return;
-        }
-        ProductInfo product = productAt(index.row());
-        if (!product.Name.isEmpty()) {
-            emit productSelected(product);
+    m_page->setModel(&m_model);
+    connect(m_page, &CatalogPage::filtersChanged, this, &CatalogController::applyFilters);
+    connect(m_page, &CatalogPage::productActivated, this, [this](const QModelIndex& index) {
+        const ProductInfo kProduct = m_model.productAt(index.row());
+        if (!kProduct.Name.isEmpty()) {
+            emit productSelected(kProduct);
         }
     });
 }
 
-void CatalogController::applyFilter(const QStringView kTypeFilter, const QStringView kColorFilter)
+void CatalogController::reload()
 {
-    if (!m_products || !m_model || !m_database) {
-        return;
+    m_services.products().pullProducts();
+
+    QList<CatalogPage::TypeOption> types;
+    const QList<CarType> kTypes = m_services.reference().carTypes();
+    for (const CarType& type : kTypes) {
+        types.append({type.Id, type.Name});
     }
-
-    auto typeId = m_database->tryGetCarTypeId(kTypeFilter);
-    const bool kApplyTypeFilter = kTypeFilter.size() > 0 && typeId.has_value();
-    const bool kApplyColorFilter = !kColorFilter.isEmpty()
-                                   && m_database->isKnownColor(kColorFilter);
-
-    QList<ProductInfo> filtered;
-    const auto kAllProducts = m_products->getProducts();
-    for (auto it = kAllProducts.constBegin(); it != kAllProducts.constEnd(); ++it) {
-        const ProductInfo& product = it.value();
-
-        bool typeMatch = !kApplyTypeFilter || (product.TypeId == *typeId);
-
-        bool colorMatch = true;
-        if (kApplyColorFilter) {
-            colorMatch = (product.Color == kColorFilter);
-        }
-
-        if (typeMatch && colorMatch) {
-            filtered.append(product);
-        }
-    }
-
-    std::sort(filtered.begin(), filtered.end(), [](const ProductInfo& a, const ProductInfo& b) {
-        return a.Id < b.Id;
-    });
-
-    m_model->setProducts(filtered);
-}
-int CatalogController::search(const QString& term)
-{
-    if (!m_products || !m_model) {
-        return 0;
-    }
-    QList<ProductInfo> relevant = m_products->findRelevantProducts(term);
-    m_model->setProducts(relevant);
-    return relevant.size();
+    m_page->setTypes(types);
+    m_page->setColors(m_services.products().availableColors());
+    m_page->resetFilters();
+    applyFilters();
 }
 
-void CatalogController::resetDefault()
+void CatalogController::applyFilters()
 {
-    if (!m_database) {
-        applyFilter(QStringView(), QStringView());
-        return;
+    const QString kTerm = m_page->searchText();
+    QList<ProductInfo> result = kTerm.isEmpty() ? m_services.products().filter(m_page->typeId(), m_page->color())
+                                                : m_services.products().findRelevantProducts(kTerm);
+    if (!kTerm.isEmpty()) {
+        // Search results still honour the chip / colour filters.
+        const auto kType = m_page->typeId();
+        const QString kColor = m_page->color();
+        result.removeIf([&](const ProductInfo& p) {
+            return (kType && p.TypeId != *kType) || (!kColor.isEmpty() && p.Color != kColor);
+        });
     }
-    const QString kDefaultColor = m_database->getDefaultCatalogColor();
-    applyFilter(QStringView(), kDefaultColor);
-}
-
-ProductInfo CatalogController::productAt(int row) const
-{
-    if (!m_model) {
-        return ProductInfo();
-    }
-    return m_model->productAt(row);
+    m_model.setProducts(result);
+    m_page->setResultCount(static_cast<int>(result.size()));
 }

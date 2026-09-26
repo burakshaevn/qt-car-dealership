@@ -6,21 +6,18 @@
 #include <QScopedPointer>
 #include <QSharedPointer>
 
-#include "AuthController.h"
-#include "AdminTableController.h"
-#include "CatalogController.h"
-#include "NotificationsController.h"
-#include "ProfileController.h"
+#include "AdminRepository.h"
+#include "ClientRepository.h"
 #include "DatabaseHandler.h"
-#include "FloatingNavigationWidget.h"
 #include "ProductRepository.h"
+#include "ReferenceDataRepository.h"
+#include "RequestRepository.h"
 #include "UserSession.h"
 
-class QWidget;
-class QObject;
-
 /*!
- * \brief Класс, предоставляющий сервисы для работы с приложением
+ * \brief Composition root: owns the database connection, repositories and the session.
+ *
+ * Controllers receive this object and never create database objects themselves.
  */
 class AppServices final
 {
@@ -28,94 +25,33 @@ public:
     AppServices();
     ~AppServices();
 
-    /*!
-     * \brief Инициализирует основные сервисы
-     */
-    void ensureCore();
+    AppServices(const AppServices&) = delete;
+    AppServices& operator=(const AppServices&) = delete;
 
-    /*!
-     * \brief Инициализирует плавающее меню
-     * \param owner - владелец плавающего меню
-     */
-    void ensureFloatingWidget(QWidget* owner);
+    /// Opens \a databasePath (or the default location when empty) and builds repositories.
+    bool initialize(const QString& databasePath = {});
+    [[nodiscard]] bool isReady() const;
+    [[nodiscard]] QString errorString() const;
 
-    /*!
-     * \brief Инициализирует контроллеры
-     * \param owner - владелец контроллеров
-     */
-    void ensureControllers(QObject* owner);
+    [[nodiscard]] QSharedPointer<DatabaseHandler> database() const { return m_database; }
+    [[nodiscard]] ClientRepository& clients() { return *m_clients; }
+    [[nodiscard]] ReferenceDataRepository& reference() { return *m_reference; }
+    [[nodiscard]] RequestRepository& requests() { return *m_requests; }
+    [[nodiscard]] ProductRepository& products() { return *m_products; }
+    [[nodiscard]] AdminRepository& admin() { return *m_admin; }
 
-    /*!
-     * \brief Сбрасывает сессию пользователя
-     */
-    void resetSession();
-
-    /*!
-     * \brief Возвращает указатель на объект DatabaseHandler
-     * \returns Указатель на объект DatabaseHandler
-     */
-    QSharedPointer<DatabaseHandler> getDatabase() const;
-
-    /*!
-     * \brief Возвращает указатель на объект Products
-     * \returns Указатель на объект Products
-     */
-    QSharedPointer<ProductRepository> getProducts() const;
-
-    /*!
-     * \brief Возвращает указатель на плавающую навигацию
-     * \returns Указатель на FloatingNavigationWidget
-     */
-    QSharedPointer<FloatingNavigationWidget> getFloatingWidget() const;
-
-    /*!
-     * \brief Возвращает указатель на объект CatalogController
-     * \returns Указатель на объект CatalogController
-     */
-    CatalogController* getCatalog() const;
-
-    /*!
-     * \brief Возвращает указатель на объект ProfileController
-     * \returns Указатель на объект ProfileController
-     */
-    ProfileController* getProfile() const;
-
-    /*!
-     * \brief Возвращает указатель на объект AuthController
-     * \returns Указатель на объект AuthController
-     */
-    AuthController* getAuth() const;
-
-    /*!
-     * \brief Возвращает указатель на объект NotificationsController
-     * \returns Указатель на объект NotificationsController
-     */
-    NotificationsController* getNotifications() const;
-    AdminTableController* getAdminTable() const;
-
-    /*!
-     * \brief Возвращает указатель на объект UserSession
-     * \returns Указатель на объект UserSession
-     */
-    UserSession* getUserSession();
-
-    /*!
-     * \brief Возвращает указатель на объект UserSession
-     * \returns Указатель на объект UserSession
-     */
-    const UserSession* getUserSession() const;
+    [[nodiscard]] UserSession& session() { return m_session; }
+    [[nodiscard]] const UserSession& session() const { return m_session; }
 
 private:
     QSharedPointer<DatabaseHandler> m_database;
-    QSharedPointer<ProductRepository> m_products;
-    QSharedPointer<FloatingNavigationWidget> m_floatingWidget;
-
-    QScopedPointer<CatalogController> m_catalogController;
-    QScopedPointer<ProfileController> m_profileController;
-    QScopedPointer<AuthController> m_authController;
-    QScopedPointer<NotificationsController> m_notificationsController;
-    QScopedPointer<AdminTableController> m_adminTableController;
-    UserSession m_userSession;
+    QScopedPointer<ClientRepository> m_clients;
+    QScopedPointer<ReferenceDataRepository> m_reference;
+    QScopedPointer<RequestRepository> m_requests;
+    QScopedPointer<ProductRepository> m_products;
+    QScopedPointer<AdminRepository> m_admin;
+    UserSession m_session;
+    QString m_error;
 };
 
 #endif // APP_SERVICES_H

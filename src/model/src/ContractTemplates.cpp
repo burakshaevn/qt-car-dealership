@@ -1,92 +1,69 @@
 #include "ContractTemplates.h"
-#include "ProductRepository.h"
 
-#include <QDateTime>
-#include <QDebug>
+#include "DatabaseHandler.h"
+
+#include <QDate>
 #include <QDesktopServices>
 #include <QFile>
 #include <QFileDialog>
-#include <QHash>
+#include <QLocale>
 #include <QMessageBox>
 #include <QPageSize>
 #include <QPdfWriter>
-#include <QSqlError>
-#include <QSqlQuery>
 #include <QTextDocument>
-#include <QTextStream>
 #include <QUrl>
 
-namespace contract_templates {
 namespace {
+const QString kDocumentResource = QStringLiteral(":/contracts/document.html");
 
-using TemplateValues = QHash<QString, QString>;
-
-QString loadTemplate(const QString& code)
+QString placeholder(const QString& key)
 {
-    QSqlQuery query;
-    query.prepare(
-        "SELECT title, body_template "
-        "FROM contract_templates "
-        "WHERE code = :code AND is_active = true "
-        "ORDER BY version DESC LIMIT 1");
-    query.bindValue(":code", code);
-
-    if (!query.exec() || !query.next()) {
-        qWarning() << "Contract template is unavailable:" << code << query.lastError().text();
-        return {};
-    }
-
-    const QString kTitle = query.value("title").toString().toHtmlEscaped();
-    const QString kBody = query.value("body_template").toString();
-    return QStringLiteral("<h1>%1</h1>%2").arg(kTitle, kBody);
+    return QStringLiteral("{{%1}}").arg(key);
 }
 
-QString renderTemplate(const QString& code, const TemplateValues& values)
+QString loadDocumentSkeleton()
 {
-    QString body = loadTemplate(code);
-    if (body.isEmpty()) {
-        return {};
+    QFile file(kDocumentResource);
+    if (!file.open(QIODevice::ReadOnly | QIODevice::Text)) {
+        return placeholder(QStringLiteral("body"));
     }
-
-    for (auto it = values.cbegin(); it != values.cend(); ++it) {
-        body.replace(
-            QStringLiteral("{{%1}}").arg(it.key()),
-            it.value().toHtmlEscaped());
-    }
-
-    return QStringLiteral(R"(
-<!DOCTYPE html>
-<html lang="ru">
-<head>
-    <meta charset="UTF-8">
-    <style>
-        body { font-family: "Times New Roman", serif; color: #111; margin: 36px; line-height: 1.55; }
-        h1 { font-size: 22px; text-align: center; margin-bottom: 28px; }
-        h2 { font-size: 16px; margin-top: 22px; }
-        p { font-size: 13px; text-align: justify; }
-        table { width: 100%%; border-collapse: collapse; margin: 18px 0; }
-        td { border: 1px solid #555; padding: 8px; font-size: 12px; }
-        .signatures { margin-top: 52px; }
-    </style>
-</head>
-<body>%1</body>
-</html>)").arg(body);
+    return QString::fromUtf8(file.readAll());
 }
-
-TemplateValues baseValues(const QString& currentDate,
-                          const QString& carName,
-                          const QString& carColor)
-{
-    return {
-        {"current_date", currentDate},
-        {"car_name", carName},
-        {"car_color", carColor}
-    };
-}
-
 } // namespace
 
-void saveAsPdf(const QString& htmlContent, const QString& fileName)
+ContractRenderer::ContractRenderer(QSharedPointer<DatabaseHandler> database)
+    : m_database(std::move(database))
+{}
+
+QString ContractRenderer::render(const QString& code, const Values& values) const
+{
+    if (!m_database) {
+        return {};
+    }
+    const auto kRows = m_database->rows(SqlQuery::Contracts::kSelectActiveTemplate, {{"code", code}});
+    if (kRows.isEmpty()) {
+        return {};
+    }
+
+    Values resolved = values;
+    if (!resolved.contains(QStringLiteral("current_date"))) {
+        resolved.insert(QStringLiteral("current_date"), QLocale().toString(QDate::currentDate(), QLocale::ShortFormat));
+    }
+
+    QString body = kRows.first().value("body_template").toString();
+    for (auto it = resolved.cbegin(); it != resolved.cend(); ++it) {
+        body.replace(placeholder(it.key()), it.value().toHtmlEscaped());
+    }
+
+    QString document = loadDocumentSkeleton();
+    document.replace(placeholder(QStringLiteral("title")), kRows.first().value("title").toString().toHtmlEscaped());
+    document.replace(placeholder(QStringLiteral("body")), body);
+    return document;
+}
+
+namespace ContractExporter {
+
+bool saveAsPdf(const QString& html, const QString& fileName)
 {
     QPdfWriter writer(fileName);
     writer.setPageSize(QPageSize(QPageSize::A4));
@@ -94,148 +71,55 @@ void saveAsPdf(const QString& htmlContent, const QString& fileName)
     writer.setResolution(300);
 
     QTextDocument document;
-    document.setHtml(htmlContent);
+    document.setHtml(html);
     document.print(&writer);
+    return QFile::exists(fileName);
 }
 
-void saveContract(const QString& content, const ProductInfo& product)
+bool saveAsHtml(const QString& html, const QString& fileName)
 {
-    if (content.isEmpty()) {
-        QMessageBox::critical(
-            nullptr,
-            QStringLiteral("Ошибка"),
-            QStringLiteral("Шаблон договора отсутствует в системной базе."));
+    QFile file(fileName);
+    if (!file.open(QIODevice::WriteOnly | QIODevice::Text | QIODevice::Truncate)) {
+        return false;
+    }
+    return file.write(html.toUtf8()) >= 0;
+}
+
+void exportWithDialog(QWidget* parent, const QString& html, const QString& suggestedName)
+{
+    if (html.isEmpty()) {
+        QMessageBox::critical(parent, QObject::tr("Договор"),
+                              QObject::tr("Шаблон договора отсутствует в базе данных."));
         return;
     }
 
-    const QString kDefaultFileName = QStringLiteral("Договор_%1_%2")
-                                         .arg(QString(product.Name).replace(' ', '_'),
-                                              QDateTime::currentDateTime().toString("dd_MM_yyyy"));
-
-    QString selectedFilter;
+    const QString kPdfFilter = QObject::tr("PDF (*.pdf)");
+    const QString kHtmlFilter = QObject::tr("HTML (*.html)");
+    QString selectedFilter = kPdfFilter;
     QString fileName = QFileDialog::getSaveFileName(
-        nullptr,
-        QStringLiteral("Сохранить договор"),
-        kDefaultFileName,
-        QStringLiteral("PDF (*.pdf);;HTML (*.html)"),
-        &selectedFilter);
-
+        parent, QObject::tr("Сохранить договор"),
+        QStringLiteral("%1_%2").arg(suggestedName, QDate::currentDate().toString(Qt::ISODate)),
+        kPdfFilter + QStringLiteral(";;") + kHtmlFilter, &selectedFilter);
     if (fileName.isEmpty()) {
         return;
     }
 
-    bool saved = false;
-    if (selectedFilter.startsWith("PDF")) {
-        if (!fileName.endsWith(".pdf", Qt::CaseInsensitive)) {
-            fileName += ".pdf";
-        }
-        saveAsPdf(content, fileName);
-        saved = QFile::exists(fileName);
-    } else {
-        if (!fileName.endsWith(".html", Qt::CaseInsensitive)) {
-            fileName += ".html";
-        }
-        QFile file(fileName);
-        if (file.open(QIODevice::WriteOnly | QIODevice::Text)) {
-            QTextStream stream(&file);
-            stream.setEncoding(QStringConverter::Utf8);
-            stream << content;
-            saved = true;
-        }
+    const bool kPdf = selectedFilter == kPdfFilter;
+    const QString kSuffix = kPdf ? QStringLiteral(".pdf") : QStringLiteral(".html");
+    if (!fileName.endsWith(kSuffix, Qt::CaseInsensitive)) {
+        fileName += kSuffix;
     }
 
-    if (!saved) {
-        QMessageBox::critical(nullptr, QStringLiteral("Ошибка"), QStringLiteral("Не удалось сохранить договор."));
+    const bool kSaved = kPdf ? saveAsPdf(html, fileName) : saveAsHtml(html, fileName);
+    if (!kSaved) {
+        QMessageBox::critical(parent, QObject::tr("Договор"), QObject::tr("Не удалось сохранить файл."));
         return;
     }
 
-    if (QMessageBox::question(
-            nullptr,
-            QStringLiteral("Файл сохранён"),
-            QStringLiteral("Договор сохранён. Открыть его?"),
-            QMessageBox::Yes | QMessageBox::No) == QMessageBox::Yes) {
+    if (QMessageBox::question(parent, QObject::tr("Договор сохранён"), QObject::tr("Открыть файл?"))
+        == QMessageBox::Yes) {
         QDesktopServices::openUrl(QUrl::fromLocalFile(fileName));
     }
 }
 
-QString getPurchaseContractHtml(const QString& currentDate,
-                                const QString& carName,
-                                const QString& carColor,
-                                const QString& carPrice)
-{
-    auto values = baseValues(currentDate, carName, carColor);
-    values.insert("car_price", carPrice);
-    return renderTemplate("purchase", values);
-}
-
-QString getLoanContractHtml(const QString& currentDate,
-                            const QString& carName,
-                            const QString& carColor,
-                            const QString& carPrice,
-                            const QString& loanAmount,
-                            const QString& loanTerm)
-{
-    auto values = baseValues(currentDate, carName, carColor);
-    values.insert("car_price", carPrice);
-    values.insert("loan_amount", loanAmount);
-    values.insert("loan_term", loanTerm);
-    return renderTemplate("loan", values);
-}
-
-QString getRentalContractHtml(const QString& currentDate,
-                              const QString& carName,
-                              const QString& carColor,
-                              const QString& rentalDays,
-                              const QString& startDate)
-{
-    auto values = baseValues(currentDate, carName, carColor);
-    values.insert("rental_days", rentalDays);
-    values.insert("start_date", startDate);
-    return renderTemplate("rental", values);
-}
-
-QString getInsuranceContractHtml(const QString& currentDate,
-                                 const QString& carName,
-                                 const QString& carColor,
-                                 const QString& insuranceType)
-{
-    auto values = baseValues(currentDate, carName, carColor);
-    values.insert("insurance_type", insuranceType);
-    return renderTemplate("insurance", values);
-}
-
-QString getServiceContractHtml(const QString& currentDate,
-                               const QString& carName,
-                               const QString& carColor,
-                               const QString& serviceType,
-                               const QString& scheduledDate)
-{
-    auto values = baseValues(currentDate, carName, carColor);
-    values.insert("service_type", serviceType);
-    values.insert("scheduled_date", scheduledDate);
-    return renderTemplate("service", values);
-}
-
-QString getTestDriveContractHtml(const QString& currentDate,
-                                 const QString& carName,
-                                 const QString& carColor,
-                                 const QString& scheduledDate)
-{
-    auto values = baseValues(currentDate, carName, carColor);
-    values.insert("scheduled_date", scheduledDate);
-    return renderTemplate("test_drive", values);
-}
-
-QString getOrderContractHtml(const QString& currentDate,
-                             const QString& carName,
-                             const QString& carColor,
-                             const QString& carPrice,
-                             const QString& trim)
-{
-    auto values = baseValues(currentDate, carName, carColor);
-    values.insert("car_price", carPrice);
-    values.insert("trim", trim);
-    return renderTemplate("order", values);
-}
-
-} // namespace contract_templates
+} // namespace ContractExporter
