@@ -8,6 +8,7 @@
 #include "RequestController.h"
 #include "SettingsForm.h"
 #include "ThemeManager.h"
+#include "WindowChrome.h"
 #include "pages/AdminPage.h"
 #include "pages/CatalogPage.h"
 #include "pages/LoginPage.h"
@@ -34,7 +35,10 @@ MainWindow::MainWindow(AppServices& services, QWidget* parent)
     , m_auth(new AuthController(services))
     , m_requests(new RequestController(services))
 {
-    setWindowTitle(tr("Mercedes-Benz. Автосалон"));
+    // Like native macOS apps, the window carries no application name: the title
+    // follows the current section and the native title bar blends into the page.
+    setWindowTitle(tr("Вход"));
+    WindowChrome::attach(this);
     setWindowIcon(ThemeManager::instance().icon(QStringLiteral("logo")));
     setMinimumSize(1100, 720);
     resize(1320, 840);
@@ -100,6 +104,7 @@ void MainWindow::onLogout()
     m_services.session().clear();
 
     m_root->setCurrentWidget(m_loginPage);
+    setWindowTitle(tr("Вход"));
     if (m_workspace) {
         m_root->removeWidget(m_workspace);
         m_workspace->deleteLater();
@@ -203,6 +208,14 @@ void MainWindow::startAdminSession()
     }
 
     connect(m_sidebar, &NavigationSidebar::sectionSelected, m_admin.get(), &AdminController::open);
+    connect(m_sidebar, &NavigationSidebar::sectionSelected, this, [this, kTables](const QString& table) {
+        for (const AdminTableInfo& info : kTables) {
+            if (info.TableName == table) {
+                setWindowTitle(info.DisplayName);
+                break;
+            }
+        }
+    });
     connect(m_sidebar, &NavigationSidebar::settingsRequested, this, &MainWindow::openSettings);
     connect(m_sidebar, &NavigationSidebar::logoutRequested, this, &MainWindow::onLogout);
 
@@ -212,6 +225,7 @@ void MainWindow::startAdminSession()
     if (!kTables.isEmpty()) {
         m_sidebar->setCurrentSection(kTables.first().TableName);
         m_admin->open(kTables.first().TableName);
+        setWindowTitle(kTables.first().DisplayName);
     }
 }
 
@@ -223,12 +237,15 @@ void MainWindow::navigate(const QString& section)
     m_topBar->setCurrentSection(section);
     if (section == Section::kCatalog) {
         m_pages->setCurrentWidget(m_catalogPage);
+        setWindowTitle(tr("Модельный ряд"));
     } else if (section == Section::kProfile) {
         refreshProfile();
         m_pages->setCurrentWidget(m_profilePage);
+        setWindowTitle(tr("Личный кабинет"));
     } else if (section == Section::kNotifications) {
         m_notifications->refresh();
         m_pages->setCurrentWidget(m_notificationsPage);
+        setWindowTitle(tr("Уведомления"));
     }
 }
 
@@ -245,6 +262,7 @@ void MainWindow::showProduct(const ProductInfo& product)
     m_productPage->setVariants(kVariants.isEmpty() ? QList<ProductInfo>{product} : kVariants, current);
     m_topBar->setCurrentSection(Section::kCatalog);
     m_pages->setCurrentWidget(m_productPage);
+    setWindowTitle(product.Name);
 }
 
 void MainWindow::refreshProfile()

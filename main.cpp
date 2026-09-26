@@ -14,7 +14,7 @@ int main(int argc, char* argv[])
     QLocale::setDefault(QLocale(QLocale::Russian, QLocale::Russia));
     QApplication::setOrganizationName(QStringLiteral("burakshaevn"));
     QApplication::setApplicationName(QStringLiteral("qt-car-dealership"));
-    QApplication::setApplicationDisplayName(QStringLiteral("Mercedes-Benz"));
+    // No applicationDisplayName on purpose: Qt would append it to every window title.
     QApplication::setApplicationVersion(QStringLiteral(PROJECT_VERSION));
 
     QCommandLineParser parser;

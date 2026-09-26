@@ -1,6 +1,5 @@
 #include "pages/TopBar.h"
 
-#include "ThemeManager.h"
 #include "UiKit.h"
 
 #include <QButtonGroup>
@@ -9,8 +8,9 @@
 #include <QPushButton>
 
 namespace {
-constexpr QSize kLogoSize(26, 26);
-constexpr QSize kWordmarkSize(150, 18);
+/// Same horizontal inset as the pages, so the bar's text lines up with the content
+/// and the bar reads as part of the page rather than as a separate strip.
+constexpr int kContentInset = 56;
 } // namespace
 
 TopBar::TopBar(QWidget* parent)
@@ -21,15 +21,8 @@ TopBar::TopBar(QWidget* parent)
     m_group->setExclusive(true);
 
     auto* root = new QHBoxLayout(this);
-    root->setContentsMargins(40, 0, 40, 0);
+    root->setContentsMargins(kContentInset, 0, kContentInset, 0);
     root->setSpacing(0);
-
-    m_logo = new QLabel(this);
-    root->addWidget(m_logo, 0, Qt::AlignVCenter);
-    root->addSpacing(12);
-    m_wordmark = new QLabel(this);
-    root->addWidget(m_wordmark, 0, Qt::AlignVCenter);
-    root->addSpacing(56);
 
     m_tabs = new QHBoxLayout;
     m_tabs->setSpacing(32);
@@ -49,17 +42,8 @@ TopBar::TopBar(QWidget* parent)
     logout->setObjectName(QStringLiteral("pushButton_logout"));
     root->addWidget(logout, 0, Qt::AlignVCenter);
 
-    refreshBrand();
-    connect(&ThemeManager::instance(), &ThemeManager::themeChanged, this, &TopBar::refreshBrand);
     connect(settings, &QPushButton::clicked, this, &TopBar::settingsRequested);
     connect(logout, &QPushButton::clicked, this, &TopBar::logoutRequested);
-}
-
-void TopBar::refreshBrand()
-{
-    const ThemeManager& theme = ThemeManager::instance();
-    m_logo->setPixmap(theme.icon(QStringLiteral("logo")).pixmap(kLogoSize));
-    m_wordmark->setPixmap(theme.icon(QStringLiteral("mercedez_benz")).pixmap(kWordmarkSize));
 }
 
 void TopBar::addSection(const QString& id, const QString& title)

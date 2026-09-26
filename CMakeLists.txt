@@ -56,6 +56,7 @@ set(VIEW_SOURCES
     ${CMAKE_CURRENT_SOURCE_DIR}/src/view/src/RecordEditDialog.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/src/view/src/ThemeManager.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/src/view/src/UiKit.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/src/view/src/WindowChrome.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/src/view/src/pages/AdminPage.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/src/view/src/pages/CatalogPage.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/src/view/src/pages/LoginPage.cpp
@@ -69,6 +70,7 @@ set(VIEW_SOURCES
     ${CMAKE_CURRENT_SOURCE_DIR}/src/view/include/RecordEditDialog.h
     ${CMAKE_CURRENT_SOURCE_DIR}/src/view/include/ThemeManager.h
     ${CMAKE_CURRENT_SOURCE_DIR}/src/view/include/UiKit.h
+    ${CMAKE_CURRENT_SOURCE_DIR}/src/view/include/WindowChrome.h
     ${CMAKE_CURRENT_SOURCE_DIR}/src/view/include/pages/AdminPage.h
     ${CMAKE_CURRENT_SOURCE_DIR}/src/view/include/pages/CatalogPage.h
     ${CMAKE_CURRENT_SOURCE_DIR}/src/view/include/pages/LoginPage.h
@@ -82,6 +84,14 @@ set(VIEW_SOURCES
 add_library(view STATIC ${VIEW_SOURCES})
 target_include_directories(view PUBLIC ${CMAKE_CURRENT_SOURCE_DIR}/src/view/include)
 target_link_libraries(view PUBLIC Qt6::Widgets model)
+# Native title bar integration (see WindowChrome.h).
+if(APPLE)
+    enable_language(OBJCXX)
+    target_sources(view PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/src/view/src/WindowChrome_mac.mm)
+    target_link_libraries(view PRIVATE "-framework AppKit")
+elseif(WIN32)
+    target_link_libraries(view PRIVATE dwmapi)
+endif()
 
 # --- Controller: composition root and page <-> repository wiring ------------
 set(CONTROLLER_SOURCES

@@ -42,9 +42,8 @@ QScrollArea#pageScroll, QScrollArea#pageScroll > QWidget > QWidget {
 /* ---------------------------------------------------------------- Top bar (customer) */
 
 QFrame#topbar {
-    background-color: @window;
+    background: transparent;
     border: none;
-    border-bottom: 1px solid @border;
 }
 
 QPushButton[type="tab"] {
@@ -65,8 +64,10 @@ QPushButton[type="tab"]:checked {
     color: @text;
     border-bottom: 2px solid @text;
 }
-QFrame#topbar QPushButton[type="tab"] {
-    padding: 21px 0 19px 0;
+QFrame#topbar QPushButton[type="tab"],
+QFrame#topbar QPushButton[type="tab"]:checked {
+    border-bottom: none;
+    padding: 14px 0 14px 0;
 }
 
 QLabel#navCount {
