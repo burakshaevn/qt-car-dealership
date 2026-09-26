@@ -2,6 +2,8 @@
 
 #include "ThemeManager.h"
 
+#include <QEvent>
+#include <QFontMetrics>
 #include <QFrame>
 #include <QHBoxLayout>
 #include <QLabel>
@@ -10,6 +12,63 @@
 #include <QVBoxLayout>
 
 namespace UiKit {
+
+namespace {
+
+/// Keeps a follower label's baseline on the reference label's baseline.
+class BaselineAligner final : public QObject
+{
+public:
+    BaselineAligner(QLabel* reference, QLabel* follower)
+        : QObject(follower)
+        , m_reference(reference)
+        , m_follower(follower)
+    {
+        reference->installEventFilter(this);
+        follower->installEventFilter(this);
+        update();
+    }
+
+protected:
+    bool eventFilter(QObject* watched, QEvent* event) override
+    {
+        switch (event->type()) {
+        case QEvent::Polish:
+        case QEvent::FontChange:
+        case QEvent::StyleChange:
+        case QEvent::Show:
+            update();
+            break;
+        default:
+            break;
+        }
+        return QObject::eventFilter(watched, event);
+    }
+
+private:
+    void update()
+    {
+        // Both labels sit on the row's bottom edge, so their baselines differ by
+        // the difference of their descents; lift the follower by that amount.
+        const int kLift = QFontMetrics(m_reference->font()).descent() - QFontMetrics(m_follower->font()).descent();
+        const QMargins kMargins(0, 0, 0, qMax(0, kLift));
+        if (m_follower->contentsMargins() != kMargins) {
+            m_follower->setContentsMargins(kMargins);
+        }
+    }
+
+    QLabel* m_reference;
+    QLabel* m_follower;
+};
+
+} // namespace
+
+void alignBaseline(QLabel* reference, QLabel* follower)
+{
+    if (reference && follower) {
+        new BaselineAligner(reference, follower);
+    }
+}
 
 void setRole(QWidget* widget, const char* role)
 {

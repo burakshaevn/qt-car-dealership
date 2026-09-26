@@ -12,10 +12,10 @@ class QLabel;
 class QPushButton;
 
 /*!
- * \brief Customer navigation: text tabs, user and account actions.
+ * \brief Customer navigation: logo, text tabs, user and account actions.
  *
- * Deliberately chrome-less: no brand, no background of its own and no bottom rule,
- * the current section is marked by text colour only.
+ * Deliberately chrome-less: no background of its own and no bottom rule, edges
+ * aligned with the page content; the current section is marked by text colour only.
  *
  * API mirrors NavigationSidebar so that the shell can treat both the same way.
  */
@@ -36,6 +36,10 @@ signals:
     void logoutRequested();
 
 private:
+    void refreshBrand();
+
+    QLabel* m_logo = nullptr;
+    QLabel* m_wordmark = nullptr;
     QHBoxLayout* m_tabs = nullptr;
     QButtonGroup* m_group = nullptr;
     QHash<QString, QPushButton*> m_buttons;

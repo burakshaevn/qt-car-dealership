@@ -87,9 +87,11 @@ ProfilePage::ProfilePage(QWidget* parent)
     garageColumn->setSpacing(0);
     auto* purchasedHeader = new QHBoxLayout;
     purchasedHeader->setSpacing(12);
-    purchasedHeader->addWidget(UiKit::label(tr("Мои автомобили"), "h2", content), 0, Qt::AlignBottom);
+    auto* garageTitle = UiKit::label(tr("Мои автомобили"), "h2", content);
+    purchasedHeader->addWidget(garageTitle, 0, Qt::AlignBottom);
     m_purchasedCount = UiKit::label(QStringLiteral("0"), "index", content);
     purchasedHeader->addWidget(m_purchasedCount, 0, Qt::AlignBottom);
+    UiKit::alignBaseline(garageTitle, m_purchasedCount);
     purchasedHeader->addStretch(1);
     garageColumn->addLayout(purchasedHeader);
     garageColumn->addSpacing(14);

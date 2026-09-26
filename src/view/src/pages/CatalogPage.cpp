@@ -35,10 +35,12 @@ CatalogPage::CatalogPage(QWidget* parent)
     // Header: title with the result count set beside it, search on the right.
     auto* header = new QHBoxLayout;
     header->setSpacing(0);
-    header->addWidget(UiKit::label(tr("Модельный ряд"), "h1", this), 0, Qt::AlignBottom);
+    auto* title = UiKit::label(tr("Модельный ряд"), "h1", this);
+    header->addWidget(title, 0, Qt::AlignBottom);
     header->addSpacing(16);
     m_count = UiKit::label({}, "index", this);
     header->addWidget(m_count, 0, Qt::AlignBottom);
+    UiKit::alignBaseline(title, m_count);
     header->addStretch(1);
 
     m_search = new QLineEdit(this);

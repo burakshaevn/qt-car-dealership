@@ -49,6 +49,14 @@ QString plural(qint64 count, const QString& one, const QString& few, const QStri
 /// Square paint sample used next to colour names; empty icon for an invalid colour.
 QIcon swatchIcon(const QColor& color, int size = 14);
 
+/*!
+ * Aligns the text baseline of \a follower with \a reference when both are
+ * bottom-aligned in the same row. Qt layouts align widget boxes, not baselines,
+ * so two labels of different sizes otherwise end up at different heights.
+ * Stays correct when fonts change (theme switch, stylesheet repolish).
+ */
+void alignBaseline(QLabel* reference, QLabel* follower);
+
 } // namespace UiKit
 
 /*!
