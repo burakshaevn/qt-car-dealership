@@ -8,7 +8,9 @@ on:
 
 env:
   BUILD_TYPE: Release
-  QT_VERSION: 6.8.2
+  # 6.9.2+ is required on macos-latest: older Qt links the AGL framework,
+  # which the Xcode 26 SDK no longer ships (QTBUG-137687).
+  QT_VERSION: 6.9.3
 
 jobs:
   build:
