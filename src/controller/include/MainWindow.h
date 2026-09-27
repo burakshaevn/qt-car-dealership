@@ -1,128 +1,75 @@
-﻿#ifndef MAINWINDOW_H
-#define MAINWINDOW_H
+#pragma once
+
+#ifndef MAIN_WINDOW_H
+#define MAIN_WINDOW_H
 
 #include <QMainWindow>
-#include <QTimeEdit>
-#include <QCheckBox>
-#include <QCryptographicHash>
-#include <QGraphicsDropShadowEffect>
+#include <QScopedPointer>
 
-#include "AppServices.h"
-#include "PurchaseMethodsController.h"
-#include "SettingsForm.h"
-#include "UserInfo.h"
+#include "ProductListModel.h"
 
-QT_BEGIN_NAMESPACE
-namespace Ui {
-class MainWindow;
-}
-QT_END_NAMESPACE
+class AdminController;
+class AdminPage;
+class AppServices;
+class AuthController;
+class CatalogController;
+class CatalogPage;
+class LoginPage;
+class NavigationSidebar;
+class NotificationsController;
+class NotificationsPage;
+class ProductPage;
+class ProfilePage;
+class QStackedWidget;
+class TopBar;
+class RequestController;
 
-class MainWindow : public QMainWindow
+/*!
+ * \brief Application shell: login screen, or sidebar + content pages after sign-in.
+ *
+ * The window only wires pages to controllers; it contains no data access code.
+ */
+class MainWindow final : public QMainWindow
 {
     Q_OBJECT
-
 public:
-    MainWindow(QWidget *parent = nullptr);
-    ~MainWindow();
-    void setDarkThemeEnabled(bool enabled);
-
-    /*!
-     * \brief Обновляет информацию о пользователе
-     * \param user - информация о пользователе
-     * \param parent - родительский виджет
-     */
-    void updateUser(const UserInfo& user, QWidget* parent);
-
-private slots:
-    void onLoginClicked();
-
-    void onRegistrationClicked();
-
-    void onLogoutClicked();
-
-    void onNextLeftClicked();
-
-    void onNextRightClicked();
-
-    void onBackClicked();
-
-    void onToPayClicked();
-
-    void onInfoClicked();
-
-    void onTestDriveClicked();
-
-    void onOrderClicked();
-
-    void onNotificationsClicked();
-
-    void onSettingsClicked();
-
-    void onProfileClicked();
-
-    void onSortByColorClicked();
-
-    void onSearchClicked();
-
-    void onSortByTypeClicked();
-
-protected:
-    void resizeEvent(QResizeEvent *event) override;
+    explicit MainWindow(AppServices& services, QWidget* parent = nullptr);
+    ~MainWindow() override;
 
 private:
-    void applyThemeIcons();
+    void buildUi();
+    void onLogin(const QString& login, const QString& password);
+    void onRegistration();
+    void onLogout();
+    void startCustomerSession();
+    void startAdminSession();
 
-    Ui::MainWindow *m_ui;
+    void navigate(const QString& section);
+    void showProduct(const ProductInfo& product);
+    void refreshProfile();
+    void refreshBadges();
+    void openSettings();
 
-    ProductInfo m_currentProduct;                      ///< Информация о текущем товаре, который выбрал пользователь
-    int m_currentColorIndex = 0;                      ///< Индекс текущего цвета у товара, который выбрал пользователь
+    AppServices& m_services;
 
-    QScopedPointer<AppServices> m_services;             ///< сервисы приложения (DB, модели, контроллеры)
+    QStackedWidget* m_root = nullptr;      ///< login | workspace
+    LoginPage* m_loginPage = nullptr;
+    QWidget* m_workspace = nullptr;
+    NavigationSidebar* m_sidebar = nullptr; ///< admin index
+    TopBar* m_topBar = nullptr;             ///< customer navigation
+    QStackedWidget* m_pages = nullptr;
+    CatalogPage* m_catalogPage = nullptr;
+    ProductPage* m_productPage = nullptr;
+    ProfilePage* m_profilePage = nullptr;
+    NotificationsPage* m_notificationsPage = nullptr;
+    AdminPage* m_adminPage = nullptr;
 
-    QScopedPointer<SettingsForm> m_settingsForm;       ///< Форма настроек
-    QScopedPointer<PurchaseMethodsController> m_purchaseMethodsController; ///< Контроллер методов покупки
-
-    /*!
-     * \brief Инициализация зависимостей
-     */
-    void buildDependencies();
-    
-    /*!
-     * \brief Инициализация бокового меню
-     */
-    void setupFloatingMenu();
-
-    /*!
-     * \brief Обновление позиции плавающего меню при изменении размера окна
-     */
-    void updateFloatingMenuPosition();
-
-    /*!
-     * \brief Обновляет размеры изображения и положение стрелок на странице автомобиля
-     */
-    void updatePersonalPageLayout();
-
-    /*!
-     * \brief Обработка выбора услуги
-     * \param ok - флаг, указывающий, была ли выбрана услуга
-     * \param selected_type - тип услуги
-     * \param selected_color - цвет услуги
-     */
-    void selectionProcessing(const bool kOk, const QStringView kSelectedType, const QStringView kSelectedColor = QStringView());
-
-    /*!
-     * \brief Загружает доступные услуги для клиента в ScrollArea на странице пользователя
-     */
-    void setupServicesScrollArea();
-
-    /*!
-     * \brief Настраивает страницу с информацей о конкретном автомобиле
-     * \param const ProductInfo& - характеристики, информация об автомобиле
-     * \param QList<ProductInfo>& - список с доступными цветами конкретного автомобиля
-     */
-    void showProductOnPersonalPage(const ProductInfo&, QList<ProductInfo>&);
-
+    QScopedPointer<AuthController> m_auth;
+    QScopedPointer<RequestController> m_requests;
+    QScopedPointer<CatalogController> m_catalog;
+    QScopedPointer<NotificationsController> m_notifications;
+    QScopedPointer<AdminController> m_admin;
+    ProductListModel m_purchasedModel;
 };
 
-#endif // MAINWINDOW_H
+#endif // MAIN_WINDOW_H

@@ -3,39 +3,39 @@
 #ifndef NOTIFICATIONS_CONTROLLER_H
 #define NOTIFICATIONS_CONTROLLER_H
 
+#include <QHash>
 #include <QObject>
-#include <QScopedPointer>
-#include <QSharedPointer>
+#include <QPointer>
 
-#include "NotificationsHandler.h"
+#include "RequestRepository.h"
 
-class DatabaseHandler;
-class QWidget;
+class AppServices;
+class NotificationsPage;
+struct NotificationItem;
 
 /*!
- * \brief Класс, предоставляющий сервисы для работы с уведомлениями
+ * \brief Feeds NotificationsPage from RequestRepository and exports contracts.
  */
-class NotificationsController : public QObject
+class NotificationsController final : public QObject
 {
     Q_OBJECT
 public:
-    explicit NotificationsController(QObject* parent = nullptr);
+    NotificationsController(AppServices& services, NotificationsPage* page, QObject* parent = nullptr);
 
-    /*!
-     * \brief Устанавливает зависимости
-     * \param database - указатель на объект DatabaseHandler
-     */
-    void setDependencies(const QSharedPointer<DatabaseHandler>& database);
-    /*!
-     * \brief Отображает уведомления для пользователя
-     * \param userId - ID пользователя
-     * \param parent - владелец диалога уведомлений
-     */
-    void showForUser(int userId, QWidget* parent);
+    void refresh();
+    [[nodiscard]] int unreadCount() const;
+
+signals:
+    void unreadCountChanged(int count);
 
 private:
-    QSharedPointer<DatabaseHandler> m_database;
-    QScopedPointer<NotificationsHandler> m_handler;
+    [[nodiscard]] NotificationItem present(const Notification& notification) const;
+    void exportContract(const Notification& notification);
+    void loadStatusLabels();
+
+    AppServices& m_services;
+    QPointer<NotificationsPage> m_page;
+    QHash<QString, QString> m_statusKeys; ///< localized status value -> key (approved, rejected, ...)
 };
 
 #endif // NOTIFICATIONS_CONTROLLER_H

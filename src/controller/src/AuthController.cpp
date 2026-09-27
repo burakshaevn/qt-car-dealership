@@ -1,230 +1,135 @@
 #include "AuthController.h"
 
-#include "DatabaseHandler.h"
-#include "ThemeStyleProvider.h"
+#include "AppServices.h"
+#include "UiKit.h"
 
-#include <QCalendarWidget>
-#include <QCryptographicHash>
-#include <QDialog>
-#include <QDoubleSpinBox>
 #include <QHBoxLayout>
-#include <QLabel>
 #include <QLineEdit>
-#include <QMessageBox>
-#include <QPushButton>
 #include <QRegularExpression>
-#include <QSpinBox>
-#include <QSqlError>
-#include <QSqlQuery>
-#include <QTimeEdit>
-#include <QVBoxLayout>
 
-AuthController::AuthController(QObject* parent)
+namespace {
+constexpr int kMinPasswordLength = 8;
+} // namespace
+
+AuthController::AuthController(AppServices& services, QObject* parent)
     : QObject(parent)
+    , m_services(services)
+{}
+
+QString AuthController::login(const QString& login, const QString& password)
 {
+    if (!m_services.isReady()) {
+        return tr("База данных недоступна.");
+    }
+    const std::optional<UserInfo> kUser = m_services.clients().authenticate(login, password);
+    if (!kUser) {
+        return tr("Неверный логин или пароль.");
+    }
+    m_services.session().setCurrentUser(*kUser);
+    return {};
 }
 
-void AuthController::setDependencies(const QSharedPointer<DatabaseHandler>& database)
+QString AuthController::normalizePhone(const QString& phone)
 {
-    m_database = database;
+    static const QRegularExpression kNonDigits(QStringLiteral("\\D"));
+    QString digits = QString(phone).remove(kNonDigits);
+    // Russian numbers are stored in the international form: 8XXXXXXXXXX -> 7XXXXXXXXXX.
+    if (digits.size() == 11 && digits.startsWith(QLatin1Char('8'))) {
+        digits[0] = QLatin1Char('7');
+    }
+    return digits;
 }
 
-AuthController::AuthResult AuthController::login(const QString& login, const QString& password) const
+QString AuthController::validateProfile(const QString& firstName,
+                                        const QString& lastName,
+                                        const QString& email,
+                                        const QString& phone)
 {
-    AuthResult result;
-    if (!m_database) {
-        result.Error = "База данных недоступна.";
-        return result;
+    if (firstName.trimmed().isEmpty() || lastName.trimmed().isEmpty() || email.trimmed().isEmpty()
+        || phone.trimmed().isEmpty()) {
+        return tr("Заполните все поля.");
     }
-
-    QSqlQuery query = m_database->executeNamedSelect(SqlQueryId::SelectAdminByUsername,
-                                                     {{"username", login}});
-    if (query.isActive()) {
-        if (query.next()) {
-            UserInfo user;
-            user.Id = query.value("id").toInt();
-            user.Password = query.value("password").toString();
-            user.Role = Role::Admin;
-            if (user.Password == password) {
-                result.Ok = true;
-                result.User = user;
-            } else {
-                result.Error = "Неверный логин или пароль.";
-            }
-            return result;
-        }
+    static const QRegularExpression kEmail(QStringLiteral(R"(^[^@\s]+@[^@\s]+\.[^@\s]{2,}$)"));
+    if (!kEmail.match(email.trimmed()).hasMatch()) {
+        return tr("Введите корректный email.");
     }
-
-    query = m_database->executeNamedSelect(SqlQueryId::SelectClientByEmail, {{"email", login}});
-    if (query.isActive()) {
-        if (query.next()) {
-            UserInfo user;
-            user.Id = query.value("id").toInt();
-            user.FullName = query.value("first_name").toString();
-            user.FullName += " " + query.value("last_name").toString();
-            user.Email = query.value("email").toString();
-            user.Password = query.value("password").toString();
-            user.Role = Role::User;
-
-            QString hashedInputPassword = QString(QCryptographicHash::hash(
-                password.toUtf8(),
-                QCryptographicHash::Sha256).toHex());
-
-            if (user.Password == hashedInputPassword) {
-                result.Ok = true;
-                result.User = user;
-            } else {
-                result.Error = "Неверный логин или пароль.";
-            }
-            return result;
-        }
+    if (normalizePhone(phone).size() != 11) {
+        return tr("Номер телефона должен содержать 11 цифр.");
     }
-
-    result.Error = "Неверный логин или пароль.";
-    return result;
+    return {};
 }
 
-bool AuthController::runRegistrationDialog(QWidget* parent)
+QString AuthController::validatePassword(const QString& password, const QString& confirmation)
 {
-    if (!m_database) {
-        QMessageBox::warning(parent, "Ошибка", "База данных недоступна.");
-        return false;
+    if (password.size() < kMinPasswordLength) {
+        return tr("Пароль должен содержать минимум %1 символов.").arg(kMinPasswordLength);
+    }
+    if (password != confirmation) {
+        return tr("Пароли не совпадают.");
+    }
+    return {};
+}
+
+std::optional<QString> AuthController::runRegistrationDialog(QWidget* parent)
+{
+    if (!m_services.isReady()) {
+        return std::nullopt;
     }
 
-    QDialog dialog(parent);
-    dialog.setWindowTitle("Регистрация");
-    dialog.setFixedSize(500, 800);
-    applyThemeStyle(&dialog, "DialogForm");
+    FormDialog dialog(tr("Создание аккаунта"), tr("Заполните данные, чтобы оформлять заявки и следить за их статусом."),
+                      parent);
+    dialog.setAcceptText(tr("Зарегистрироваться"));
 
-    QVBoxLayout* layout = new QVBoxLayout(&dialog);
-    layout->setSpacing(10);
-    layout->setContentsMargins(30, 30, 30, 30);
+    auto* firstName = new QLineEdit;
+    auto* lastName = new QLineEdit;
+    auto* nameRow = new QWidget;
+    auto* nameLayout = new QHBoxLayout(nameRow);
+    nameLayout->setContentsMargins(0, 0, 0, 0);
+    nameLayout->setSpacing(12);
+    nameLayout->addWidget(UiKit::field(tr("Имя"), firstName));
+    nameLayout->addWidget(UiKit::field(tr("Фамилия"), lastName));
+    dialog.addWidget(nameRow);
 
-    QLabel* titleLabel = new QLabel("Создание учетной записи", &dialog);
-    titleLabel->setProperty("type", "header");
-    layout->addWidget(titleLabel);
+    auto* email = new QLineEdit;
+    email->setPlaceholderText(QStringLiteral("name@example.com"));
+    dialog.addField(tr("Email"), email);
 
-    QLabel* firstNameLabel = new QLabel("Имя:", &dialog);
-    layout->addWidget(firstNameLabel);
-    QLineEdit* firstNameEdit = new QLineEdit(&dialog);
-    firstNameEdit->setPlaceholderText("Введите имя");
-    layout->addWidget(firstNameEdit);
+    auto* phone = new QLineEdit;
+    phone->setPlaceholderText(QStringLiteral("+7 900 000-00-00"));
+    dialog.addField(tr("Телефон"), phone);
 
-    QLabel* lastNameLabel = new QLabel("Фамилия:", &dialog);
-    layout->addWidget(lastNameLabel);
-    QLineEdit* lastNameEdit = new QLineEdit(&dialog);
-    lastNameEdit->setPlaceholderText("Введите фамилию");
-    layout->addWidget(lastNameEdit);
+    auto* password = new QLineEdit;
+    password->setEchoMode(QLineEdit::Password);
+    password->setPlaceholderText(tr("Минимум %1 символов").arg(kMinPasswordLength));
+    dialog.addField(tr("Пароль"), password);
 
-    QLabel* phoneLabel = new QLabel("Телефон:", &dialog);
-    layout->addWidget(phoneLabel);
-    QLineEdit* phoneEdit = new QLineEdit(&dialog);
-    phoneEdit->setPlaceholderText("+7XXXXXXXXXX");
-    layout->addWidget(phoneEdit);
+    auto* confirmation = new QLineEdit;
+    confirmation->setEchoMode(QLineEdit::Password);
+    dialog.addField(tr("Повторите пароль"), confirmation);
 
-    QLabel* emailLabel = new QLabel("Email:", &dialog);
-    layout->addWidget(emailLabel);
-    QLineEdit* emailEdit = new QLineEdit(&dialog);
-    emailEdit->setPlaceholderText("example@domain.com");
-    layout->addWidget(emailEdit);
-
-    QLabel* passwordLabel = new QLabel("Пароль:", &dialog);
-    layout->addWidget(passwordLabel);
-    QLineEdit* passwordEdit = new QLineEdit(&dialog);
-    passwordEdit->setPlaceholderText("Минимум 8 символов");
-    passwordEdit->setEchoMode(QLineEdit::Password);
-    layout->addWidget(passwordEdit);
-
-    QLabel* confirmPasswordLabel = new QLabel("Подтвердите пароль:", &dialog);
-    layout->addWidget(confirmPasswordLabel);
-    QLineEdit* confirmPasswordEdit = new QLineEdit(&dialog);
-    confirmPasswordEdit->setPlaceholderText("Повторите пароль");
-    confirmPasswordEdit->setEchoMode(QLineEdit::Password);
-    layout->addWidget(confirmPasswordEdit);
-
-    layout->addStretch();
-
-    QHBoxLayout* buttonLayout = new QHBoxLayout();
-    buttonLayout->setSpacing(15);
-
-    QPushButton* registerButton = new QPushButton("Зарегистрироваться", &dialog);
-    registerButton->setProperty("type", "primary");
-    QPushButton* cancelButton = new QPushButton("Отмена", &dialog);
-    cancelButton->setProperty("type", "secondary");
-
-    buttonLayout->addWidget(cancelButton);
-    buttonLayout->addWidget(registerButton);
-    layout->addLayout(buttonLayout);
-
-    bool accepted = false;
-
-    connect(registerButton, &QPushButton::clicked, [&]() {
-        if (firstNameEdit->text().isEmpty() || lastNameEdit->text().isEmpty() ||
-            phoneEdit->text().isEmpty() || emailEdit->text().isEmpty() ||
-            passwordEdit->text().isEmpty() || confirmPasswordEdit->text().isEmpty()) {
-            QMessageBox::warning(&dialog, "Ошибка", "Все поля должны быть заполнены.");
-            return;
+    dialog.setValidator([&]() -> QString {
+        QString error = validateProfile(firstName->text(), lastName->text(), email->text(), phone->text());
+        if (error.isEmpty()) {
+            error = validatePassword(password->text(), confirmation->text());
         }
-
-        if (passwordEdit->text().length() < 8) {
-            QMessageBox::warning(&dialog, "Ошибка", "Пароль должен содержать минимум 8 символов.");
-            return;
+        if (!error.isEmpty()) {
+            return error;
         }
-
-        if (passwordEdit->text() != confirmPasswordEdit->text()) {
-            QMessageBox::warning(&dialog, "Ошибка", "Пароли не совпадают.");
-            return;
+        const QString kPhone = normalizePhone(phone->text());
+        if (m_services.clients().isEmailOrPhoneTaken(email->text().trimmed(), kPhone)) {
+            return tr("Пользователь с таким email или телефоном уже существует.");
         }
-
-        QRegularExpression emailRegex(R"((\w+)(\.\w+)*@(\w+)(\.\w{2,})+)");
-        if (!emailRegex.match(emailEdit->text()).hasMatch()) {
-            QMessageBox::warning(&dialog, "Ошибка", "Введите корректный email адрес.");
-            return;
+        const ClientProfile kProfile{firstName->text().trimmed(), lastName->text().trimmed(),
+                                     email->text().trimmed(), kPhone};
+        QString dbError;
+        if (!m_services.clients().registerClient(kProfile, password->text(), &dbError)) {
+            return dbError;
         }
-
-        QString phone = phoneEdit->text();
-        if (phone.startsWith("+")) {
-            phone = phone.mid(1);
-        }
-        QRegularExpression phoneRegex("^[0-9]{11}$");
-        if (!phoneRegex.match(phone).hasMatch()) {
-            QMessageBox::warning(&dialog, "Ошибка", "Введите корректный номер телефона (11 цифр).");
-            return;
-        }
-
-        QSqlQuery checkQuery = m_database->executeNamedSelect(SqlQueryId::SelectClientByEmailOrPhone,
-                                                              {{"email", emailEdit->text()},
-                                                               {"phone", phone}});
-
-        if (checkQuery.isActive() && checkQuery.next()) {
-            QMessageBox::warning(&dialog, "Ошибка", "Пользователь с таким email или телефоном уже существует.");
-            return;
-        }
-
-        QString hashedPassword = QString(QCryptographicHash::hash(
-            passwordEdit->text().toUtf8(),
-            QCryptographicHash::Sha256).toHex());
-
-        QString databaseError;
-        if (m_database->executeNamedQuery(SqlQueryId::InsertClient,
-                                          {{"first_name", firstNameEdit->text()},
-                                           {"last_name", lastNameEdit->text()},
-                                           {"phone", phone},
-                                           {"email", emailEdit->text()},
-                                           {"password", hashedPassword}},
-                                          &databaseError)) {
-            QMessageBox::information(&dialog, "Успех",
-                                     "Регистрация успешно завершена.\nТеперь вы можете войти в систему, используя email и пароль.");
-            accepted = true;
-            dialog.accept();
-        } else {
-            QMessageBox::critical(&dialog,
-                                  "Ошибка",
-                                  "Не удалось создать учетную запись: " + databaseError);
-        }
+        return {};
     });
 
-    connect(cancelButton, &QPushButton::clicked, &dialog, &QDialog::reject);
-
-    return dialog.exec() == QDialog::Accepted && accepted;
+    if (dialog.exec() != QDialog::Accepted) {
+        return std::nullopt;
+    }
+    return email->text().trimmed();
 }

@@ -13,7 +13,7 @@ struct UserInfo
     QString FullName;
     QString Email;
     QString Password;
-    Role Role = Role::Unknown;
+    ::Role Role = ::Role::Unknown;
 };
 
 #endif // USER_INFO_H

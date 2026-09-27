@@ -1,63 +1,86 @@
+#pragma once
+
 #ifndef DATABASE_HANDLER_H
 #define DATABASE_HANDLER_H
 
+#include <QList>
 #include <QSqlDatabase>
+#include <QSqlError>
 #include <QSqlQuery>
 #include <QString>
 #include <QVariant>
 #include <QVariantMap>
-#include <optional>
 
-#include "SystemData.h"
+#include "SqlQueries.h"
 
-class DatabaseHandler {
+/*!
+ * \brief Owns the SQLite connection and executes named, parameterised statements.
+ *
+ * - Statements are resolved by logical name (see SqlQueries.h) from resources;
+ *   no SQL text lives in C++ code.
+ * - Parameters are always bound (`:name` placeholders), never interpolated.
+ * - Each handler uses its own named connection, so several handlers
+ *   (e.g. application + tests) can coexist.
+ */
+class DatabaseHandler final
+{
 public:
-    DatabaseHandler();
+    explicit DatabaseHandler(QString connectionName = QStringLiteral("dealership"));
+    ~DatabaseHandler();
 
-    bool open();
+    DatabaseHandler(const DatabaseHandler&) = delete;
+    DatabaseHandler& operator=(const DatabaseHandler&) = delete;
+
+    /// Opens (creating if needed) an SQLite file and brings its schema up to date.
+    bool open(const QString& databasePath);
+
+    /// Opens the default database: $CAR_DEALERSHIP_DB or <AppDataLocation>/dealership.sqlite.
+    bool openDefault();
+
     void close();
+    [[nodiscard]] bool isOpen() const;
 
-    /// Подключение к файлу SQLite
-    void updateConnection(const QString& databasePath);
+    [[nodiscard]] static QString defaultDatabasePath();
+    [[nodiscard]] QString databasePath() const;
+    [[nodiscard]] QString connectionName() const;
+    [[nodiscard]] QSqlDatabase database() const;
 
-    /// Подключается к БД по умолчанию (путь берётся из окружения или дефолтный)
-    void loadDefault();
+    /// Runs a named statement and returns the active query (check isActive()).
+    QSqlQuery select(SqlQuery::Name name, const QVariantMap& params = {}) const;
 
-    QString getLastError() const;
+    /// Runs a named statement and returns every row as a column -> value map.
+    [[nodiscard]] QList<QVariantMap> rows(SqlQuery::Name name, const QVariantMap& params = {}) const;
 
-    /// Возвращает строку из sys_strings по категории и ключу
-    QString getString(const QString& category, const QString& key,
-                      const QString& fallback = QString()) const;
-    /// Возвращает значение настройки из sys_settings
-    QString getSetting(const QString& key, const QString& fallback = QString()) const;
+    /// Runs a named statement and returns the first column of the first row.
+    [[nodiscard]] QVariant scalar(SqlQuery::Name name,
+                                  const QVariantMap& params = {},
+                                  const QVariant& fallback = {}) const;
 
-    QString getTableDescription(QStringView tableName) const;
-    QStringList getTables() const;
+    /// Runs a named DML statement. On failure \a userMessage receives a localized explanation.
+    bool execute(SqlQuery::Name name, const QVariantMap& params = {}, QString* userMessage = nullptr);
 
-    bool executeQuery(QStringView stringQuery);
-    bool executeQueryWithUserMessage(QStringView stringQuery, QString& errorMessage);
-    QVariant executeSelectQuery(QStringView stringQuery) const;
-    QSqlQuery executeNamedSelect(SqlQueryId queryId,
-                                 const QVariantMap& bindings = {}) const;
-    bool executeNamedQuery(SqlQueryId queryId,
-                           const QVariantMap& bindings = {},
-                           QString* errorMessage = nullptr);
+    [[nodiscard]] QVariant lastInsertId() const;
 
-    std::optional<int> tryGetCarTypeId(QStringView typeName) const;
-    bool isKnownColor(QStringView color) const;
-    QStringList getCarTypeNames() const;
-    QString getDefaultCatalogColor() const;
+    bool transaction();
+    bool commit();
+    bool rollback();
 
-    int getColumnsCount(QStringView tableName) const;
-    int getMaxOrMinValueFromTable(const QString& maxOrMin,
-                                  const QString& columnName,
-                                  const QString& tableName);
-    const QStringList getForeignKeysForColumn(const QString& tableName,
-                                              const QString& columnName);
-    QList<QString> getDistinctColors();
+    /// Converts a driver error into a message suitable for the user (texts are stored in sys_strings).
+    [[nodiscard]] QString userMessage(const QSqlError& error) const;
+    [[nodiscard]] QSqlError lastError() const;
+
+    /// Value from sys_strings.
+    [[nodiscard]] QString string(const QString& category,
+                                 const QString& key,
+                                 const QString& fallback = {}) const;
 
 private:
-    QSqlDatabase m_database;
+    bool prepareAndExec(QSqlQuery& query, SqlQuery::Name name, const QVariantMap& params) const;
+    bool runBootstrap(const QString& name);
+
+    QString m_connectionName;
+    mutable QSqlError m_lastError;
+    QVariant m_lastInsertId;
 };
 
 #endif // DATABASE_HANDLER_H

@@ -1,5 +1,0 @@
-QTableView {
-    border: 0px;
-    background: #ffffff;
-    color: #1d1b20;
-}

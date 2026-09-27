@@ -1,37 +1,72 @@
-#include "../include/ProductCardDelegate.h"
+#include "ProductCardDelegate.h"
 
-#include "ProductListModel.h"
 #include "PriceFormatter.h"
+#include "ProductListModel.h"
+#include "ThemeManager.h"
 
+#include <QAbstractItemView>
 #include <QPainter>
-#include <QPixmap>
-#include <QApplication>
-#include <QWidget>
-#include <QtGlobal>
+#include <QPainterPath>
+#include <QPixmapCache>
+#include <QStringList>
+#include <utility>
+
+namespace {
+constexpr int kImageHeight = 200;
+constexpr int kSwatch = 10;
+constexpr int kSwatchGap = 8; ///< leaves room for the ring around the current chip
+
+QPixmap scaledImage(const QString& path, const QSize& box, const qreal dpr)
+{
+    const QSize kPixels = box * dpr;
+    const QString kKey = QStringLiteral("card:%1:%2x%3").arg(path).arg(kPixels.width()).arg(kPixels.height());
+    QPixmap pixmap;
+    if (QPixmapCache::find(kKey, &pixmap)) {
+        return pixmap;
+    }
+    const QPixmap kSource(path);
+    if (kSource.isNull()) {
+        return {};
+    }
+    pixmap = kSource.scaled(kPixels, Qt::KeepAspectRatio, Qt::SmoothTransformation);
+    pixmap.setDevicePixelRatio(dpr);
+    QPixmapCache::insert(kKey, pixmap);
+    return pixmap;
+}
+
+QFont sized(const QFont& base, const qreal pointSize, const QFont::Weight weight, const qreal tracking = 0)
+{
+    QFont font(base);
+    font.setPointSizeF(pointSize);
+    font.setWeight(weight);
+    if (tracking > 0) {
+        font.setLetterSpacing(QFont::AbsoluteSpacing, tracking);
+    }
+    return font;
+}
+} // namespace
 
 ProductCardDelegate::ProductCardDelegate(QObject* parent)
     : QStyledItemDelegate(parent)
-{
-}
+{}
 
-namespace {
-bool isDarkTheme()
+QSize ProductCardDelegate::cardSize(const int viewportWidth, const int spacing)
 {
-    if (qApp) {
-        const QVariant kProp = qApp->property("app_theme");
-        if (kProp.isValid()) {
-            return kProp.toString().trimmed().compare("dark", Qt::CaseInsensitive) == 0;
-        }
-    }
-    return qEnvironmentVariable("APP_THEME").trimmed().compare("dark", Qt::CaseInsensitive) == 0;
+    const int kAvailable = qMax(kMinCardWidth, viewportWidth - spacing);
+    const int kColumns = qMax(1, kAvailable / (kMinCardWidth + spacing));
+    const int kWidth = kAvailable / kColumns - spacing;
+    return {qMax(kMinCardWidth - spacing, kWidth), kCardHeight};
 }
-} // namespace
 
 QSize ProductCardDelegate::sizeHint(const QStyleOptionViewItem& option, const QModelIndex& index) const
 {
     Q_UNUSED(index);
-    const int kWidth = option.widget ? qMax(320, option.widget->width() - 4) : 833;
-    return QSize(kWidth, 149);
+    const auto* kView = qobject_cast<const QAbstractItemView*>(option.widget);
+    if (!kView) {
+        return {kMinCardWidth, kCardHeight};
+    }
+    const int kSpacing = kView->property("cardSpacing").toInt();
+    return cardSize(kView->viewport()->width(), kSpacing);
 }
 
 void ProductCardDelegate::paint(QPainter* painter, const QStyleOptionViewItem& option, const QModelIndex& index) const
@@ -39,68 +74,121 @@ void ProductCardDelegate::paint(QPainter* painter, const QStyleOptionViewItem& o
     if (!index.isValid()) {
         return;
     }
+    const ThemeManager& theme = ThemeManager::instance();
+    const bool kHovered = option.state.testFlag(QStyle::State_MouseOver);
 
     painter->save();
-    painter->setRenderHint(QPainter::Antialiasing, true);
-    const bool kDarkTheme = isDarkTheme();
+    painter->setRenderHint(QPainter::Antialiasing);
+    painter->setRenderHint(QPainter::SmoothPixmapTransform);
 
-    const QRect kRect = option.rect.adjusted(0, 0, -1, -1);
+    const QRectF kCell = QRectF(option.rect);
+
+    // Neutral plate behind the cut-out photo, square corners, darker on hover.
+    const QRectF kPlate(kCell.left(), kCell.top(), kCell.width(), kImageHeight);
     painter->setPen(Qt::NoPen);
-    painter->setBrush(kDarkTheme ? QColor("#1f2631") : QColor("#ffffff"));
-    painter->drawRoundedRect(kRect, 39, 39);
+    painter->setBrush(theme.color(kHovered ? QStringLiteral("plateHover") : QStringLiteral("plate")));
+    painter->drawRect(kPlate);
+
+    const QString kImagePath = index.data(ProductListModel::ImagePathRole).toString();
+    const qreal kDpr = painter->device() ? painter->device()->devicePixelRatioF() : 1.0;
+    const QSize kImageBox = kPlate.adjusted(24, 22, -24, -18).size().toSize();
+    const QPixmap kImage = scaledImage(kImagePath, kImageBox, kDpr);
+    if (!kImage.isNull()) {
+        const QSizeF kLogical = QSizeF(kImage.size()) / kDpr;
+        painter->drawPixmap(QPointF(kPlate.center().x() - kLogical.width() / 2,
+                                    kPlate.bottom() - 16 - kLogical.height()),
+                            kImage);
+    }
 
     const QString kName = index.data(ProductListModel::NameRole).toString();
     const QString kColor = index.data(ProductListModel::ColorRole).toString();
     const QString kTrim = index.data(ProductListModel::TrimRole).toString();
-    const int kStockQty = index.data(ProductListModel::StockQtyRole).toInt();
-    const int kPrice = index.data(ProductListModel::PriceRole).toInt();
-    const QString kImagePath = index.data(ProductListModel::ImagePathRole).toString();
+    const QString kType = index.data(ProductListModel::TypeNameRole).toString();
+    const QColor kPaint = QColor::fromString(index.data(ProductListModel::ColorHexRole).toString());
+    const int kStock = index.data(ProductListModel::StockQtyRole).toInt();
+    const qint64 kPrice = index.data(ProductListModel::PriceRole).toLongLong();
 
-    QString description = kColor;
-    if (!kTrim.isEmpty()) {
-        description += " • " + kTrim;
+    const qreal kLeft = kCell.left();
+    const qreal kWidth = kCell.width();
+    qreal y = kPlate.bottom() + 16;
+
+    // Overline: body type, and availability on the right.
+    const QFont kOverFont = sized(option.font, 8, QFont::DemiBold, 1.0);
+    const QFontMetricsF kOverMetrics(kOverFont);
+    painter->setFont(kOverFont);
+    painter->setPen(theme.color(QStringLiteral("textMuted")));
+    const QRectF kOverRect(kLeft, y, kWidth, kOverMetrics.height());
+    painter->drawText(kOverRect, Qt::AlignLeft | Qt::AlignVCenter, kType.toUpper());
+    const bool kInStock = kStock > 0;
+    painter->setPen(theme.color(kInStock ? QStringLiteral("success") : QStringLiteral("textMuted")));
+    painter->drawText(kOverRect, Qt::AlignRight | Qt::AlignVCenter,
+                      (kInStock ? QObject::tr("В наличии") : QObject::tr("Под заказ")).toUpper());
+    y += kOverMetrics.height() + 6;
+
+    // Model name in the display serif.
+    const QFont kNameFont = theme.displayFont(15, QFont::Medium);
+    const QFontMetricsF kNameMetrics(kNameFont);
+    painter->setFont(kNameFont);
+    painter->setPen(theme.color(QStringLiteral("text")));
+    const QRectF kNameRect(kLeft, y, kWidth, kNameMetrics.height());
+    const QString kElided = kNameMetrics.elidedText(kName, Qt::ElideRight, kWidth);
+    painter->drawText(kNameRect, Qt::AlignLeft | Qt::AlignVCenter, kElided);
+    if (kHovered) {
+        const qreal kBase = kNameRect.top() + kNameMetrics.ascent() + 3;
+        painter->setPen(QPen(theme.color(QStringLiteral("text")), 1));
+        painter->drawLine(QPointF(kLeft, kBase), QPointF(kLeft + kNameMetrics.horizontalAdvance(kElided), kBase));
     }
-    if (kStockQty <= 0) {
-        description += " • Нет в наличии";
+    y += kNameMetrics.height() + 4;
+
+    // Paint range of the model: one chip per available colour, the card's own
+    // colour ringed. Then the colour name and trim of this particular card.
+    const QFont kDetailsFont = sized(option.font, 9.5, QFont::Normal);
+    const QFontMetricsF kDetailsMetrics(kDetailsFont);
+    QStringList palette = index.data(ProductListModel::PaletteRole).toStringList();
+    if (palette.isEmpty() && kPaint.isValid()) {
+        palette.append(kPaint.name());
     }
-
-    const int kImageAreaWidth = qBound(180, kRect.width() * 44 / 100, 367);
-    const int kTextLeft = kRect.x() + kImageAreaWidth;
-    const int kTextWidth = qMax(80, kRect.right() - kTextLeft - 28);
-    const int kImageX = kRect.x();
-    const int kImageY = kRect.y() + 11;
-
-    if (!kImagePath.isEmpty()) {
-        QPixmap originalPixmap(kImagePath);
-        if (!originalPixmap.isNull()) {
-            QPixmap scaledPixmap = originalPixmap.scaled(
-                QSize(qMax(1, kImageAreaWidth - 24), 130),
-                Qt::KeepAspectRatio,
-                Qt::SmoothTransformation);
-            const int kImageWidth = scaledPixmap.width();
-            const int kX = kImageX + qMax(0, (kImageAreaWidth - kImageWidth) / 2);
-            painter->drawPixmap(kX, kImageY, scaledPixmap);
+    const qreal kChipTop = y + (kDetailsMetrics.height() - kSwatch) / 2;
+    qreal x = kLeft;
+    for (const QString& hex : std::as_const(palette)) {
+        const QColor kChipColor = QColor::fromString(hex);
+        if (!kChipColor.isValid()) {
+            continue;
         }
+        const QRectF kChip(x, kChipTop, kSwatch, kSwatch);
+        const bool kCurrent = kChipColor == kPaint;
+        if (kCurrent) {
+            painter->setPen(QPen(theme.color(QStringLiteral("text")), 1));
+            painter->setBrush(Qt::NoBrush);
+            painter->drawRect(kChip.adjusted(-2.5, -2.5, 2.5, 2.5));
+        }
+        painter->setPen(QPen(kChipColor.lightnessF() > 0.85 ? theme.color(QStringLiteral("borderStrong")) : kChipColor, 1));
+        painter->setBrush(kChipColor);
+        painter->drawRect(kChip.adjusted(0.5, 0.5, -0.5, -0.5));
+        x += kSwatch + kSwatchGap;
     }
+    if (x > kLeft) {
+        x += 10 - kSwatchGap;
+    }
+    QString details = kColor;
+    if (!kTrim.isEmpty()) {
+        details += QStringLiteral(", ") + kTrim.toLower();
+    }
+    painter->setFont(kDetailsFont);
+    painter->setPen(theme.color(QStringLiteral("textSecondary")));
+    painter->drawText(QRectF(x, y, kWidth - (x - kLeft), kDetailsMetrics.height()), Qt::AlignLeft | Qt::AlignVCenter,
+                      kDetailsMetrics.elidedText(details, Qt::ElideRight, kWidth - (x - kLeft)));
 
-    QFont nameFont("Open Sans", 20, QFont::Bold);
-    painter->setFont(nameFont);
-    painter->setPen(kDarkTheme ? QColor("#e7edf5") : QColor("#1d1b20"));
-    painter->drawText(QRect(kTextLeft, kRect.y() + 15, kTextWidth, 32),
-                      Qt::AlignLeft | Qt::AlignVCenter, kName);
-
-    QFont descFont("JetBrains Mono", 15);
-    painter->setFont(descFont);
-    painter->setPen(kDarkTheme ? QColor("#b8c6d8") : QColor("#555555"));
-    painter->drawText(QRect(kTextLeft, kRect.y() + 64, kTextWidth, 24),
-                      Qt::AlignLeft | Qt::AlignVCenter, description);
-
-    QFont priceFont("Open Sans", 20, QFont::Bold);
-    painter->setFont(priceFont);
-    painter->setPen(kDarkTheme ? QColor("#e7edf5") : QColor("#1d1b20"));
-    painter->drawText(QRect(kTextLeft, kRect.y() + 106, kTextWidth, 32),
-                      Qt::AlignRight | Qt::AlignVCenter,
-                      formatPrice(kPrice) + " руб.");
+    // Price on its own line, separated by a hairline.
+    const QFont kPriceFont = theme.displayFont(14, QFont::Normal);
+    const QFontMetricsF kPriceMetrics(kPriceFont);
+    const qreal kPriceTop = kCell.bottom() - kPriceMetrics.height() - 6;
+    painter->setPen(QPen(theme.color(QStringLiteral("border")), 1));
+    painter->drawLine(QPointF(kLeft, kPriceTop - 10.5), QPointF(kCell.right(), kPriceTop - 10.5));
+    painter->setFont(kPriceFont);
+    painter->setPen(theme.color(QStringLiteral("text")));
+    painter->drawText(QRectF(kLeft, kPriceTop, kWidth, kPriceMetrics.height()), Qt::AlignLeft | Qt::AlignVCenter,
+                      formatPrice(kPrice) + QStringLiteral(" ₽"));
 
     painter->restore();
 }

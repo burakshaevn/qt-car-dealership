@@ -11,14 +11,15 @@ public:
     void setCurrentUser(const UserInfo& user);
     void clear();
 
-    bool isAuthorized() const;
-    bool isAdmin() const;
-    bool isUser() const;
+    [[nodiscard]] bool isAuthorized() const;
+    [[nodiscard]] bool isAdmin() const;
+    [[nodiscard]] bool isUser() const;
 
-    int getId() const;
-    const QString& getName() const;
-    const QString& getEmail() const;
-    Role getRole() const;
+    [[nodiscard]] int id() const;
+    [[nodiscard]] const QString& name() const;
+    [[nodiscard]] const QString& email() const;
+    [[nodiscard]] Role role() const;
+
     void setName(const QString& name);
     void setEmail(const QString& email);
 
