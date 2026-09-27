@@ -9,7 +9,14 @@
 кредит, аренду, страхование и тест-драйв, уведомления со статусами и экспорт договоров, а также
 панель администратора для обработки заявок и редактирования справочников.
 
-<p align="center"><img src="docs/screenshots/02_catalog.png" width="90%"/></p>
+<p align="center">
+  <img src="docs/screenshots/02_catalog.png" width="90%" style="display:block; margin-bottom:16px;">
+</p>
+
+<p align="center" style="margin:0;">
+  <img src="docs/screenshots/03_product.png" width="45%" style="vertical-align:middle; margin-right:4%;">
+  <img src="docs/screenshots/05_profile.png" width="45%" style="vertical-align:middle;">
+</p>
 
 ## Возможности
 
